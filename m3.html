@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SN2 Pro Lab – Mekanisme Substitusi Nukleofilik</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-deep:    #060d1a;
+            --bg-card:    rgba(10,22,45,0.75);
+            --border:     rgba(0,210,255,0.15);
+            --cyan:       #00d2ff;
+            --amber:      #fbbf24;
+            --red:        #f87171;
+            --green:      #4ade80;
+            --purple:     #a78bfa;
+            --text-muted: #94a3b8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Syne', sans-serif;
+            background: var(--bg-deep);
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        code, .mono { font-family: 'Space Mono', monospace; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 10px; }
+
+        /* Glass card */
+        .glass {
+            background: var(--bg-card);
+            backdrop-filter: blur(14px);
+            border: 1px solid var(--border);
+        }
+
+        /* Loader */
+        #loader {
+            position: fixed; inset: 0; z-index: 999;
+            background: var(--bg-deep);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 20px;
+        }
+        .loader-ring {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-top-color: var(--cyan);
+            border-right-color: var(--purple);
+            animation: spin3 1.2s linear infinite;
+        }
+        @keyframes spin3 { to { transform: rotate(360deg); } }
+
+        /* Sidebar */
+        #sidebar {
+            width: 270px; min-width: 270px;
+            background: #040c1c;
+            border-right: 1px solid var(--border);
+            height: 100vh;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+        .nav-item {
+            padding: 10px 20px;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .nav-item:hover { color: #fff; background: rgba(0,210,255,0.06); }
+        .nav-item.active {
+            color: var(--cyan);
+            border-left-color: var(--cyan);
+            background: rgba(0,210,255,0.08);
+            font-weight: 700;
+        }
+
+        /* Main */
+        #main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px;
+        }
+
+        /* Page sections */
+        .page { display: none; }
+        .page.visible { display: block; }
+
+        /* Topic title */
+        .topic-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--cyan);
+            margin-bottom: 24px;
+            letter-spacing: -0.02em;
+        }
+
+        /* === 3D CANVAS WRAPPER === */
+        #canvas-sn2 {
+            width: 100%; height: 420px;
+            background: radial-gradient(ellipse at center, #0a1f3a 0%, #040c1c 70%);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+        #canvas-sn2 canvas { display: block; }
+
+        /* Labels on 3D */
+        .atom-label {
+            position: absolute;
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            pointer-events: none;
+            text-shadow: 0 0 8px rgba(0,0,0,0.9);
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+        }
+
+        /* Bond-breaking indicator */
+        .bond-indicator {
+            position: absolute;
+            font-size: 10px;
+            font-family: 'Space Mono', monospace;
+            color: var(--amber);
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        /* Progress bar */
+        .progress-track {
+            background: #0a1a2e;
+            border-radius: 99px;
+            height: 6px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, var(--cyan), var(--purple));
+            transition: width 0.4s ease;
+        }
+
+        /* Control buttons */
+        .btn-primary {
+            padding: 10px 24px;
+            background: linear-gradient(135deg, #0069a3, #0094cc);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 20px rgba(0,210,255,0.2);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(0,210,255,0.35); }
+        .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        .btn-ghost {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-family: 'Syne', sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-ghost:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+        /* Step cards */
+        .step-card {
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .step-card:hover { border-color: var(--cyan); transform: translateY(-4px); }
+        .step-card.active { border-color: var(--cyan); background: rgba(0,210,255,0.08) !important; }
+
+        /* Info badge */
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 99px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .badge-cyan  { background: rgba(0,210,255,0.15); color: var(--cyan); }
+        .badge-amber { background: rgba(251,191,36,0.15); color: var(--amber); }
+        .badge-red   { background: rgba(248,113,113,0.15); color: var(--red); }
+        .badge-green { background: rgba(74,222,128,0.15); color: var(--green); }
+
+        /* Energy diagram */
+        #energy-svg { width: 100%; max-width: 640px; display: block; margin: 0 auto; }
+
+        /* 2D mechanism SVG */
+        #mechanism-2d { width: 100%; }
+
+        /* Radical dot */
+        .rad-dot {
+            display: inline-block; width: 8px; height: 8px;
+            background: var(--red); border-radius: 50%;
+            box-shadow: 0 0 10px var(--red);
+            animation: radpulse 1s infinite;
+            vertical-align: middle;
+        }
+        @keyframes radpulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.5);} }
+
+        /* Tooltip */
+        .tip {
+            position: relative; display: inline-block;
+        }
+        .tip .tiptext {
+            visibility: hidden;
+            background: #0d2340;
+            border: 1px solid var(--border);
+            color: #fff;
+            font-size: 0.75rem;
+            border-radius: 8px;
+            padding: 6px 10px;
+            position: absolute;
+            z-index: 10;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+        .tip:hover .tiptext { visibility: visible; }
+
+        /* Quiz */
+        .quiz-option {
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            text-align: left;
+            width: 100%;
+            color: #e2e8f0;
+            font-family: 'Syne', sans-serif;
+        }
+        .quiz-option:hover { border-color: var(--cyan); background: rgba(0,210,255,0.05); }
+        .quiz-option.correct { border-color: var(--green); background: rgba(74,222,128,0.1); color: var(--green); }
+        .quiz-option.wrong   { border-color: var(--red); background: rgba(248,113,113,0.1); color: var(--red); }
+
+        /* Info highlight box */
+        .highlight-box {
+            padding: 16px 20px;
+            border-radius: 14px;
+            border-left: 4px solid;
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+
+        /* Sliding mobile sidebar */
+        @media (max-width: 1024px) {
+            #sidebar {
+                position: fixed; left: 0; top: 0; z-index: 50;
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+            }
+            #sidebar.open { transform: translateX(0); }
+            #main { padding: 20px; }
+        }
+
+        /* Glow text */
+        .glow { text-shadow: 0 0 30px rgba(0,210,255,0.5); }
+
+        /* Walden animation */
+        #walden-wrap {
+            display: flex; align-items: center; justify-content: center;
+            gap: 40px; padding: 30px 0;
+        }
+        .molecule-card {
+            background: rgba(10,22,45,0.9);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            min-width: 140px;
+        }
+        .wedge-svg { width: 130px; height: 100px; }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        th { background: rgba(0,210,255,0.08); color: var(--cyan); padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+        td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); color: var(--text-muted); }
+        tr:hover td { background: rgba(255,255,255,0.02); color: #fff; }
+
+        /* Glow card header */
+        .section-header {
+            font-size: 1.1rem; font-weight: 700;
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 20px; color: #fff;
+        }
+
+        /* Reaction equation display */
+        .reaction-eq {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.1rem;
+            background: #020810;
+            padding: 16px 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            text-align: center;
+            letter-spacing: 0.05em;
+            overflow-x: auto;
+        }
+
+        /* Animated arrow */
+        @keyframes arrow-shift {
+            0%,100% { transform: translateX(0); }
+            50%      { transform: translateX(6px); }
+        }
+        .arrow-anim { display: inline-block; animation: arrow-shift 1.4s ease-in-out infinite; }
+    </style>
+</head>
+<body>
+
+<!-- Loader -->
+<div id="loader">
+    <div class="loader-ring"></div>
+    <p style="font-family:'Space Mono',monospace; font-size:0.75rem; color:var(--cyan); letter-spacing:0.15em; text-transform:uppercase;">
+        Inisialisasi Laboratorium SN2…
+    </p>
+</div>
+
+<!-- App Shell -->
+<div id="app" style="display:none; display:flex; height:100vh; overflow:hidden;">
+
+    <!-- Sidebar -->
+    <aside id="sidebar">
+        <div style="padding:24px 20px 10px;">
+            <div style="font-size:1.3rem; font-weight:800; color:var(--cyan);">SN2 Pro Lab</div>
+            <div style="font-size:0.68rem; color:var(--text-muted); letter-spacing:0.1em; text-transform:uppercase; margin-top:4px;">Kimia Organik – Mekanisme Substitusi</div>
+        </div>
+        <hr style="border-color:var(--border); margin:12px 0;">
+        <nav id="nav-list"></nav>
+        <hr style="border-color:var(--border); margin:12px 0;">
+        <div style="padding:0 16px 24px;">
+            <button onclick="showHome()" class="btn-ghost" style="width:100%; font-size:0.78rem; display:flex; align-items:center; gap:8px; justify-content:center;">
+                <i class="fas fa-home"></i> Beranda
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <main id="main">
+
+        <!-- ===================== LANDING ===================== -->
+        <section id="page-landing" class="page visible" style="max-width:900px; margin:0 auto; min-height:80vh; display:flex; flex-direction:column; justify-content:center;">
+            <div style="text-align:center;">
+                <div class="badge badge-cyan" style="margin-bottom:16px;">Kimia Organik Lanjut</div>
+                <h1 style="font-size:clamp(2.5rem,6vw,4.5rem); font-weight:800; line-height:1.1; margin-bottom:20px;" class="glow">
+                    Reaksi <span style="color:var(--cyan);">SN2</span><br>Interaktif 3D
+                </h1>
+                <p style="color:var(--text-muted); max-width:560px; margin:0 auto 40px; line-height:1.7; font-size:0.95rem;">
+                    Visualisasi animasi 3D mekanisme Substitusi Nukleofilik Bimolekuler — lihat secara langsung serangan balik, pemutusan ikatan, dan inversi konfigurasi Walden.
+                </p>
+
+                <!-- Stats row -->
+                <div style="display:flex; gap:20px; justify-content:center; flex-wrap:wrap; margin-bottom:40px;">
+                    <div class="glass" style="padding:16px 24px; border-radius:14px; text-align:center;">
+                        <div style="font-size:1.6rem; font-weight:800; color:var(--cyan);">14</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em;">Topik Materi</div>
+                    </div>
+                    <div class="glass" style="padding:16px 24px; border-radius:14px; text-align:center;">
+                        <div style="font-size:1.6rem; font-weight:800; color:var(--amber);">3D</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em;">Animasi Mekanisme</div>
+                    </div>
+                    <div class="glass" style="padding:16px 24px; border-radius:14px; text-align:center;">
+                        <div style="font-size:1.6rem; font-weight:800; color:var(--purple);">∞</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em;">Interaksi Real-time</div>
+                    </div>
+                </div>
+
+                <button onclick="goToTopic(1)" class="btn-primary" style="font-size:1rem; padding:14px 36px; border-radius:16px;">
+                    <i class="fas fa-play" style="margin-right:8px;"></i> Mulai Belajar
+                </button>
+            </div>
+        </section>
+
+        <!-- ===================== TOPIC 1 – Intro ===================== -->
+        <section id="page-topic-1" class="page" style="max-width:880px; margin:0 auto;">
+            <div class="badge badge-cyan" style="margin-bottom:12px;">Topik 01</div>
+            <h2 class="topic-title">Pengantar Reaksi SN2</h2>
+
+            <div class="glass" style="border-radius:20px; padding:32px; margin-bottom:24px;">
+                <div class="section-header"><i class="fas fa-graduation-cap" style="color:var(--purple);"></i> Apa itu SN2?</div>
+                <p style="color:var(--text-muted); line-height:1.8; margin-bottom:20px; font-size:0.9rem;">
+                    <strong style="color:#fff;">SN2</strong> (Substitusi Nukleofilik Bimolekuler) adalah reaksi di mana nukleofil menyerang karbon elektrofilik dari sisi belakang secara bersamaan dengan pelepasan gugus pergi (leaving group), melalui satu langkah <em style="color:var(--cyan);">concerted</em> tanpa intermediat.
+                </p>
+
+                <div class="reaction-eq">
+                    <span style="color:var(--cyan);">Nu⁻</span>
+                    <span style="color:var(--text-muted);"> + </span>
+                    <span style="color:var(--amber);">R–LG</span>
+                    <span style="color:#fff;" class="arrow-anim"> ⟶ </span>
+                    <span style="color:var(--green);">Nu–R</span>
+                    <span style="color:var(--text-muted);"> + </span>
+                    <span style="color:var(--red);">LG⁻</span>
+                </div>
+
+                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-top:24px;">
+                    <div class="highlight-box" style="border-color:var(--cyan); background:rgba(0,210,255,0.05);">
+                        <div style="color:var(--cyan); font-weight:700; margin-bottom:6px;"><i class="fas fa-crosshairs"></i> Serangan Balik (Backside)</div>
+                        <p style="color:var(--text-muted); font-size:0.82rem;">Nukleofil datang 180° berlawanan dari leaving group.</p>
+                    </div>
+                    <div class="highlight-box" style="border-color:var(--amber); background:rgba(251,191,36,0.05);">
+                        <div style="color:var(--amber); font-weight:700; margin-bottom:6px;"><i class="fas fa-bolt"></i> Satu Langkah</div>
+                        <p style="color:var(--text-muted); font-size:0.82rem;">Tidak ada karbokation intermediat — ikatan putus & terbentuk serentak.</p>
+                    </div>
+                    <div class="highlight-box" style="border-color:var(--purple); background:rgba(167,139,250,0.05);">
+                        <div style="color:var(--purple); font-weight:700; margin-bottom:6px;"><i class="fas fa-rotate"></i> Inversi Walden</div>
+                        <p style="color:var(--text-muted); font-size:0.82rem;">Konfigurasi R/S terbalik seperti payung terbalik angin.</p>
+                    </div>
+                    <div class="highlight-box" style="border-color:var(--green); background:rgba(74,222,128,0.05);">
+                        <div style="color:var(--green); font-weight:700; margin-bottom:6px;"><i class="fas fa-flask"></i> Bimolekuler</div>
+                        <p style="color:var(--text-muted); font-size:0.82rem;">Laju ∝ [R–LG][Nu] — kedua reaktan muncul dalam kinetika orde dua.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass" style="border-radius:20px; padding:32px;">
+                <div class="section-header"><i class="fas fa-history" style="color:var(--amber);"></i> Sejarah Singkat</div>
+                <p style="color:var(--text-muted); line-height:1.8; font-size:0.88rem;">
+                    Mekanisme SN2 dirumuskan oleh <strong style="color:#fff;">E.D. Hughes</strong> dan <strong style="color:#fff;">Christopher Ingold</strong> pada tahun 1935. Mereka membuktikan bahwa reaksi berlangsung dengan inversi stereokimia — yang kemudian dikenal sebagai <em style="color:var(--cyan);">Inversi Walden</em>, dinamai dari Paul Walden yang pertama mengamati fenomena ini pada 1896.
+                </p>
+            </div>
+
+            <div style="margin-top:24px; display:flex; gap:12px;">
+                <button onclick="goToTopic(2)" class="btn-primary">Lanjut: Mekanisme 3D <i class="fas fa-arrow-right" style="margin-left:6px;"></i></button>
+            </div>
+        </section>
+
+        <!-- ===================== TOPIC 2 – Mekanisme 3D ===================== -->
+        <section id="page-topic-2" class="page" style="max-width:960px; margin:0 auto;">
+            <div class="badge badge-amber" style="margin-bottom:12px;">Topik 02</div>
+            <h2 class="topic-title">Mekanisme SN2 – Visualisasi 3D</h2>
+
+            <!-- 3D Canvas -->
+            <div class="glass" style="border-radius:20px; padding:24px; margin-bottom:24px;">
+                <div class="section-header" style="margin-bottom:8px;">
+                    <i class="fas fa-cube" style="color:var(--cyan);"></i> Simulasi 3D Real-time
+                    <span class="badge badge-cyan" style="margin-left:auto; font-size:0.6rem;">Three.js</span>
+                </div>
+
+                <!-- Step indicator -->
+                <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;" id="step-indicators">
+                    <div class="badge" id="ind-0" style="background:rgba(0,210,255,0.2); color:var(--cyan);">① Reactants</div>
+                    <div class="badge" id="ind-1" style="background:rgba(255,255,255,0.05); color:var(--text-muted);">② Attack</div>
+                    <div class="badge" id="ind-2" style="background:rgba(255,255,255,0.05); color:var(--text-muted);">③ Transition State</div>
+                    <div class="badge" id="ind-3" style="background:rgba(255,255,255,0.05); color:var(--text-muted);">④ Inversion</div>
+                    <div class="badge" id="ind-4" style="background:rgba(255,255,255,0.05); color:var(--text-muted);">⑤ Products</div>
+                </div>
+
+                <div id="canvas-sn2">
+                    <!-- Three.js renders here -->
+                    <div id="atom-labels" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></div>
+                </div>
+
+                <!-- Status bar -->
+                <div style="margin-top:14px; padding:12px 18px; background:#020810; border-radius:10px; border:1px solid var(--border); display:flex; align-items:center; gap:10px;">
+                    <i class="fas fa-info-circle" style="color:var(--cyan);"></i>
+                    <span id="status-text" style="font-size:0.82rem; color:var(--text-muted); font-family:'Space Mono',monospace; flex:1;">
+                        Sistem siap. Tekan <strong style="color:#fff;">Animasi SN2</strong> untuk memulai simulasi.
+                    </span>
+                    <div class="progress-track" style="width:120px; margin:0;">
+                        <div class="progress-fill" id="anim-progress" style="width:0%;"></div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
+                    <button id="btn-play" onclick="playSN2()" class="btn-primary">
+                        <i class="fas fa-play" style="margin-right:6px;"></i> Animasi SN2
+                    </button>
+                    <button onclick="stepSN2()" class="btn-ghost">
+                        <i class="fas fa-step-forward" style="margin-right:6px;"></i> Langkah Demi Langkah
+                    </button>
+                    <button onclick="resetSN2()" class="btn-ghost">
+                        <i class="fas fa-undo" style="margin-right:6px;"></i> Reset
+                    </button>
+                    <label style="display:flex; align-items:center; gap:8px; color:var(--text-muted); font-size:0.8rem; cursor:pointer;">
+                        <input type="checkbox" id="show-orbitals" onchange="toggleOrbitals(this.checked)" style="accent-color:var(--cyan);">
+                        Tampilkan orbital p
+                    </label>
+                </div>
+            </div>
+
+            <!-- Step explanation cards -->
+            <div class="glass" style="border-radius:20px; padding:24px; margin-bottom:24px;">
+                <div class="section-header"><i class="fas fa-list-ol" style="color:var(--purple);"></i> Tahapan Mekanisme</div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px;">
+                    <div class="glass step-card active" id="mcard-0" onclick="jumpStep(0)" style="padding:16px; border-radius:14px; text-align:center;">
+                        <div style="width:36px;height:36px;background:rgba(0,210,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;color:var(--cyan);font-weight:800;">1</div>
+                        <div style="font-size:0.82rem; font-weight:700; margin-bottom:4px;">Reaktan</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted);">Nu⁻ mendekati C–LG</div>
+                    </div>
+                    <div class="glass step-card" id="mcard-1" onclick="jumpStep(1)" style="padding:16px; border-radius:14px; text-align:center;">
+                        <div style="width:36px;height:36px;background:rgba(251,191,36,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;color:var(--amber);font-weight:800;">2</div>
+                        <div style="font-size:0.82rem; font-weight:700; margin-bottom:4px;">Serangan</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted);">Orbital sp³ tumbukan</div>
+                    </div>
+                    <div class="glass step-card" id="mcard-2" onclick="jumpStep(2)" style="padding:16px; border-radius:14px; text-align:center;">
+                        <div style="width:36px;height:36px;background:rgba(167,139,250,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;color:var(--purple);font-weight:800;">3</div>
+                        <div style="font-size:0.82rem; font-weight:700; margin-bottom:4px;">Transisi</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted);">Trigonal bipiramid</div>
+                    </div>
+                    <div class="glass step-card" id="mcard-3" onclick="jumpStep(3)" style="padding:16px; border-radius:14px; text-align:center;">
+                        <div style="width:36px;height:36px;background:rgba(248,113,113,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;color:var(--red);font-weight:800;">4</div>
+                        <div style="font-size:0.82rem; font-weight:700; margin-bottom:4px;">Inversi</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted);">Payung terbalik</div>
+                    </div>
+                    <div class="glass step-card" id="mcard-4" onclick="jumpStep(4)" style="padding:16px; border-radius:14px; text-align:center;">
+                        <div style="width:36px;height:36px;background:rgba(74,222,128,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;color:var(--green);font-weight:800;">5</div>
+                        <div style="font-size:0.82rem; font-weight:700; margin-bottom:4px;">Produk</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted);">Nu–R + LG⁻</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:12px;">
+                <button onclick="goToTopic(3)" class="btn-primary">Lanjut: Mekanisme 2D <i class="fas fa-arrow-right" style="margin-left:6px;"></i></button>
+            </div>
+        </section>
+
+        <!-- ===================== TOPIC 3 – Mekanisme 2D ===================== -->
+        <section id="page-topic-3" class="page" style="max-width:900px; margin:0 auto;">
+            <div class="badge badge-green" style="margin-bottom:12px;">Topik 03</div>
+            <h2 class="topic-title">Mekanisme SN2 – Diagram 2D</h2>
+
+            <div class="glass" style="border-radius:20px; padding:32px; margin-bottom:24px;">
+                <div class="section-header"><i class="fas fa-pen-to-square" style="color:var(--green);"></i> Notasi Panah Melengkung</div>
+                <p style="color:var(--text-muted); font-size:0.88rem; margin-bottom:20px; line-height:1.7;">
+                    Dalam kimia organik, <strong style="color:#fff;">panah lengkung penuh</strong> menunjukkan pergerakan dua elektron. Pada SN2, dua panah digunakan: satu dari nukleofil ke karbon, satu dari ikatan C–LG ke LG.
+                </p>
+
+                <!-- 2D SVG Mechanism -->
+                <div id="diagram-2d-wrapper" style="background:#020810; border-radius:16px; padding:24px; border:1px solid var(--border); overflow-x:auto;">
+                    <svg id="mechanism-2d" viewBox="0 0 800 220" xmlns="http://www.w3.org/2000/svg" style="min-width:600px; height:220px;">
+                        <!-- Reactant side -->
+                        <!-- Nu: -->
+                        <text x="40" y="115" fill="#00d2ff" font-family="Space Mono" font-size="18" font-weight="700">Nu⁻</text>
+                        <!-- Arrow Nu to C (animated) -->
+                        <path id="arrow-nu" d="M 90 108 C 130 90 170 100 195 108" fill="none" stroke="#00d2ff" stroke-width="2.5" stroke-dasharray="80" stroke-dashoffset="80" marker-end="url(#arrowhead-cyan)"/>
+                        <!-- C center -->
+                        <circle cx="220" cy="110" r="22" fill="#1a2f50" stroke="#fbbf24" stroke-width="2"/>
+                        <text x="220" y="115" fill="#fff" font-family="Space Mono" font-size="12" font-weight="700" text-anchor="middle">C</text>
+                        <!-- substituents H3, H2, R -->
+                        <line x1="220" y1="88" x2="220" y2="58" stroke="#94a3b8" stroke-width="2"/>
+                        <text x="220" y="50" fill="#94a3b8" font-family="Space Mono" font-size="11" text-anchor="middle">H</text>
+                        <line x1="198" y1="120" x2="168" y2="140" stroke="#94a3b8" stroke-width="2"/>
+                        <text x="155" y="148" fill="#94a3b8" font-family="Space Mono" font-size="11" text-anchor="middle">R</text>
+                        <line x1="240" y1="122" x2="268" y2="142" stroke="#94a3b8" stroke-width="2"/>
+                        <text x="277" y="150" fill="#94a3b8" font-family="Space Mono" font-size="11" text-anchor="middle">H</text>
+                        <!-- Bond C–LG -->
+                        <line id="bond-clg" x1="242" y1="110" x2="305" y2="110" stroke="#f87171" stroke-width="2.5" stroke-linecap="round"/>
+                        <!-- Arrow from C-LG bond to LG (animated) -->
+                        <path id="arrow-lg" d="M 280 100 C 295 82 320 82 340 100" fill="none" stroke="#f87171" stroke-width="2.5" stroke-dasharray="70" stroke-dashoffset="70" marker-end="url(#arrowhead-red)"/>
+                        <!-- LG -->
+                        <circle cx="332" cy="110" r="20" fill="#1a2020" stroke="#f87171" stroke-width="2"/>
+                        <text x="332" y="115" fill="#f87171" font-family="Space Mono" font-size="11" font-weight="700" text-anchor="middle">LG</text>
+
+                        <!-- Plus sign -->
+                        <text x="375" y="115" fill="#64748b" font-family="Space Mono" font-size="20">→</text>
+
+                        <!-- Transition State -->
+                        <text x="410" y="72" fill="#a78bfa" font-family="Syne" font-size="10" text-anchor="middle">[Transition State]</text>
+                        <text x="410" y="84" fill="#a78bfa" font-family="Syne" font-size="10" text-anchor="middle">Trigonal Bipiramid</text>
+                        <!-- TS circle dashed -->
+                        <circle cx="410" cy="110" r="36" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="6,3"/>
+                        <text x="410" y="115" fill="#fff" font-family="Space Mono" font-size="10" text-anchor="middle">‡</text>
+                        <text x="381" y="115" fill="#00d2ff" font-family="Space Mono" font-size="9" text-anchor="middle">Nu---</text>
+                        <text x="441" y="115" fill="#f87171" font-family="Space Mono" font-size="9" text-anchor="middle">---LG</text>
+                        <!-- Substituents TS -->
+                        <line x1="410" y1="74" x2="410" y2="60" stroke="#94a3b8" stroke-width="1.5"/>
+                        <text x="410" y="54" fill="#94a3b8" font-family="Space Mono" font-size="9" text-anchor="middle">H</text>
+                        <line x1="393" y1="122" x2="380" y2="136" stroke="#94a3b8" stroke-width="1.5"/>
+                        <text x="374" y="145" fill="#94a3b8" font-family="Space Mono" font-size="9" text-anchor="middle">R</text>
+                        <line x1="427" y1="122" x2="440" y2="136" stroke="#94a3b8" stroke-width="1.5"/>
+                        <text x="446" y="145" fill="#94a3b8" font-family="Space Mono" font-size="9" text-anchor="middle">H</text>
+
+                        <!-- Arrow TS → Product -->
+                        <text x="475" y="115" fill="#64748b" font-family="Space Mono" font-size="20">→</text>
+
+                        <!-- Product -->
+                        <!-- Nu-C bond -->
+                        <line x1="510" y1="110" x2="545" y2="110" stroke="#00d2ff" stroke-width="2.5" stroke-linecap="round"/>
+                        <circle cx="560" cy="110" r="22" fill="#1a2f50" stroke="#00d2ff" stroke-width="2"/>
+                        <text x="560" y="115" fill="#fff" font-family="Space Mono" font-size="12" font-weight="700" text-anchor="middle">C</text>
+                        <text x="498" y="107" fill="#00d2ff" font-family="Space Mono" font-size="14" font-weight="700">Nu</text>
+                        <!-- Inverted substituents -->
+                        <line x1="560" y1="132" x2="560" y2="160" stroke="#94a3b8" stroke-width="2"/>
+                        <text x="560" y="172" fill="#94a3b8" font-family="Space Mono" font-size="11" text-anchor="middle">H</text>
+                        <line x1="578" y1="100" x2="606" y2="82" stroke="#94a3b8" stroke-width="2"/>
+                        <text x="613" y="78" fill="#94a3b8" font-family="Space Mono" font-size="11" text-anchor="middle">R</text>
+                        <line x1="540" y1="100" x2="514" y2="80" stroke="#94a3b8" stroke-width="2"/>
+                        <text x="508" y="75" fill="#94a3b8" font-family="Space Mono" font-size="11" text-anchor="middle">H</text>
+                        <!-- + LG- -->
+                        <text x="640" y="115" fill="#64748b" font-family="Space Mono" font-size="14">+ LG⁻</text>
+
+                        <!-- INVERSION annotation -->
+                        <path d="M 220 170 Q 390 195 560 170" fill="none" stroke="#a78bfa" stroke-width="1" stroke-dasharray="4,3"/>
+                        <text x="390" y="208" fill="#a78bfa" font-family="Syne" font-size="11" text-anchor="middle" font-weight="700">⟵ Inversi Konfigurasi (Walden) ⟶</text>
+
+                        <!-- Arrowhead definitions -->
+                        <defs>
+                            <marker id="arrowhead-cyan" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#00d2ff"/>
+                            </marker>
+                            <marker id="arrowhead-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#f87171"/>
+                            </marker>
+                        </defs>
+                    </svg>
+                </div>
+
+                <!-- Animate 2D button -->
+                <div style="margin-top:16px; display:flex; gap:10px;">
+                    <button onclick="animate2D()" class="btn-primary"><i class="fas fa-play" style="margin-right:6px;"></i> Animasi Panah</button>
+                    <button onclick="reset2D()" class="btn-ghost"><i class="fas fa-undo" style="margin-right:6px;"></i> Reset</button>
+                </div>
+            </div>
+
+            <!-- Leaving group quality table -->
+            <div class="glass" style="border-radius:20px; padding:28px; margin-bottom:24px;">
+                <div class="section-header"><i class="fas fa-table" style="color:var(--amber);"></i> Kualitas Leaving Group</div>
+                <table>
+                    <tr><th>Leaving Group</th><th>Konjugat Asam</th><th>pKa</th><th>Kualitas</th></tr>
+                    <tr><td>I⁻</td><td>HI</td><td>−10</td><td><span class="badge badge-green">Sangat Baik</span></td></tr>
+                    <tr><td>Br⁻</td><td>HBr</td><td>−9</td><td><span class="badge badge-green">Sangat Baik</span></td></tr>
+                    <tr><td>Cl⁻</td><td>HCl</td><td>−7</td><td><span class="badge badge-cyan">Baik</span></td></tr>
+                    <tr><td>TsO⁻</td><td>TsOH</td><td>−1.3</td><td><span class="badge badge-cyan">Baik</span></td></tr>
+                    <tr><td>F⁻</td><td>HF</td><td>3.1</td><td><span class="badge badge-amber">Buruk</span></td></tr>
+                    <tr><td>HO⁻</td><td>H₂O</td><td>15.7</td><td><span class="badge badge-red">Tidak Bisa</span></td></tr>
+                </table>
+            </div>
+
+            <div style="display:flex; gap:12px;">
+                <button onclick="goToTopic(4)" class="btn-primary">Lanjut: Diagram Energi <i class="fas fa-arrow-right" style="margin-left:6px;"></i></button>
+            </div>
+        </section>
+
+        <!-- ===================== TOPIC 4 – Energy Diagram ===================== -->
+        <section id="page-topic-4" class="page" style="max-width:880px; margin:0 auto;">
+            <div class="badge badge-purple" style="background:rgba(167,139,250,0.15); color:var(--purple); margin-bottom:12px;">Topik 04</div>
+            <h2 class="topic-title">Diagram Energi SN2</h2>
+
+            <div class="glass" style="border-radius:20px; padding:32px; margin-bottom:24px;">
+                <div class="section-header"><i class="fas fa-chart-line" style="color:var(--purple);"></i> Profil Energi Reaksi</div>
+                <p style="color:var(--text-muted); font-size:0.88rem; line-height:1.7; margin-bottom:24px;">
+                    SN2 memiliki <strong style="color:#fff;">satu puncak energi tunggal</strong> (transition state) tanpa cekungan intermediat — berbeda dengan SN1 yang memiliki dua puncak dan satu intermediat karbokation.
+                </p>
+
+                <svg id="energy-svg" viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Grid lines -->
+                    <line x1="60" y1="40" x2="60" y2="260" stroke="#1e3a5f" stroke-width="1"/>
+                    <line x1="60" y1="260" x2="600" y2="260" stroke="#1e3a5f" stroke-width="1"/>
+                    <!-- Y axis label -->
+                    <text x="20" y="155" fill="#64748b" font-family="Syne" font-size="12" transform="rotate(-90,20,155)">Energi (kJ/mol)</text>
+                    <!-- X axis label -->
+                    <text x="320" y="290" fill="#64748b" font-family="Syne" font-size="12" text-anchor="middle">Koordinat Reaksi</text>
+
+                    <!-- SN2 curve -->
+                    <path id="energy-curve" d="M 80 200 C 150 200 180 190 220 190 C 260 190 290 55 330 55 C 370 55 400 165 440 165 C 480 165 510 168 580 168"
+                          fill="none" stroke="#00d2ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+                    <!-- Reactant label -->
+                    <circle cx="100" cy="200" r="5" fill="#00d2ff"/>
+                    <text x="100" y="220" fill="#94a3b8" font-family="Space Mono" font-size="10" text-anchor="middle">R + Nu⁻</text>
+
+                    <!-- Transition state label -->
+                    <circle cx="330" cy="55" r="5" fill="#a78bfa"/>
+                    <line x1="330" y1="55" x2="330" y2="40" stroke="#a78bfa" stroke-width="1" stroke-dasharray="4,2"/>
+                    <text x="330" y="32" fill="#a78bfa" font-family="Space Mono" font-size="10" text-anchor="middle">‡ Transition State</text>
+                    <text x="330" y="20" fill="#a78bfa" font-family="Space Mono" font-size="9" text-anchor="middle">(Trigonal Bipiramid)</text>
+
+                    <!-- Product label -->
+                    <circle cx="560" cy="168" r="5" fill="#4ade80"/>
+                    <text x="560" y="185" fill="#94a3b8" font-family="Space Mono" font-size="10" text-anchor="middle">Nu–R + LG⁻</text>
+
+                    <!-- Ea arrow -->
+                    <line x1="390" y1="190" x2="390" y2="57" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="5,3"/>
+                    <text x="420" y="128" fill="#fbbf24" font-family="Syne" font-size="11" font-weight="700">Ea</text>
+
+                    <!-- ΔG arrow -->
+                    <line x1="500" y1="200" x2="500" y2="168" stroke="#f87171" stroke-width="1.5" stroke-dasharray="5,3"/>
+                    <text x="520" y="186" fill="#f87171" font-family="Syne" font-size="11" font-weight="700">ΔG°</text>
+
+                    <!-- SN1 comparison dashed -->
+                    <path d="M 80 200 C 140 200 165 100 200 100 C 235 100 245 130 270 130 C 295 130 310 40 330 40 C 355 40 375 135 400 135 C 425 135 435 100 460 100 C 485 100 510 168 580 168"
+                          fill="none" stroke="#f87171" stroke-width="1.5" stroke-dasharray="8,5" opacity="0.4"/>
+                    <text x="470" y="96" fill="#f87171" font-family="Syne" font-size="9" opacity="0.6">SN1 (perbandingan)</text>
+                </svg>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px;">
+                    <div class="highlight-box" style="border-color:var(--cyan); background:rgba(0,210,255,0.05);">
+                        <div style="color:var(--cyan); font-weight:700; margin-bottom:8px;">SN2 — Satu Puncak</div>
+                        <p style="color:var(--text-muted); font-size:0.82rem;">Tidak ada intermediat stabil. Reaksi concerted — ikatan putus dan terbentuk dalam satu langkah.</p>
+                    </div>
+                    <div class="highlight-box" style="border-color:var(--red); background:rgba(248,113,113,0.05);">
+                        <div style="color:var(--red); font-weight:700; margin-bottom:8px;">SN1 — Dua Puncak</div>
+                        <p style="color:var(--text-muted); font-size:0.82rem;">Terdapat intermediat karbokation yang stabil sementara, menyebabkan dua puncak energi.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:12px;">
+                <button onclick="goToTopic(5)" class="btn-primary">Lanjut: Stereokimia <i class="fas fa-arrow-right" style="margin-left:6px;"></i></button>
+            </div>
+        </section>
+
+        <!-- ===================== TOPIC 5 – Stereochemistry ===================== -->
+        <section id="page-topic-5" class="page" style="max-width:880px; margin:0 auto;">
+            <div class="badge badge-amber" style="margin-bottom:12px;">Topik 05</div>
+            <h2 class="topic-title">Stereokimia – Inversi Walden</h2>
+
+            <div class="glass" style="border-radius:20px; padding:32px; margin-bottom:24px;">
+                <div class="section-header"><i class="fas fa-rotate" style="color:var(--amber);"></i> Inversi Konfigurasi</div>
+                <p style="color:var(--text-muted); font-size:0.88rem; line-height:1.7; margin-bottom:24px;">
+                    Serangan balik pada SN2 selalu menghasilkan <strong style="color:#fff;">inversi sempurna</strong> pada karbon stereogenik. Jika reaktan berupa enantiomer (R), maka produk pasti berupa enantiomer (S), dan sebaliknya.
+                </p>
+
+                <!-- Walden inversion visual -->
+                <div id="walden-wrap">
+                    <!-- (R) molecule -->
+                    <div class="molecule-card" id="mol-r">
+                        <div class="badge badge-cyan" style="margin-bottom:12px;">Reaktan (R)</div>
+                        <svg class="wedge-svg" viewBox="0 0 130 100" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Central C -->
+                            <circle cx="65" cy="50" r="14" fill="#1a2f50" stroke="#fbbf24" stroke-width="2"/>
+                            <text x="65" y="55" fill="#fff" font-family="Space Mono" font-size="10" font-weight="700" text-anchor="middle">C</text>
+                            <!-- LG (leaving) to right -->
+                            <line x1="79" y1="50" x2="115" y2="50" stroke="#f87171" stroke-width="2"/>
+                            <text x="120" y="54" fill="#f87171" font-family="Space Mono" font-size="9">LG</text>
+                            <!-- H up (dash bond) -->
+                            <line x1="65" y1="36" x2="65" y2="10" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,2"/>
+                            <text x="65" y="8" fill="#94a3b8" font-family="Space Mono" font-size="9" text-anchor="middle">H</text>
+                            <!-- R wedge (solid triangle, coming out) -->
+                            <polygon points="55,58 47,78 51,80" fill="#4ade80"/>
+                            <text x="38" y="90" fill="#4ade80" font-family="Space Mono" font-size="9">R</text>
+                            <!-- Me dash (going back) -->
+                            <line x1="73" y1="61" x2="90" y2="80" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="4,2"/>
+                            <text x="94" y="88" fill="#a78bfa" font-family="Space Mono" font-size="9">Me</text>
+                            <!-- Nu attack arrow from left -->
+                            <path d="M 10 50 L 44 50" fill="none" stroke="#00d2ff" stroke-width="2" marker-end="url(#ah2)"/>
+                            <text x="5" y="46" fill="#00d2ff" font-family="Space Mono" font-size="9">Nu⁻</text>
+                            <defs>
+                                <marker id="ah2" markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto">
+                                    <polygon points="0 0,6 2.5,0 5" fill="#00d2ff"/>
+                                </marker>
+                            </defs>
+                        </svg>
+                        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:8px;">Nu⁻ menyerang dari belakang LG</div>
+                    </div>
+
+                    <!-- Arrow -->
+                    <div style="text-align:center;">
+                        <div style="font-size:2rem; color:var(--amber); animation:arrow-shift 1.4s infinite;">⟶</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:4px; font-family:'Space Mono',monospace;">Inversi</div>
+                    </div>
+
+                    <!-- (S) product -->
+                    <div class="molecule-card" id="mol-s">
+                        <div class="badge badge-green" style="margin-bottom:12px;">Produk (S)</div>
+                        <svg class="wedge-svg" viewBox="0 0 130 100" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Central C -->
+                            <circle cx="65" cy="50" r="14" fill="#1a2f50" stroke="#00d2ff" stroke-width="2"/>
+                            <text x="65" y="55" fill="#fff" font-family="Space Mono" font-size="10" font-weight="700" text-anchor="middle">C</text>
+                            <!-- Nu bonded to left -->
+                            <line x1="50" y1="50" x2="14" y2="50" stroke="#00d2ff" stroke-width="2"/>
+                            <text x="8" y="54" fill="#00d2ff" font-family="Space Mono" font-size="9">Nu</text>
+                            <!-- H up (dash) - stays -->
+                            <line x1="65" y1="36" x2="65" y2="10" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,2"/>
+                            <text x="65" y="8" fill="#94a3b8" font-family="Space Mono" font-size="9" text-anchor="middle">H</text>
+                            <!-- R wedge - now flipped -->
+                            <polygon points="76,58 84,78 80,80" fill="#4ade80"/>
+                            <text x="88" y="90" fill="#4ade80" font-family="Space Mono" font-size="9">R</text>
+                            <!-- Me dash - flipped -->
+                            <line x1="57" y1="61" x2="40" y2="80" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="4,2"/>
+                            <text x="26" y="88" fill="#a78bfa" font-family="Space Mono" font-size="9">Me</text>
+                            <!-- LG departed right -->
+                            <text x="105" y="38" fill="#f87171" font-family="Space Mono" font-size="9">LG⁻</text>
+                            <text x="108" y="50" fill="#f87171" font-size="16">↗</text>
+                        </svg>
+                        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:8px;">Konfigurasi terbalik (S)</div>
+                    </div>
+                </div>
+
+                <div class="highlight-box" style="border-color:var(--purple); background:rgba(167,139,250,0.05); margin-top:16px;">
+                    <div style="color:var(--purple); font-weight:700; margin-bottom:6px;"><i class="fas fa-lightbulb"></i> Analogi Payung</div>
+                    <p style="color:var(--text-muted); font-size:0.85rem;">
+                        Bayangkan gugus-gugus di karbon seperti rangka payung. Saat angin kencang (serangan Nu) datang dari bawah, payung terbalik — semua gugus berpindah arah. Inilah inversi Walden.
+                    </p>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:12px;">
+                <button onclick="goToTopic(6)" class="btn-primary">Lanjut: Pengaruh Sterik <i class="fas fa-arrow-right" style="margin-left:6px;"></i></button>
+            </div>
+        </section>
+
+        <!-- ===================== TOPIC 6 – Steric Effects ===================== -->
+        <section id="page-topic-6" class="page" style="max-width:880px; margin:0 auto;">
+            <div class="badge badge-red" style="margin-bottom:12px;">Topik 06</div>
+            <h2 class="topic-title">Pengaruh Halangan Sterik</h2>
+
+            <div class="glass" style="border-radius:20px; padding:32px; margin-bottom:24px;">
+                <div class="section-header"><i class="fas fa-shield-halved" style="color:var(--red);"></i> Mengapa Sterik Penting?</div>
+                <p style="color:var(--text-muted); font-size:0.88rem; line-height:1.7; margin-bottom:24px;">
+                    SN2 <strong style="color:#fff;">sangat sensitif terhadap halangan sterik</strong>. Nukleofil harus mendekati karbon dari belakang (backside) — jika jalur ini terhalang oleh gugus besar, reaksi melambat drastis atau bahkan tidak terjadi.
+                </p>
+
+                <!-- Steric comparison -->
+                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:24px;">
+                    <div class="highlight-box" style="border-color:var(--green); background:rgba(74,222,128,0.05); text-align:center;">
+                        <div style="font-size:2rem; margin-bottom:8px;">🚀</div>
+                        <div class="badge badge-green" style="margin-bottom:8px;">Metil (CH₃X)</div>
+                        <div style="font-weight:700; color:var(--green); font-size:1.1rem; margin-bottom:4px;">Tercepat</div>
+                        <p style="color:var(--text-muted); font-size:0.78rem;">Tidak ada halangan — nukleofil bebas menyerang.</p>
+                    </div>
+                    <div class="highlight-box" style="border-color:var(--cyan); background:rgba(0,210,255,0.05); text-align:center;">
+                        <div style="font-size:2rem; margin-bottom:8px;">⚡</div>
+                        <div class="badge badge-cyan" style="margin-bottom:8px;">Primer (RCH₂X)</div>
+                        <div style="font-weight:700; color:var(--cyan); font-size:1.1rem; margin-bottom:4px;">Cepat</div>
+                        <p style="color:var(--text-muted); font-size:0.78rem;">Halangan minimal. SN2 berlangsung baik.</p>
+                    </div>
+                    <div class="highlight-box" style="border-color:var(--amber); background:rgba(251,191,36,0.05); text-align:center;">
+                        <div style="font-size:2rem; margin-bottom:8px;">🐢</div>
+                        <div class="badge badge-amber" style="margin-bottom:8px;">Sekunder (R₂CHX)</div>
+                        <div style="font-weight:700; color:var(--amber); font-size:1.1rem; margin-bottom:4px;">Lambat</div>
+                        <p style="color:var(--text-muted); font-size:0.78rem;">Dua gugus menghalangi jalur serangan.</p>
+                    </div>
+                    <div class="highlight-box" style="border-color:var(--red); background:rgba(248,113,113,0.05); text-align:center;">
+                        <div style="font-size:2rem; margin-bottom:8px;">🚫</div>
+                        <div class="badge badge-red" style="margin-bottom:8px;">Tersier (R₃CX)</div>
+                        <div style="font-weight:700; color:var(--red); font-size:1.1rem; margin-bottom:4px;">Tidak Terjadi</div>
+                        <p style="color:var(--text-muted); font-size:0.78rem;">Tiga gugus besar sepenuhnya memblokir Nu.</p>
+                    </div>
+                </div>
+
+                <!-- Speed bar chart -->
+                <div style="background:#020810; border-radius:12px; padding:20px; border:1px solid var(--border);">
+                    <div style="font-size:0.82rem; color:var(--text-muted); margin-bottom:12px; font-family:'Space Mono',monospace;">Kecepatan Relatif SN2:</div>
+                    <div style="margin-bottom:8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:4px;"><span style="color:#fff;">CH₃X (metil)</span><span style="color:var(--green);">1000×</span></div>
+                        <div class="progress-track"><div class="progress-fill" style="width:100%; background:linear-gradient(90deg,var(--green),#22c55e);"></div></div>
+                    </div>
+                    <div style="margin-bottom:8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:4px;"><span style="color:#fff;">RCH₂X (primer)</span><span style="color:var(--cyan);">~40×</span></div>
+                        <div class="progress-track"><div class="progress-fill" style="width:60%; background:linear-gradient(90deg,var(--cyan),#0284c7);"></div></div>
+                    </div>
+                    <div style="margin-bottom:8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:4px;"><span style="color:#fff;">R₂CHX (sekunder)</span><span style="color:var(--amber);">~1×</span></div>
+                        <div class="progress-track"><div class="progress-fill" style="width:15%; background:linear-gradient(90deg,var(--amber),#d97706);"></div></div>
+                    </div>
+                    <div>
+                        <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:4px;"><span style="color:#fff;">R₃CX (tersier)</span><span style="color:var(--red);">≈0</span></div>
+                        <div class="progress-track"><div class="progress-fill" style="width:2%; background:var(--red);"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:12px;">
+                <button onclick="goToTopic(7)" class="btn-primary">Lanjut: Nukleofil & Pelarut <i class="fas fa-arrow-right" style="margin-left:6px;"></i></button>
+            </div>
+        </section>
+
+        <!-- ===================== TOPICS 7–14 (Generic) ===================== -->
+        <section id="page-generic" class="page" style="max-width:880px; margin:0 auto;">
+            <div id="generic-badge" class="badge badge-cyan" style="margin-bottom:12px;">Topik</div>
+            <h2 id="generic-title" class="topic-title"></h2>
+            <div class="glass" style="border-radius:20px; padding:32px;">
+                <div id="generic-content" style="color:var(--text-muted); line-height:1.8; font-size:0.9rem;"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Right Quiz Panel -->
+    <aside style="width:280px; min-width:280px; background:#040c1c; border-left:1px solid var(--border); padding:24px; overflow-y:auto; display:none;" id="quiz-panel" class="xl:block">
+        <div style="font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+            <i class="fas fa-brain" style="color:var(--purple);"></i> Mini Kuis
+        </div>
+        <div class="glass" style="border-radius:16px; padding:16px; margin-bottom:20px;">
+            <p id="quiz-question" style="font-size:0.82rem; margin-bottom:14px; line-height:1.6; color:#e2e8f0;">Memuat pertanyaan...</p>
+            <div id="quiz-options" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+        <div>
+            <div style="font-weight:700; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-lightbulb" style="color:var(--amber);"></i> Tip Kilat
+            </div>
+            <div style="background:rgba(251,191,36,0.06); border:1px solid rgba(251,191,36,0.2); border-radius:12px; padding:14px;">
+                <p id="quick-tip" style="font-size:0.78rem; color:#fde68a; line-height:1.6;">Semakin baik nukleofil (lebih negatif, polarisabilitas tinggi), semakin cepat SN2.</p>
+            </div>
+        </div>
+    </aside>
+
+</div>
+
+<!-- Mobile overlay -->
+<div id="overlay" onclick="closeSidebar()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:40;"></div>
+
+<!-- Mobile header -->
+<div id="mobile-header" style="display:none; position:fixed; top:0; left:0; right:0; z-index:30; background:#040c1c; border-bottom:1px solid var(--border); padding:12px 16px; align-items:center; justify-content:space-between;">
+    <button onclick="openSidebar()" style="background:none; border:none; color:var(--cyan); font-size:1.2rem; cursor:pointer;"><i class="fas fa-bars"></i></button>
+    <span style="font-weight:800; color:var(--cyan);">SN2 Pro Lab</span>
+    <div style="width:24px;"></div>
+</div>
+
+<script>
+// ============================================================
+// TOPICS DATA
+// ============================================================
+const topics = [
+    { id:1,  label:"Pengantar Reaksi SN2" },
+    { id:2,  label:"Mekanisme SN2 – 3D" },
+    { id:3,  label:"Mekanisme SN2 – 2D" },
+    { id:4,  label:"Diagram Energi" },
+    { id:5,  label:"Stereokimia Inversi Walden" },
+    { id:6,  label:"Pengaruh Halangan Sterik" },
+    { id:7,  label:"Nukleofil & Kualitasnya" },
+    { id:8,  label:"Pengaruh Pelarut" },
+    { id:9,  label:"SN2 vs SN1 – Perbandingan" },
+    { id:10, label:"Contoh Reaksi SN2 Penting" },
+    { id:11, label:"SN2 pada Alkil Halida" },
+    { id:12, label:"SN2 pada Epoksida" },
+    { id:13, label:"Aplikasi: Sintesis Organik" },
+    { id:14, label:"Latihan Soal & Kuis" },
+];
+
+const genericContent = {
+    7: {
+        title:"Nukleofil & Kualitasnya",
+        badge:"Topik 07",
+        html: `<p style="margin-bottom:16px;">Nukleofil yang baik untuk SN2 harus memiliki: (1) muatan negatif atau pasangan elektron bebas, (2) polarisabilitas tinggi, (3) tidak terlalu terhalang sterik.</p>
+        <table><tr><th>Nukleofil</th><th>Jenis</th><th>Reaktivitas SN2</th></tr>
+        <tr><td>I⁻</td><td>Halida</td><td><span class="badge badge-green">★★★★★</span></td></tr>
+        <tr><td>RS⁻</td><td>Tiolat</td><td><span class="badge badge-green">★★★★★</span></td></tr>
+        <tr><td>Br⁻</td><td>Halida</td><td><span class="badge badge-cyan">★★★★</span></td></tr>
+        <tr><td>CN⁻</td><td>Sianida</td><td><span class="badge badge-cyan">★★★★</span></td></tr>
+        <tr><td>HO⁻</td><td>Hidroksida</td><td><span class="badge badge-amber">★★★</span></td></tr>
+        <tr><td>F⁻</td><td>Halida</td><td><span class="badge badge-red">★</span></td></tr>
+        <tr><td>H₂O</td><td>Netral</td><td><span class="badge badge-red">★</span></td></tr></table>`
+    },
+    8: {
+        title:"Pengaruh Pelarut",
+        badge:"Topik 08",
+        html: `<p style="margin-bottom:16px;">SN2 lebih cepat dalam <strong style="color:#fff;">pelarut polar aprotik</strong> (DMF, DMSO, aseton) karena pelarut ini tidak mensolvatasi nukleofil secara kuat, sehingga nukleofil tetap "bebas" dan reaktif. Pelarut polar protik (air, alkohol) memperlambat SN2.</p>
+        <table><tr><th>Pelarut</th><th>Jenis</th><th>Pengaruh SN2</th></tr>
+        <tr><td>DMSO</td><td>Polar Aprotik</td><td><span class="badge badge-green">Sangat Baik</span></td></tr>
+        <tr><td>DMF</td><td>Polar Aprotik</td><td><span class="badge badge-green">Sangat Baik</span></td></tr>
+        <tr><td>Aseton</td><td>Polar Aprotik</td><td><span class="badge badge-cyan">Baik</span></td></tr>
+        <tr><td>Etanol</td><td>Polar Protik</td><td><span class="badge badge-amber">Cukup</span></td></tr>
+        <tr><td>Air (H₂O)</td><td>Polar Protik</td><td><span class="badge badge-red">Buruk</span></td></tr></table>`
+    },
+    9: {
+        title:"SN2 vs SN1 – Perbandingan",
+        badge:"Topik 09",
+        html: `<table><tr><th>Faktor</th><th>SN2</th><th>SN1</th></tr>
+        <tr><td>Langkah mekanisme</td><td>1 (concerted)</td><td>2 (bertahap)</td></tr>
+        <tr><td>Kinetika</td><td>Orde 2: v=[R][Nu]</td><td>Orde 1: v=[R]</td></tr>
+        <tr><td>Intermediat</td><td>Tidak ada</td><td>Karbokation</td></tr>
+        <tr><td>Stereokimia</td><td>Inversi (100%)</td><td>Rasemat (~50:50)</td></tr>
+        <tr><td>Substrat terbaik</td><td>Metil, Primer</td><td>Tersier, Sekunder</td></tr>
+        <tr><td>Nukleofil</td><td>Kuat & diperlukan</td><td>Lemah pun bisa</td></tr>
+        <tr><td>Pelarut terbaik</td><td>Polar aprotik</td><td>Polar protik</td></tr></table>`
+    },
+    10: {
+        title:"Contoh Reaksi SN2 Penting",
+        badge:"Topik 10",
+        html: `<p style="margin-bottom:16px;">Beberapa contoh reaksi SN2 yang umum dalam kimia organik:</p>
+        <div class="highlight-box" style="border-color:var(--cyan); background:rgba(0,210,255,0.05); margin-bottom:12px;">
+            <div style="color:var(--cyan); font-weight:700; margin-bottom:6px;">1. Sintesis Alkil Halida</div>
+            <code style="font-size:0.82rem; color:#e2e8f0;">CH₃Br + NaI → CH₃I + NaBr (reaksi Finkelstein)</code>
+        </div>
+        <div class="highlight-box" style="border-color:var(--amber); background:rgba(251,191,36,0.05); margin-bottom:12px;">
+            <div style="color:var(--amber); font-weight:700; margin-bottom:6px;">2. Sintesis Eter Williamson</div>
+            <code style="font-size:0.82rem; color:#e2e8f0;">RO⁻ + R'–Br → R–O–R' + Br⁻</code>
+        </div>
+        <div class="highlight-box" style="border-color:var(--purple); background:rgba(167,139,250,0.05); margin-bottom:12px;">
+            <div style="color:var(--purple); font-weight:700; margin-bottom:6px;">3. Sintesis Nitril</div>
+            <code style="font-size:0.82rem; color:#e2e8f0;">R–Br + NaCN → R–CN + NaBr</code>
+        </div>
+        <div class="highlight-box" style="border-color:var(--green); background:rgba(74,222,128,0.05);">
+            <div style="color:var(--green); font-weight:700; margin-bottom:6px;">4. Sintesis Alkohol</div>
+            <code style="font-size:0.82rem; color:#e2e8f0;">R–Br + NaOH → R–OH + NaBr</code>
+        </div>`
+    },
+    11: {
+        title:"SN2 pada Alkil Halida",
+        badge:"Topik 11",
+        html: `<p style="margin-bottom:16px;">Alkil halida adalah substrat SN2 paling umum. Urutan reaktivitas bergantung pada derajat substitusi karbon dan ukuran leaving group.</p>
+        <p style="margin-bottom:16px; color:var(--text-muted);">Reaktivitas: <strong style="color:var(--green);">CH₃X > RCH₂X > R₂CHX >> R₃CX</strong></p>
+        <p style="color:var(--text-muted);">Leaving group: <strong style="color:var(--cyan);">I > Br > Cl >> F</strong> — karena ikatan C–I paling lemah dan I⁻ paling stabil sebagai anion bebas.</p>`
+    },
+    12: {
+        title:"SN2 pada Epoksida",
+        badge:"Topik 12",
+        html: `<p style="margin-bottom:16px;">Epoksida (oksirana) merupakan substrat SN2 yang sangat reaktif karena ring strain 3-anggota menyebabkan ikatan C–O sangat lemah dan mudah diserang nukleofil.</p>
+        <div class="reaction-eq">Nu⁻ <span class="arrow-anim">⟶</span> [C₂H₄O] → Nu–CH₂–CH₂–O⁻</div>
+        <p style="color:var(--text-muted); margin-top:16px; font-size:0.88rem;">Serangan nukleofil pada epoksida <strong style="color:#fff;">dalam kondisi basa</strong> terjadi pada karbon <em>kurang tersubstitusi</em> (aturan SN2). Dalam kondisi asam, menyerang karbon <em>lebih tersubstitusi</em> (aturan SN1-like).</p>`
+    },
+    13: {
+        title:"Aplikasi: Sintesis Organik",
+        badge:"Topik 13",
+        html: `<p style="margin-bottom:16px;">SN2 adalah alat fundamental dalam sintesis organik karena:</p>
+        <ul style="color:var(--text-muted); list-style:disc; padding-left:24px; line-height:2; font-size:0.88rem;">
+            <li>Memungkinkan pembentukan ikatan C–C, C–N, C–O, C–S dengan presisi</li>
+            <li>Stereokimia dapat diprediksi (selalu inversi)</li>
+            <li>Kondisi reaksi ringan (suhu rendah, dalam larutan)</li>
+            <li>Basis untuk retrosintesis: disconnection approach</li>
+        </ul>
+        <p style="margin-top:16px; color:var(--text-muted); font-size:0.88rem;">Contoh dalam industri: sintesis obat β-laktam (penisilin), sintesis amino asid non-alami, dan pembuatan senyawa organosulfur.</p>`
+    },
+    14: {
+        title:"Latihan Soal & Kuis",
+        badge:"Topik 14",
+        html: `<p style="margin-bottom:20px;">Uji pemahaman kamu dengan soal-soal berikut:</p>
+        <div class="highlight-box" style="border-color:var(--cyan); background:rgba(0,210,255,0.05); margin-bottom:12px;">
+            <div style="font-weight:700; margin-bottom:6px; color:#fff;">1. Substrat manakah yang bereaksi paling cepat melalui SN2?</div>
+            <div style="color:var(--text-muted); font-size:0.85rem;">a) (CH₃)₃CBr &nbsp; b) CH₃Br &nbsp; c) CH₃CH₂Br &nbsp; d) (CH₃)₂CHBr</div>
+            <div style="margin-top:8px; color:var(--green); font-size:0.82rem; font-weight:700;">Jawaban: b) CH₃Br — metil halida tanpa halangan sterik.</div>
+        </div>
+        <div class="highlight-box" style="border-color:var(--amber); background:rgba(251,191,36,0.05); margin-bottom:12px;">
+            <div style="font-weight:700; margin-bottom:6px; color:#fff;">2. Jika (R)-2-bromobutana bereaksi dengan NaI melalui SN2, produknya adalah?</div>
+            <div style="color:var(--text-muted); font-size:0.85rem;">a) (R)-2-iodobutana &nbsp; b) Rasemat &nbsp; c) (S)-2-iodobutana &nbsp; d) Tidak bereaksi</div>
+            <div style="margin-top:8px; color:var(--green); font-size:0.82rem; font-weight:700;">Jawaban: c) (S)-2-iodobutana — inversi sempurna konfigurasi.</div>
+        </div>
+        <div class="highlight-box" style="border-color:var(--purple); background:rgba(167,139,250,0.05);">
+            <div style="font-weight:700; margin-bottom:6px; color:#fff;">3. Pelarut manakah yang paling baik untuk reaksi SN2?</div>
+            <div style="color:var(--text-muted); font-size:0.85rem;">a) Air &nbsp; b) Metanol &nbsp; c) DMSO &nbsp; d) Dietil eter</div>
+            <div style="margin-top:8px; color:var(--green); font-size:0.82rem; font-weight:700;">Jawaban: c) DMSO — pelarut polar aprotik, tidak mensolvatasi nukleofil.</div>
+        </div>`
+    }
+};
+
+// ============================================================
+// APP INIT
+// ============================================================
+let currentTopic = 0;
+
+function initApp() {
+    const nav = document.getElementById('nav-list');
+    topics.forEach(t => {
+        const el = document.createElement('div');
+        el.className = 'nav-item';
+        el.id = `nav-${t.id}`;
+        el.innerHTML = `<span style="font-family:'Space Mono',monospace; font-size:0.68rem; color:var(--text-muted); min-width:22px;">${String(t.id).padStart(2,'0')}</span>${t.label}`;
+        el.onclick = () => goToTopic(t.id);
+        nav.appendChild(el);
+    });
+
+    // Responsive
+    const mh = document.getElementById('mobile-header');
+    const qp = document.getElementById('quiz-panel');
+    if (window.innerWidth < 1280) { mh.style.display='flex'; }
+    if (window.innerWidth >= 1280) { qp.style.display='block'; }
+
+    setTimeout(() => {
+        document.getElementById('loader').style.display='none';
+        document.getElementById('app').style.display='flex';
+        loadQuiz();
+        initThreeJS();
+    }, 900);
+}
+
+function goToTopic(num) {
+    currentTopic = num;
+    // Hide all
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('visible'));
+    // Update nav
+    document.querySelectorAll('.nav-item').forEach((el, i) => {
+        el.classList.toggle('active', i+1 === num);
+    });
+
+    if (num <= 6) {
+        document.getElementById(`page-topic-${num}`).classList.add('visible');
+    } else {
+        const g = genericContent[num];
+        document.getElementById('page-generic').classList.add('visible');
+        document.getElementById('generic-badge').textContent = g.badge;
+        document.getElementById('generic-title').textContent = g.title;
+        document.getElementById('generic-content').innerHTML = g.html;
+    }
+
+    // Scroll top
+    document.getElementById('main').scrollTop = 0;
+    closeSidebar();
+}
+
+function showHome() {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('visible'));
+    document.getElementById('page-landing').classList.add('visible');
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    closeSidebar();
+}
+
+function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').style.display='block'; }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').style.display='none'; }
+
+// ============================================================
+// THREE.JS 3D MECHANISM
+// ============================================================
+let renderer, scene, camera;
+let nuSphere, carbonSphere, lgSphere;
+let h1Sphere, h2Sphere, rSphere;
+let bonds = [];
+let orbitalMesh;
+let animStep = 0;
+let isPlaying = false;
+let animTicker = null;
+
+// Bond references
+let bondNuC, bondCLG, bondCH1, bondCH2, bondCR;
+
+const COLORS = {
+    nu:     0x00d2ff,
+    carbon: 0xfbbf24,
+    lg:     0xf87171,
+    h:      0x94a3b8,
+    r:      0xa78bfa,
+    bond:   0x334155,
+    bondActive: 0xfbbf24,
+    orbital: 0x00d2ff,
+};
+
+function initThreeJS() {
+    const container = document.getElementById('canvas-sn2');
+    const W = container.clientWidth;
+    const H = container.clientHeight;
+
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(W, H);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setClearColor(0x000000, 0);
+    container.insertBefore(renderer.domElement, container.firstChild);
+
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(50, W/H, 0.1, 100);
+    camera.position.set(0, 1.5, 9);
+    camera.lookAt(0, 0, 0);
+
+    // Lights
+    const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambient);
+    const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+    dir.position.set(5, 8, 5);
+    scene.add(dir);
+    const pointCyan = new THREE.PointLight(0x00d2ff, 0.5, 20);
+    pointCyan.position.set(-4, 2, 3);
+    scene.add(pointCyan);
+
+    buildMolecule();
+    animate3D();
+
+    window.addEventListener('resize', () => {
+        const W2 = container.clientWidth;
+        const H2 = container.clientHeight;
+        renderer.setSize(W2, H2);
+        camera.aspect = W2/H2;
+        camera.updateProjectionMatrix();
+    });
+}
+
+function makeSphere(r, color, x, y, z, emissive) {
+    const geo = new THREE.SphereGeometry(r, 32, 32);
+    const mat = new THREE.MeshPhongMaterial({ color, emissive: emissive||0x000000, emissiveIntensity: 0.2, shininess: 80 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, y, z);
+    scene.add(mesh);
+    return mesh;
+}
+
+function makeBond(a, b, color) {
+    const dir = new THREE.Vector3().subVectors(b, a);
+    const len = dir.length();
+    const geo = new THREE.CylinderGeometry(0.06, 0.06, len, 12);
+    const mat = new THREE.MeshPhongMaterial({ color: color||COLORS.bond, shininess:60, transparent:true, opacity:1 });
+    const mesh = new THREE.Mesh(geo, mat);
+    const mid = new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5);
+    mesh.position.copy(mid);
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.normalize());
+    scene.add(mesh);
+    return { mesh, matRef: mat };
+}
+
+function updateBond(bond, posA, posB) {
+    const dir = new THREE.Vector3().subVectors(posB, posA);
+    const len = dir.length();
+    const mid = new THREE.Vector3().addVectors(posA, posB).multiplyScalar(0.5);
+    bond.mesh.position.copy(mid);
+    bond.mesh.scale.y = len;
+    bond.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.normalize());
+}
+
+function buildMolecule() {
+    // Remove existing
+    if (nuSphere) [nuSphere, carbonSphere, lgSphere, h1Sphere, h2Sphere, rSphere].forEach(m => { if(m) scene.remove(m); });
+    bonds.forEach(b => scene.remove(b.mesh));
+    bonds = [];
+    if (orbitalMesh) scene.remove(orbitalMesh);
+
+    // Positions
+    const nuPos  = new THREE.Vector3(-4.2, 0, 0);
+    const cPos   = new THREE.Vector3( 0,   0, 0);
+    const lgPos  = new THREE.Vector3( 3.8, 0, 0);
+    const h1Pos  = new THREE.Vector3( 0,   1.6, 0);
+    const h2Pos  = new THREE.Vector3( 0,  -1.0, 1.3);
+    const rPos   = new THREE.Vector3( 0,  -1.0,-1.3);
+
+    nuSphere     = makeSphere(0.55, COLORS.nu,     nuPos.x, nuPos.y, nuPos.z, 0x003344);
+    carbonSphere = makeSphere(0.65, COLORS.carbon, cPos.x,  cPos.y,  cPos.z,  0x221100);
+    lgSphere     = makeSphere(0.55, COLORS.lg,     lgPos.x, lgPos.y, lgPos.z, 0x330000);
+    h1Sphere     = makeSphere(0.35, COLORS.h,      h1Pos.x, h1Pos.y, h1Pos.z);
+    h2Sphere     = makeSphere(0.35, COLORS.h,      h2Pos.x, h2Pos.y, h2Pos.z);
+    rSphere      = makeSphere(0.45, COLORS.r,      rPos.x,  rPos.y,  rPos.z);
+
+    // Build bonds
+    bondNuC  = makeBond(nuPos,  cPos,  COLORS.nu);  bondNuC.matRef.opacity  = 0.2;
+    bondCLG  = makeBond(cPos,   lgPos, COLORS.lg);
+    bondCH1  = makeBond(cPos,   h1Pos, COLORS.bond);
+    bondCH2  = makeBond(cPos,   h2Pos, COLORS.bond);
+    bondCR   = makeBond(cPos,   rPos,  COLORS.r);
+    bonds = [bondNuC, bondCLG, bondCH1, bondCH2, bondCR];
+
+    // Orbital (p lobe)
+    const orbGeo = new THREE.TorusGeometry(1.1, 0.12, 8, 40);
+    const orbMat = new THREE.MeshPhongMaterial({ color:0x00d2ff, transparent:true, opacity:0, wireframe:false });
+    orbitalMesh = new THREE.Mesh(orbGeo, orbMat);
+    orbitalMesh.position.set(0, 0, 0);
+    orbitalMesh.rotation.z = Math.PI/2;
+    scene.add(orbitalMesh);
+
+    updateBond(bondNuC,  nuSphere.position,  carbonSphere.position);
+    updateBond(bondCLG,  carbonSphere.position, lgSphere.position);
+    updateBond(bondCH1,  carbonSphere.position, h1Sphere.position);
+    updateBond(bondCH2,  carbonSphere.position, h2Sphere.position);
+    updateBond(bondCR,   carbonSphere.position, rSphere.position);
+
+    animStep = 0;
+    updateStepUI(0);
+    setStatus("Sistem siap. Tekan <strong style='color:#fff;'>Animasi SN2</strong> untuk memulai simulasi.");
+    setProgress(0);
+}
+
+function animate3D() {
+    requestAnimationFrame(animate3D);
+    const t = Date.now() * 0.001;
+    if (!isPlaying) {
+        carbonSphere.rotation.y = t * 0.4;
+    }
+    renderer.render(scene, camera);
+}
+
+// ========================
+// STEP DEFINITIONS
+// ========================
+const stepMessages = [
+    "Reaktan: Nu⁻ (biru) mendekati C–LG dari arah berlawanan (180°).",
+    "Serangan nukleofilik dimulai. Orbital sp³ C bertumbukan.",
+    "Transition State: Trigonal bipiramid. Nu···C···LG dalam satu garis.",
+    "Inversi berlangsung! Substituents terbalik seperti payung. Ikatan C–LG lemah.",
+    "Produk terbentuk: Nu–C kuat, LG⁻ lepas. Konfigurasi terInversi.",
+];
+
+function setStatus(html) { document.getElementById('status-text').innerHTML = html; }
+function setProgress(pct) { document.getElementById('anim-progress').style.width = pct+'%'; }
+
+function updateStepUI(step) {
+    // Indicator badges
+    for (let i=0;i<5;i++) {
+        const el = document.getElementById(`ind-${i}`);
+        if (!el) continue;
+        if (i === step) {
+            el.style.background = 'rgba(0,210,255,0.25)'; el.style.color = 'var(--cyan)';
+        } else if (i < step) {
+            el.style.background = 'rgba(74,222,128,0.15)'; el.style.color = 'var(--green)';
+        } else {
+            el.style.background = 'rgba(255,255,255,0.05)'; el.style.color = 'var(--text-muted)';
+        }
+    }
+    // Mechanism cards
+    for (let i=0;i<5;i++) {
+        const c = document.getElementById(`mcard-${i}`);
+        if (c) c.classList.toggle('active', i===step);
+    }
+}
+
+// GSAP-like manual tween using Three.js
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+const steps = [
+    // Step 0 → Step 1: Nu approaches
+    function(progress) {
+        const startX = -4.2, endX = -2.4;
+        nuSphere.position.x = lerp(startX, endX, progress);
+        bondNuC.matRef.opacity = lerp(0.2, 0.6, progress);
+        updateBond(bondNuC, nuSphere.position, carbonSphere.position);
+    },
+    // Step 1 → Step 2: Nu closer, C-LG weakens, substituents flatten
+    function(progress) {
+        nuSphere.position.x = lerp(-2.4, -1.5, progress);
+        lgSphere.position.x = lerp(3.8, 4.6, progress);
+        bondNuC.matRef.opacity = lerp(0.6, 0.9, progress);
+        bondCLG.matRef.opacity = lerp(1, 0.7, progress);
+        bondCLG.matRef.color.setHex(lerp3Color(COLORS.lg, 0xff9999, progress));
+        // Flatten H and R slightly
+        h1Sphere.position.y = lerp(1.6, 1.8, progress);
+        h2Sphere.position.y = lerp(-1.0, -0.2, progress);
+        rSphere.position.y  = lerp(-1.0, -0.2, progress);
+        updateBond(bondNuC, nuSphere.position, carbonSphere.position);
+        updateBond(bondCLG, carbonSphere.position, lgSphere.position);
+        updateBond(bondCH1, carbonSphere.position, h1Sphere.position);
+        updateBond(bondCH2, carbonSphere.position, h2Sphere.position);
+        updateBond(bondCR,  carbonSphere.position, rSphere.position);
+    },
+    // Step 2 → Step 3: Full TS, trigonal bipyramid, substituents flat
+    function(progress) {
+        nuSphere.position.x = lerp(-1.5, -2.5, progress);
+        lgSphere.position.x = lerp(4.6, 2.5, progress);
+        bondNuC.matRef.opacity = lerp(0.9, 1.0, progress);
+        bondCLG.matRef.opacity = lerp(0.7, 1.0, progress);
+        // Both bonds become dashed appearance via color
+        bondNuC.matRef.color.setHex(lerp3Color(COLORS.nu, COLORS.bondActive, progress));
+        bondCLG.matRef.color.setHex(lerp3Color(0xff9999, COLORS.bondActive, progress));
+        // Substituents fully flat (equatorial)
+        h1Sphere.position.y = lerp(1.8, 0, progress); h1Sphere.position.z = lerp(0, 2.0, progress);
+        h2Sphere.position.y = lerp(-0.2, 0, progress); h2Sphere.position.z = lerp(1.3, -1.0, progress);
+        rSphere.position.y  = lerp(-0.2, 0, progress); rSphere.position.x  = lerp(0, 0.7, progress);
+        // Orbital pulse
+        if(orbitalMesh) orbitalMesh.material.opacity = lerp(0, 0.4, progress);
+        updateBond(bondNuC, nuSphere.position, carbonSphere.position);
+        updateBond(bondCLG, carbonSphere.position, lgSphere.position);
+        updateBond(bondCH1, carbonSphere.position, h1Sphere.position);
+        updateBond(bondCH2, carbonSphere.position, h2Sphere.position);
+        updateBond(bondCR,  carbonSphere.position, rSphere.position);
+    },
+    // Step 3 → Step 4: LG departs, Nu bonds
+    function(progress) {
+        nuSphere.position.x = lerp(-2.5, -2.0, progress);
+        lgSphere.position.x = lerp(2.5, 5.5, progress);
+        bondCLG.matRef.opacity = lerp(1.0, 0, progress);
+        bondNuC.matRef.opacity = lerp(1.0, 1.0, progress);
+        bondNuC.matRef.color.setHex(COLORS.nu);
+        // Substituents invert
+        h1Sphere.position.y = lerp(0, -1.6, progress); h1Sphere.position.z = lerp(2.0, 0, progress);
+        h2Sphere.position.y = lerp(0, 1.0, progress);  h2Sphere.position.z = lerp(-1.0, -1.3, progress);
+        rSphere.position.y  = lerp(0, 1.0, progress);  rSphere.position.x  = lerp(0.7, 0, progress); rSphere.position.z = lerp(0, 1.3, progress);
+        if(orbitalMesh) orbitalMesh.material.opacity = lerp(0.4, 0, progress);
+        updateBond(bondNuC, nuSphere.position, carbonSphere.position);
+        updateBond(bondCLG, carbonSphere.position, lgSphere.position);
+        updateBond(bondCH1, carbonSphere.position, h1Sphere.position);
+        updateBond(bondCH2, carbonSphere.position, h2Sphere.position);
+        updateBond(bondCR,  carbonSphere.position, rSphere.position);
+    }
+];
+
+function lerp3Color(c1, c2, t) {
+    const r1=(c1>>16)&0xff, g1=(c1>>8)&0xff, b1=c1&0xff;
+    const r2=(c2>>16)&0xff, g2=(c2>>8)&0xff, b2=c2&0xff;
+    return ((Math.round(r1+(r2-r1)*t)<<16)|(Math.round(g1+(g2-g1)*t)<<8)|Math.round(b1+(b2-b1)*t));
+}
+
+let currentStepProgress = 0;
+let currentStepIdx = -1;
+
+function playSN2() {
+    if (isPlaying) return;
+    resetSN2();
+    isPlaying = true;
+    document.getElementById('btn-play').disabled = true;
+    runStep(0);
+}
+
+function runStep(idx) {
+    if (idx >= steps.length) {
+        isPlaying = false;
+        document.getElementById('btn-play').disabled = false;
+        updateStepUI(4);
+        setStatus(stepMessages[4]);
+        setProgress(100);
+        return;
+    }
+    updateStepUI(idx);
+    setStatus(stepMessages[idx]);
+    setProgress(Math.round((idx / steps.length) * 100));
+
+    let t = 0;
+    const duration = 1400; // ms per step
+    const start = performance.now();
+    function tick(now) {
+        t = Math.min((now - start) / duration, 1);
+        steps[idx](t);
+        setProgress(Math.round(((idx + t) / steps.length) * 100));
+        if (t < 1) {
+            animTicker = requestAnimationFrame(tick);
+        } else {
+            steps[idx](1);
+            setTimeout(() => runStep(idx+1), 200);
+        }
+    }
+    animTicker = requestAnimationFrame(tick);
+}
+
+function stepSN2() {
+    if (isPlaying) return;
+    const next = (currentStepIdx + 1);
+    if (next >= steps.length) { resetSN2(); return; }
+    currentStepIdx = next;
+    updateStepUI(next);
+    setStatus(stepMessages[next]);
+    setProgress(Math.round(((next+1) / steps.length) * 100));
+    steps[next](1);
+}
+
+function jumpStep(idx) {
+    if (isPlaying) return;
+    resetSN2();
+    for (let i=0; i<=Math.min(idx, steps.length-1); i++) steps[i](1);
+    currentStepIdx = idx;
+    updateStepUI(idx);
+    setStatus(stepMessages[idx]);
+    setProgress(Math.round(((idx+1)/steps.length)*100));
+}
+
+function resetSN2() {
+    if (animTicker) cancelAnimationFrame(animTicker);
+    isPlaying = false;
+    currentStepIdx = -1;
+    document.getElementById('btn-play').disabled = false;
+    buildMolecule();
+}
+
+function toggleOrbitals(on) {
+    if (orbitalMesh) orbitalMesh.material.opacity = on ? 0.35 : 0;
+}
+
+// ========================
+// 2D ANIMATION
+// ========================
+function animate2D() {
+    const arrowNu = document.getElementById('arrow-nu');
+    const arrowLg = document.getElementById('arrow-lg');
+    const bondClg = document.getElementById('bond-clg');
+    arrowNu.style.transition = 'none';
+    arrowLg.style.transition = 'none';
+    arrowNu.setAttribute('stroke-dashoffset', '80');
+    arrowLg.setAttribute('stroke-dashoffset', '70');
+    setTimeout(() => {
+        arrowNu.style.transition = 'stroke-dashoffset 1s ease';
+        arrowNu.setAttribute('stroke-dashoffset', '0');
+    }, 100);
+    setTimeout(() => {
+        arrowLg.style.transition = 'stroke-dashoffset 1s ease';
+        arrowLg.setAttribute('stroke-dashoffset', '0');
+    }, 700);
+    setTimeout(() => {
+        if (bondClg) { bondClg.style.transition='stroke-opacity 0.5s'; bondClg.style.strokeOpacity='0.2'; }
+    }, 1400);
+}
+
+function reset2D() {
+    const arrowNu = document.getElementById('arrow-nu');
+    const arrowLg = document.getElementById('arrow-lg');
+    const bondClg = document.getElementById('bond-clg');
+    arrowNu.style.transition = 'none'; arrowNu.setAttribute('stroke-dashoffset','80');
+    arrowLg.style.transition = 'none'; arrowLg.setAttribute('stroke-dashoffset','70');
+    if (bondClg) { bondClg.style.transition='none'; bondClg.style.strokeOpacity='1'; }
+}
+
+// ========================
+// QUIZ
+// ========================
+const quizBank = [
+    { q:"Tahap mana yang menentukan laju reaksi SN2?", opts:["Pembentukan karbokation","Serangan nukleofilik (satu langkah)","Pelepasan leaving group","Ionisasi substrat"], correct:1 },
+    { q:"Apa produk stereokimia SN2 dari substrat (R)?", opts:["(R) — tidak berubah","Campuran rasemat","(S) — inversi sempurna","Eliminasi"], correct:2 },
+    { q:"Mengapa SN2 tidak terjadi pada tersier?", opts:["Leaving group terlalu kuat","Halangan sterik memblokir serangan","Nukleofil terlalu lemah","Tidak ada karbon elektrofilik"], correct:1 },
+    { q:"Leaving group terbaik untuk SN2 adalah?", opts:["F⁻","OH⁻","I⁻","NH₂⁻"], correct:2 },
+    { q:"Pelarut terbaik untuk SN2 adalah?", opts:["Air","Metanol","Etanol","DMSO"], correct:3 },
+];
+let qi = 0;
+
+function loadQuiz() {
+    const q = quizBank[qi % quizBank.length];
+    document.getElementById('quiz-question').textContent = q.q;
+    const ob = document.getElementById('quiz-options');
+    ob.innerHTML = '';
+    q.opts.forEach((o, i) => {
+        const b = document.createElement('button');
+        b.className = 'quiz-option';
+        b.textContent = o;
+        b.onclick = () => {
+            document.querySelectorAll('.quiz-option').forEach(btn => btn.onclick=null);
+            if (i === q.correct) {
+                b.classList.add('correct');
+                document.getElementById('quick-tip').textContent = '✓ Benar! ' + getTip(qi);
+            } else {
+                b.classList.add('wrong');
+                document.querySelectorAll('.quiz-option')[q.correct].classList.add('correct');
+                document.getElementById('quick-tip').textContent = 'Ingat: ' + getTip(qi);
+            }
+            setTimeout(() => { qi++; loadQuiz(); }, 2200);
+        };
+        ob.appendChild(b);
+    });
+}
+
+function getTip(idx) {
+    const tips = [
+        "SN2 adalah reaksi concerted — laju ditentukan oleh tumbukan Nu dan substrat.",
+        "Backside attack selalu menghasilkan inversi — seperti payung terbalik angin.",
+        "Karbon tersier terlindungi tiga gugus besar, Nu tidak bisa masuk.",
+        "I⁻ paling besar & paling polarisabel, menjadikannya leaving group terbaik.",
+        "DMSO tidak memproteksi Nu sehingga Nu tetap bebas dan reaktif.",
+    ];
+    return tips[idx % tips.length];
+}
+
+window.onload = initApp;
+</script>
+</body>
+</html>

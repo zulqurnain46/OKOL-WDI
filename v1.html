@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konfigurasi R/S 3D – OKOL-WDI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:ital,wght@0,300;0,400;0,600;0,700;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        /* ===== CSS VARIABLES (OKOL-WDI) ===== */
+        :root {
+            --primary: #0a0e1a;
+            --secondary: #0d1530;
+            --accent-blue: #00b4d8;
+            --accent-cyan: #06ffd8;
+            --accent-purple: #7b2fff;
+            --accent-violet: #c77dff;
+            --glow-cyan: rgba(6,255,216,0.4);
+            --glow-purple: rgba(123,47,255,0.3);
+            --text-primary: #e8f4fd;
+            --text-secondary: #8ab4cc;
+            --text-muted: #4a6070;
+            --glass: rgba(13,21,48,0.72);
+            --glass-border: rgba(6,255,216,0.18);
+            --font-display: 'Orbitron', monospace;
+            --font-body: 'Exo 2', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+        body { margin: 0; overflow: hidden; background-color: var(--primary); color: var(--text-primary); font-family: var(--font-body); }
+        ::selection { background: var(--accent-purple); color: #fff; }
+
+        #webgl-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
+
+        .bg-grid {
+            position: fixed; inset: 0; pointer-events: none; z-index: 1;
+            background-image:
+                linear-gradient(rgba(6,255,216,0.018) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(6,255,216,0.018) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse at 50% 50%, black, transparent 85%);
+        }
+
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 32px rgba(0,0,0,0.5), 0 0 0 0 rgba(6,255,216,0);
+            transition: box-shadow 0.3s, border-color 0.3s;
+        }
+        .glass-panel:hover { border-color: rgba(6,255,216,0.35); box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 24px var(--glow-cyan); }
+
+        .ui-layer { position: absolute; z-index: 10; pointer-events: none; }
+        .interactive { pointer-events: auto; }
+
+        input[type=range] { -webkit-appearance: none; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--accent-cyan); cursor: pointer; margin-top: -6px; box-shadow: 0 0 8px var(--glow-cyan); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: rgba(6,255,216,0.15); border-radius: 2px; }
+
+        .glow-text { text-shadow: 0 0 8px var(--glow-cyan); }
+        canvas#priority-chart { width: 100%; height: 120px; display: block; }
+
+        /* ===== START OVERLAY ===== */
+        #start-overlay {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: var(--primary); z-index: 50;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: flex-start;
+            padding-top: 18vh;
+            transition: opacity 0.6s;
+        }
+        #start-overlay::before {
+            content: '';
+            position: absolute; inset: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse at 20% 40%, rgba(123,47,255,0.18) 0%, transparent 55%),
+                radial-gradient(ellipse at 80% 30%, rgba(0,180,216,0.14) 0%, transparent 55%),
+                radial-gradient(ellipse at 50% 80%, rgba(6,255,216,0.10) 0%, transparent 55%);
+        }
+        .overlay-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(6,255,216,0.08);
+            border: 1px solid rgba(6,255,216,0.3);
+            border-radius: 20px; padding: 6px 20px;
+            font-family: var(--font-mono); font-size: 0.72rem;
+            color: var(--accent-cyan); letter-spacing: 2px;
+            margin-bottom: 1.6rem;
+            animation: pulse-border 2s ease infinite;
+            position: relative; z-index: 1;
+        }
+        .overlay-badge::before { content: '◉'; font-size: 0.6rem; animation: blink 1.5s ease infinite; }
+        @keyframes pulse-border {
+            0%,100% { box-shadow: 0 0 0 0 rgba(6,255,216,0.3); }
+            50% { box-shadow: 0 0 0 6px rgba(6,255,216,0); }
+        }
+        @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+        .overlay-title {
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 5vw, 3.4rem);
+            font-weight: 900; line-height: 1.1;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            position: relative; z-index: 1;
+        }
+        .overlay-title .t1 {
+            background: linear-gradient(135deg, #fff 0%, var(--accent-cyan) 50%, var(--accent-violet) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            display: block;
+        }
+        .overlay-title .t2 {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            display: block; font-size: 0.5em;
+            letter-spacing: 4px; margin-top: 6px;
+        }
+        .overlay-sub {
+            font-family: var(--font-body);
+            font-size: 0.92rem; font-weight: 300;
+            color: var(--text-secondary);
+            margin: 1.2rem 0 2rem; letter-spacing: 0.5px;
+            position: relative; z-index: 1;
+        }
+        .btn-start {
+            position: relative; z-index: 1;
+            padding: 14px 36px; border-radius: 50px; border: none;
+            font-family: var(--font-body); font-weight: 700; font-size: 0.92rem;
+            letter-spacing: 0.5px; cursor: pointer;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            color: #fff; box-shadow: 0 0 30px var(--glow-cyan);
+            transition: all 0.3s; overflow: hidden;
+        }
+        .btn-start::before {
+            content: ''; position: absolute; inset: 0;
+            background: rgba(255,255,255,0.12);
+            transform: translateX(-100%) skewX(-15deg); transition: transform 0.5s;
+        }
+        .btn-start:hover::before { transform: translateX(100%) skewX(-15deg); }
+        .btn-start:hover { transform: translateY(-3px); box-shadow: 0 8px 40px var(--glow-cyan); }
+
+        .overlay-formula {
+            position: relative; z-index: 1;
+            font-family: var(--font-mono); font-size: 0.72rem;
+            color: var(--accent-purple); opacity: 0.7;
+            letter-spacing: 2px; margin-top: 2rem;
+        }
+
+        /* ===== SEGMENTED LANG TOGGLE ===== */
+        .lang-toggle-wrap {
+            display: flex;
+            background: rgba(0,0,0,0.28);
+            border-radius: 10px;
+            padding: 3px;
+            gap: 3px;
+        }
+        .lang-seg {
+            padding: 5px 14px;
+            border-radius: 7px;
+            border: none;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 0.72rem;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.25s;
+            color: var(--text-muted);
+            background: transparent;
+            line-height: 1;
+        }
+        .lang-seg:hover { color: var(--accent-cyan); background: rgba(6,255,216,0.08); }
+        .lang-seg.active {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            color: #0a0e1a;
+            box-shadow: 0 0 10px var(--glow-cyan);
+        }
+
+        input:checked[type='checkbox'].toggle-checkbox { transform: translateX(100%); border-color: var(--accent-cyan); }
+        input:checked[type='checkbox'].toggle-checkbox + .toggle-label { background-color: var(--accent-cyan); }
+
+        #btn-play { background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple)); box-shadow: 0 0 20px var(--glow-cyan); }
+        #btn-play:hover { box-shadow: 0 0 35px var(--glow-cyan); }
+        #btn-reset:hover { background: rgba(123,47,255,0.25); color: var(--accent-violet); }
+        #ui-title { font-family: var(--font-display); font-size: 1rem; font-weight: 700; letter-spacing: 1px; color: var(--accent-cyan); }
+        #ui-step-badge { font-family: var(--font-mono); background: rgba(6,255,216,0.08); color: var(--accent-cyan); border-color: rgba(6,255,216,0.3); }
+        #ui-energy-title { font-family: var(--font-display); font-size: 0.75rem; letter-spacing: 1px; color: var(--accent-cyan); }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--primary); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-cyan); border-radius: 3px; }
+
+        .overlay-logos {
+            position: relative; z-index: 1;
+            display: flex; align-items: center; justify-content: center;
+            gap: 16px; margin-bottom: 2rem;
+        }
+        .overlay-logo-item {
+            width: 52px; height: 52px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+            transition: all 0.3s;
+            box-shadow: 0 0 0 0 var(--glow-cyan);
+        }
+        .overlay-logo-item:hover { border-color: var(--accent-cyan); box-shadow: 0 0 16px var(--glow-cyan); transform: translateY(-3px); }
+        .overlay-logo-item img { width: 100%; height: 100%; object-fit: contain; padding: 6px; }
+    </style>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <div class="bg-grid"></div>
+    <div id="webgl-container"></div>
+
+    <!-- Overlay Mulai -->
+    <div id="start-overlay" class="interactive">
+        <div class="overlay-logos">
+            <div class="overlay-logo-item"><img src="logo1.png" alt="Logo 1"></div>
+            <div class="overlay-logo-item"><img src="logo2.png" alt="Logo 2"></div>
+            <div class="overlay-logo-item"><img src="logo3.png" alt="Logo 3"></div>
+            <div class="overlay-logo-item"><img src="logo4.png" alt="Logo 4"></div>
+        </div>
+        <span class="overlay-badge">OKOL-WDI • LAB KIMIA ORGANIK</span>
+        <h1 class="overlay-title">
+            <span class="t1">R/S Configuration</span>
+            <span class="t2">Stereokimia 3D Interaktif</span>
+        </h1>
+        <p class="overlay-sub">Interactive 3D Stereochemistry &bull; CIP Rules &bull; Chirality</p>
+        <button id="start-btn" class="btn-start">▶ &nbsp;Start Experience / Mulai</button>
+        <p class="overlay-formula">C* → Kiral &nbsp;|&nbsp; CIP: Z↑ = Prioritas↑ &nbsp;|&nbsp; ↻ = R &nbsp;|&nbsp; ↺ = S</p>
+    </div>
+
+    <!-- UI Overlay -->
+    <div class="ui-layer w-full h-full flex flex-col justify-between p-4 md:p-6 opacity-0" id="main-ui">
+
+        <!-- Header -->
+        <header class="flex justify-between items-start">
+            <div class="glass-panel rounded-2xl p-4 max-w-sm interactive">
+                <h2 class="font-bold mb-1" style="font-family:var(--font-display);color:var(--accent-cyan);font-size:0.95rem;letter-spacing:1px" id="ui-title">Konfigurasi R/S</h2>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-xs px-2 py-1 rounded border" style="background:rgba(6,255,216,0.08);color:var(--accent-cyan);border-color:rgba(6,255,216,0.3);font-family:var(--font-mono)" id="ui-step-badge">Step 1/4</span>
+                    <span class="text-xs px-2 py-1 rounded border" style="background:rgba(123,47,255,0.12);color:var(--accent-violet);border-color:rgba(123,47,255,0.3);font-family:var(--font-mono)">CIP Rules</span>
+                </div>
+                <p class="text-sm" style="color:var(--text-secondary);white-space:pre-line" id="ui-desc">Karbon kiral memiliki 4 substituen berbeda.</p>
+            </div>
+
+            <div class="flex flex-col gap-3 interactive" style="max-height:calc(100vh - 100px);overflow-y:auto;overflow-x:visible;scrollbar-width:thin;scrollbar-color:rgba(6,255,216,0.3) transparent;padding-right:2px;">
+                <div class="glass-panel rounded-xl p-2 w-fit self-end">
+                    <div class="lang-toggle-wrap">
+                        <button class="lang-seg" id="lang-btn-en" data-lang="EN">EN</button>
+                        <button class="lang-seg" id="lang-btn-id" data-lang="ID">ID</button>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-xl p-3 flex flex-col gap-3">
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <span class="text-sm" style="color:var(--text-secondary)" id="ui-ts-label">Gerak Lambat</span>
+                        <input type="checkbox" id="ts-toggle" class="cursor-pointer" style="width:15px;height:15px;accent-color:var(--accent-cyan);"/>
+                    </label>
+                    <div class="flex flex-col gap-1">
+                        <span class="text-xs" style="color:var(--text-muted)" id="ui-speed-label">Kecepatan: 1x</span>
+                        <input type="range" id="speed-slider" min="0.2" max="2" step="0.1" value="1" class="w-full">
+                    </div>
+                </div>
+
+                <!-- Legend Warna Atom -->
+                <div class="glass-panel rounded-xl p-3 flex flex-col gap-1">
+                    <span class="text-xs font-semibold mb-1" style="color:var(--accent-cyan);font-family:var(--font-mono)" id="ui-legend-title">Kode Warna</span>
+                    <div class="flex items-center gap-2"><span style="width:12px;height:12px;border-radius:50%;background:#cc4400;display:inline-block"></span><span class="text-xs" style="color:var(--text-secondary)">Br (Z=35) – P1</span></div>
+                    <div class="flex items-center gap-2"><span style="width:12px;height:12px;border-radius:50%;background:#22aa55;display:inline-block"></span><span class="text-xs" style="color:var(--text-secondary)">Cl (Z=17) – P2</span></div>
+                    <div class="flex items-center gap-2"><span style="width:12px;height:12px;border-radius:50%;background:#cccc00;display:inline-block"></span><span class="text-xs" style="color:var(--text-secondary)">F (Z=9) – P3</span></div>
+                    <div class="flex items-center gap-2"><span style="width:12px;height:12px;border-radius:50%;background:#dddddd;display:inline-block"></span><span class="text-xs" style="color:var(--text-secondary)">H (Z=1) – P4</span></div>
+                </div>
+
+                <!-- Diagram Prioritas (dipindah ke sini agar tidak tumpang tindih) -->
+                <div class="glass-panel rounded-xl p-3 flex flex-col gap-1">
+                    <span class="text-xs font-semibold mb-1" style="color:var(--accent-cyan);font-family:var(--font-display);letter-spacing:1px" id="ui-energy-title">Diagram Prioritas</span>
+                    <canvas id="priority-chart" style="width:100%;height:120px;display:block;"></canvas>
+                    <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">
+                        <span id="ui-rxn-coord">Nomor Atom (Z)</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Footer / Kontrol Playback -->
+        <footer class="flex justify-center mb-2">
+            <div class="glass-panel rounded-full p-2 flex items-center gap-4 interactive shadow-[0_0_20px_rgba(0,0,0,0.8)]">
+                <button id="btn-prev" class="w-10 h-10 flex items-center justify-center rounded-full transition-colors" style="color:var(--text-secondary)" onmouseover="this.style.background='rgba(6,255,216,0.1)'" onmouseout="this.style.background='transparent'">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
+                </button>
+                <button id="btn-play" class="w-14 h-14 flex items-center justify-center rounded-full text-white transition-transform transform hover:scale-105">
+                    <svg id="icon-play" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    <svg id="icon-pause" class="hidden" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                </button>
+                <button id="btn-next" class="w-10 h-10 flex items-center justify-center rounded-full transition-colors" style="color:var(--text-secondary)" onmouseover="this.style.background='rgba(6,255,216,0.1)'" onmouseout="this.style.background='transparent'">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+                </button>
+                <div class="w-px h-8 mx-2" style="background:rgba(6,255,216,0.15)"></div>
+                <button id="btn-reset" class="w-10 h-10 flex items-center justify-center rounded-full transition-colors" style="color:var(--accent-violet)" title="Reset Step" onmouseover="this.style.background='rgba(123,47,255,0.2)'" onmouseout="this.style.background='transparent'">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
+                </button>
+                <!-- Quiz Button -->
+                <div class="w-px h-8 mx-2" style="background:rgba(6,255,216,0.15)"></div>
+                <button id="btn-quiz" class="w-10 h-10 flex items-center justify-center rounded-full transition-colors" style="color:var(--accent-violet)" title="Quiz" onmouseover="this.style.background='rgba(123,47,255,0.2)'" onmouseout="this.style.background='transparent'">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Panel Diagram 2D -->
+    <div id="panel-2d"
+         class="absolute z-20 glass-panel rounded-2xl p-3 interactive"
+         style="display:none; left:1.5rem; top:210px; width:320px; max-height:calc(100vh - 290px); overflow-y:auto; scrollbar-width:thin; scrollbar-color:rgba(6,255,216,0.3) transparent;">
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold" style="color:var(--accent-cyan);font-family:var(--font-mono)" id="label-2d">Diagram 2D – Pusat Kiral</span>
+            <button id="btn-toggle-2d" class="text-[10px] px-2 py-1 rounded-lg" style="background:rgba(13,21,48,0.8);border:1px solid var(--glass-border);color:var(--text-secondary);transition:all 0.2s">Sembunyikan</button>
+        </div>
+        <div id="svg-2d-container" style="overflow:visible;width:100%;"></div>
+    </div>
+
+    <button id="btn-show-2d" class="z-20 glass-panel rounded-xl px-3 py-2 text-xs font-semibold interactive" style="display:none;position:absolute;left:1.5rem;top:210px;color:var(--accent-cyan);font-family:var(--font-mono);transition:all 0.2s">▤ Diagram 2D</button>
+
+    <!-- Quiz Modal -->
+    <div id="quiz-modal" class="absolute top-0 left-0 w-full h-full backdrop-blur-sm z-50 hidden flex-col items-center justify-center interactive" style="background:rgba(10,14,26,0.88)">
+        <div class="glass-panel p-8 rounded-2xl max-w-md w-full" style="border-top:4px solid var(--accent-cyan)" id="quiz-box">
+            <h2 class="text-2xl font-bold mb-4" style="font-family:var(--font-display);color:var(--text-primary);font-size:1.1rem;letter-spacing:1px" id="quiz-title">Kuis Konsep</h2>
+            <p class="mb-6" style="color:var(--text-secondary);font-size:0.92rem" id="quiz-q">Soal kuis</p>
+            <div class="space-y-3" id="quiz-opts">
+                <button class="w-full text-left px-4 py-3 rounded-xl quiz-opt" style="background:rgba(13,21,48,0.85);border:1px solid var(--glass-border);color:var(--text-secondary);transition:all 0.2s;font-size:0.88rem" data-idx="0"></button>
+                <button class="w-full text-left px-4 py-3 rounded-xl quiz-opt" style="background:rgba(13,21,48,0.85);border:1px solid var(--glass-border);color:var(--text-secondary);transition:all 0.2s;font-size:0.88rem" data-idx="1"></button>
+                <button class="w-full text-left px-4 py-3 rounded-xl quiz-opt" style="background:rgba(13,21,48,0.85);border:1px solid var(--glass-border);color:var(--text-secondary);transition:all 0.2s;font-size:0.88rem" data-idx="2"></button>
+            </div>
+            <div id="quiz-feedback" class="mt-4 text-center font-bold hidden"></div>
+            <button id="quiz-close" class="mt-6 w-full py-2 rounded-xl font-semibold hidden" style="background:rgba(13,21,48,0.8);border:1px solid var(--glass-border);color:var(--text-secondary)">Tutup & Ulangi</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // ==========================================
+        // 1. KAMUS & LOKALISASI (Bilingual)
+        // ==========================================
+        const locales = {
+            EN: {
+                title: "R/S Configuration",
+                steps: [
+                    {
+                        name: "Chiral Center",
+                        desc: "C* + 4 Different Groups → Chiral\nA carbon atom bonded to four different substituents (Br, Cl, F, H) is called a chiral center or stereocenter. It can exist in two non-superimposable mirror image forms."
+                    },
+                    {
+                        name: "CIP Priority Rules",
+                        desc: "Priority: Z↑ = Higher Priority\nAssign priorities 1–4 using Cahn-Ingold-Prelog rules based on atomic number (Z). Br (Z=35)=1, Cl (Z=17)=2, F (Z=9)=3, H (Z=1)=4."
+                    },
+                    {
+                        name: "R Configuration",
+                        desc: "1→2→3 Clockwise (↻) = R\nPlace lowest priority (H, group 4) pointing away. If 1→2→3 rotation is clockwise, the configuration is R (Latin: Rectus = right)."
+                    },
+                    {
+                        name: "S Configuration",
+                        desc: "1→2→3 Counterclockwise (↺) = S\nPlace lowest priority (H, group 4) pointing away. If 1→2→3 rotation is counterclockwise, the configuration is S (Latin: Sinister = left)."
+                    }
+                ],
+                tsLabel: "Slow-Mo Arrow",
+                speedLabel: "Speed",
+                energyTitle: "Priority Diagram",
+                rxnCoord: "Atomic Number (Z)",
+                legendTitle: "Atom Colors",
+                quiz: {
+                    title: "Concept Check",
+                    q: "For CHBrClF: if H points away from you and the sequence Br→Cl→F goes clockwise, what is the configuration?",
+                    opts: ["A) S (Sinister – counterclockwise)", "B) R (Rectus – clockwise)", "C) Racemic mixture"],
+                    correctIdx: 1,
+                    correct: "✓ Correct! Clockwise with group 4 away = R (Rectus).",
+                    wrong: "✗ Incorrect. Remember: clockwise = R when H points away!"
+                }
+            },
+            ID: {
+                title: "Konfigurasi R/S",
+                steps: [
+                    {
+                        name: "Pusat Kiral",
+                        desc: "C* + 4 Gugus Berbeda → Kiral\nAtom karbon yang berikatan dengan empat substituen berbeda (Br, Cl, F, H) disebut pusat kiral atau stereosenter. Ia dapat hadir dalam dua bentuk bayangan cermin yang tidak saling tumpang tindih."
+                    },
+                    {
+                        name: "Aturan Prioritas CIP",
+                        desc: "Prioritas: Z↑ = Prioritas Lebih Tinggi\nTetapkan prioritas 1–4 menggunakan aturan Cahn-Ingold-Prelog berdasarkan nomor atom (Z). Br (Z=35)=1, Cl (Z=17)=2, F (Z=9)=3, H (Z=1)=4."
+                    },
+                    {
+                        name: "Konfigurasi R",
+                        desc: "1→2→3 Searah Jarum Jam (↻) = R\nTempatkan gugus prioritas terendah (H, gugus 4) menjauh dari Anda. Jika rotasi 1→2→3 searah jarum jam, konfigurasinya adalah R (Latin: Rectus = kanan)."
+                    },
+                    {
+                        name: "Konfigurasi S",
+                        desc: "1→2→3 Berlawanan Jarum Jam (↺) = S\nTempatkan gugus prioritas terendah (H, gugus 4) menjauh dari Anda. Jika rotasi 1→2→3 berlawanan arah jarum jam, konfigurasinya adalah S (Latin: Sinister = kiri)."
+                    }
+                ],
+                tsLabel: "Gerak Lambat",
+                speedLabel: "Kecepatan",
+                energyTitle: "Diagram Prioritas",
+                rxnCoord: "Nomor Atom (Z)",
+                legendTitle: "Kode Warna",
+                quiz: {
+                    title: "Kuis Konsep",
+                    q: "Untuk CHBrClF: jika H menjauh dari Anda dan urutan Br→Cl→F berlangsung searah jarum jam, apa konfigurasinya?",
+                    opts: ["A) S (Sinister – berlawanan jarum jam)", "B) R (Rectus – searah jarum jam)", "C) Campuran rasemat"],
+                    correctIdx: 1,
+                    correct: "✓ Benar! Searah jarum jam dengan gugus 4 menjauh = R (Rectus).",
+                    wrong: "✗ Salah. Ingat: searah jarum jam = R saat H menjauh!"
+                }
+            }
+        };
+
+        let currentLang = 'ID';
+        let currentStep = 0;
+        let isPlaying = false;
+        let isSlowMo = false;
+        let currentTimeline = null;
+
+        // ==========================================
+        // 2. AUDIO
+        // ==========================================
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        function playChime() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        }
+        function playClick() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(1400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.12);
+            gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.12);
+        }
+
+        // ==========================================
+        // 3. THREE.JS SCENE
+        // ==========================================
+        const container = document.getElementById('webgl-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0e1a);
+        scene.fog = new THREE.FogExp2(0x0a0e1a, 0.016);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 2, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 5;
+        controls.maxDistance = 22;
+
+        // Pencahayaan
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const mainLight = new THREE.DirectionalLight(0xffffff, 2.2);
+        mainLight.position.set(5, 10, 7);
+        mainLight.castShadow = true;
+        scene.add(mainLight);
+        const blueRim = new THREE.PointLight(0x4080ff, 3, 20);
+        blueRim.position.set(-5, -2, -5);
+        scene.add(blueRim);
+        const cyanFill = new THREE.PointLight(0x06ffd8, 1.5, 18);
+        cyanFill.position.set(6, 3, 6);
+        scene.add(cyanFill);
+
+        // ==========================================
+        // 4. MATERIAL & GEOMETRI
+        // ==========================================
+        const matC = new THREE.MeshPhysicalMaterial({ color: 0x444444, roughness: 0.2, metalness: 0.3, clearcoat: 0.6 });
+        const matBr = new THREE.MeshPhysicalMaterial({ color: 0xcc4400, roughness: 0.3, metalness: 0.2, clearcoat: 0.5 });
+        const matCl = new THREE.MeshPhysicalMaterial({ color: 0x22aa55, roughness: 0.35, metalness: 0.15, clearcoat: 0.4 });
+        const matF  = new THREE.MeshPhysicalMaterial({ color: 0xdddd00, roughness: 0.3, metalness: 0.1, clearcoat: 0.3 });
+        const matH  = new THREE.MeshPhysicalMaterial({ color: 0xeeeeee, roughness: 0.4, metalness: 0.0, clearcoat: 0.2 });
+        const matBond = new THREE.MeshPhysicalMaterial({ color: 0x888888, roughness: 0.5, metalness: 0.5 });
+        const matArrowR = new THREE.MeshBasicMaterial({ color: 0x06ffd8, side: THREE.DoubleSide });
+        const matArrowS = new THREE.MeshBasicMaterial({ color: 0xc77dff, side: THREE.DoubleSide });
+
+        function makeSphere(r, mat) {
+            const m = new THREE.Mesh(new THREE.SphereGeometry(r, 32, 32), mat);
+            m.castShadow = true;
+            return m;
+        }
+        function makeBond(from, to) {
+            const dir = new THREE.Vector3().subVectors(to, from);
+            const len = dir.length();
+            const mid = new THREE.Vector3().addVectors(from, to).multiplyScalar(0.5);
+            const bond = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, len, 16), matBond);
+            bond.position.copy(mid);
+            bond.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.normalize());
+            bond.castShadow = true;
+            return bond;
+        }
+
+        // Sprite label angka/teks
+        function makeSprite(text, bgColor, textColor = '#000000', scale = 1.0) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128; canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0,0,128,128);
+            ctx.fillStyle = bgColor;
+            ctx.beginPath(); ctx.arc(64,64,56,0,Math.PI*2); ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+            ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.arc(64,64,54,0,Math.PI*2); ctx.stroke();
+            ctx.fillStyle = textColor;
+            ctx.font = `bold ${text.length > 2 ? 36 : 44}px Arial`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(text, 64, 64);
+            const tex = new THREE.CanvasTexture(canvas);
+            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+            sprite.scale.set(scale, scale, 1);
+            return sprite;
+        }
+
+        // Arrow melingkar
+        function makeCircularArrow(clockwise, color, radius = 2.2, arcFraction = 0.78) {
+            const points = [];
+            const totalAng = Math.PI * 2 * arcFraction;
+            const startAng = clockwise ? Math.PI * 0.5 : Math.PI * 0.5;
+            const segs = 80;
+            for (let i = 0; i <= segs; i++) {
+                const t = i / segs;
+                const ang = clockwise
+                    ? startAng - totalAng * t
+                    : startAng + totalAng * t;
+                points.push(new THREE.Vector3(Math.cos(ang) * radius, 0, Math.sin(ang) * radius));
+            }
+            const curve = new THREE.CatmullRomCurve3(points);
+            const tubeMat = new THREE.MeshBasicMaterial({ color });
+            const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 80, 0.07, 10, false), tubeMat);
+
+            // Kepala panah
+            const endPt = points[points.length - 1];
+            const prePt = points[points.length - 5];
+            const headDir = new THREE.Vector3().subVectors(endPt, prePt).normalize();
+            const headMesh = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.45, 12), tubeMat);
+            headMesh.position.copy(endPt);
+            headMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), headDir);
+
+            const grp = new THREE.Group();
+            grp.add(tube, headMesh);
+            return grp;
+        }
+
+        // ==========================================
+        // 5. STEP GROUPS
+        // ==========================================
+        const stepGroups = [new THREE.Group(), new THREE.Group(), new THREE.Group(), new THREE.Group()];
+        stepGroups.forEach(g => { g.visible = false; scene.add(g); });
+
+        const BL = 2.2; // bond length
+        // Posisi tetrahedral
+        const posTetra = [
+            new THREE.Vector3( 1, 1, 1).normalize().multiplyScalar(BL),   // Br (P1)
+            new THREE.Vector3(-1,-1, 1).normalize().multiplyScalar(BL),   // Cl (P2)
+            new THREE.Vector3(-1, 1,-1).normalize().multiplyScalar(BL),   // F  (P3)
+            new THREE.Vector3( 1,-1,-1).normalize().multiplyScalar(BL),   // H  (P4)
+        ];
+
+        // ── STEP 0: Pusat Kiral ──
+        const g0 = stepGroups[0];
+        {
+            const cCenter = makeSphere(0.65, matC);
+            const br = makeSphere(0.9, matBr); br.position.copy(posTetra[0]);
+            const cl = makeSphere(0.8, matCl); cl.position.copy(posTetra[1]);
+            const f  = makeSphere(0.65, matF);  f.position.copy(posTetra[2]);
+            const h  = makeSphere(0.42, matH);  h.position.copy(posTetra[3]);
+
+            g0.add(cCenter, br, cl, f, h);
+            posTetra.forEach(p => g0.add(makeBond(new THREE.Vector3(0,0,0), p)));
+
+            // Label atom
+            const labels = [
+                makeSprite('Br','#cc4400','#ffffff',1.0), makeSprite('Cl','#22aa55','#ffffff',1.0),
+                makeSprite('F','#bbbb00','#000000',0.9),  makeSprite('H','#cccccc','#000000',0.85)
+            ];
+            const offsets = [
+                new THREE.Vector3(0.5,0.4,0.4), new THREE.Vector3(-0.5,-0.4,0.4),
+                new THREE.Vector3(-0.5,0.4,-0.4), new THREE.Vector3(0.5,-0.4,-0.5)
+            ];
+            labels.forEach((lbl, i) => {
+                lbl.position.copy(posTetra[i]).add(offsets[i]);
+                g0.add(lbl);
+            });
+
+            // Label C* center
+            const cLabel = makeSprite('C*','#06ffd8','#000000',0.75);
+            cLabel.position.set(0, 0.9, 0);
+            g0.add(cLabel);
+        }
+
+        // ── STEP 1: Aturan CIP – Prioritas ──
+        const g1 = stepGroups[1];
+        {
+            const cCenter = makeSphere(0.65, matC);
+            const br = makeSphere(0.9, matBr); br.position.copy(posTetra[0]);
+            const cl = makeSphere(0.8, matCl); cl.position.copy(posTetra[1]);
+            const f  = makeSphere(0.65, matF);  f.position.copy(posTetra[2]);
+            const h  = makeSphere(0.42, matH);  h.position.copy(posTetra[3]);
+            g1.add(cCenter, br, cl, f, h);
+            posTetra.forEach(p => g1.add(makeBond(new THREE.Vector3(0,0,0), p)));
+
+            // Label atom
+            const atomLabels = ['Br','Cl','F','H'];
+            const atomColors = ['#cc4400','#22aa55','#bbbb00','#cccccc'];
+            atomLabels.forEach((lbl, i) => {
+                const sp = makeSprite(lbl, atomColors[i], i < 3 ? '#ffffff':'#000000', 1.0);
+                const off = posTetra[i].clone().normalize().multiplyScalar(0.8);
+                sp.position.copy(posTetra[i]).add(off);
+                g1.add(sp);
+            });
+
+            // Priority number badges – start invisible
+            const priorities = ['①','②','③','④'];
+            const prColors = ['#06ffd8','#00b4d8','#7b2fff','#c77dff'];
+            const prSprites = priorities.map((p, i) => {
+                const sp = makeSprite(p, prColors[i], '#ffffff', 1.1);
+                const off = posTetra[i].clone().normalize().multiplyScalar(-0.9);
+                sp.position.copy(posTetra[i]).add(off);
+                sp.material.opacity = 0;
+                g1.add(sp);
+                return sp;
+            });
+
+            // Z number labels
+            const zLabels = ['Z=35','Z=17','Z=9','Z=1'];
+            const zSprites = zLabels.map((z, i) => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 160; canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'rgba(6,255,216,0.15)';
+                ctx.roundRect(0,0,160,64,16);
+                ctx.fill();
+                ctx.fillStyle = '#06ffd8';
+                ctx.font = 'bold 28px monospace';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(z, 80, 32);
+                const tex = new THREE.CanvasTexture(canvas);
+                const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+                sp.scale.set(1.6, 0.65, 1);
+                const dir = posTetra[i].clone().normalize();
+                sp.position.copy(posTetra[i]).addScaledVector(dir, 1.1);
+                sp.position.y += 0.5;
+                sp.material.opacity = 0;
+                g1.add(sp);
+                return sp;
+            });
+
+            // Store for animation
+            g1.userData = { prSprites, zSprites };
+        }
+
+        // ── STEP 2: Konfigurasi R ──
+        // Arrange H at back (negative z), others in front plane
+        const g2 = stepGroups[2];
+        {
+            const posR = [
+                new THREE.Vector3(-1.8, 0.9, 1.2),   // Br (P1)
+                new THREE.Vector3( 1.8, 0.9, 1.2),   // Cl (P2)
+                new THREE.Vector3( 0,  -1.8, 0.8),   // F  (P3)
+                new THREE.Vector3( 0,   0, -2.2),    // H  (P4 – away)
+            ];
+            const cCenter = makeSphere(0.65, matC);
+            const br = makeSphere(0.9, matBr); br.position.copy(posR[0]);
+            const cl = makeSphere(0.8, matCl); cl.position.copy(posR[1]);
+            const f  = makeSphere(0.65, matF);  f.position.copy(posR[2]);
+            const h  = makeSphere(0.42, matH);  h.position.copy(posR[3]);
+            g2.add(cCenter, br, cl, f, h);
+            posR.forEach(p => g2.add(makeBond(new THREE.Vector3(0,0,0), p)));
+
+            // Labels
+            const atomData = [['Br','#cc4400','#fff'],['Cl','#22aa55','#fff'],['F','#bbbb00','#000'],['H','#cccccc','#000']];
+            atomData.forEach(([lbl,bg,tc], i) => {
+                const sp = makeSprite(lbl, bg, tc, 0.9);
+                const off = posR[i].clone().normalize().multiplyScalar(0.8);
+                sp.position.copy(posR[i]).add(off);
+                g2.add(sp);
+            });
+
+            // Priority badges
+            const prColors = ['#06ffd8','#00b4d8','#7b2fff','#c77dff'];
+            ['①','②','③','④'].forEach((p,i) => {
+                const sp = makeSprite(p, prColors[i],'#fff',0.8);
+                const off = posR[i].clone().normalize().multiplyScalar(-0.7);
+                sp.position.copy(posR[i]).add(off);
+                g2.add(sp);
+            });
+
+            // H "away" indicator – dashed ring
+            const hIndicator = new THREE.Mesh(
+                new THREE.TorusGeometry(0.55, 0.05, 8, 40),
+                new THREE.MeshBasicMaterial({ color: 0xcccccc, opacity: 0.5, transparent: true })
+            );
+            hIndicator.position.copy(posR[3]);
+            hIndicator.rotation.x = Math.PI / 2;
+            g2.add(hIndicator);
+
+            // Clockwise arrow (R)
+            const arrowR = makeCircularArrow(true, 0x06ffd8, 2.0, 0.80);
+            arrowR.position.y = 0.1;
+            arrowR.visible = false;
+            g2.add(arrowR);
+
+            // "R" large label
+            const rLabel = makeSprite('R', '#06ffd8', '#000000', 2.0);
+            rLabel.position.set(0, 3.2, 0);
+            rLabel.material.opacity = 0;
+            g2.add(rLabel);
+
+            // "↻" direction label
+            const dirLabel = makeSprite('↻','rgba(6,255,216,0.9)','#000',1.4);
+            dirLabel.position.set(2.6, 0.2, 0);
+            dirLabel.material.opacity = 0;
+            g2.add(dirLabel);
+
+            g2.userData = { arrowR, rLabel, dirLabel };
+        }
+
+        // ── STEP 3: Konfigurasi S ──
+        const g3 = stepGroups[3];
+        {
+            // Mirror image: swap Br and Cl x-positions → S configuration
+            const posS = [
+                new THREE.Vector3( 1.8, 0.9, 1.2),   // Br (P1) – swapped to right
+                new THREE.Vector3(-1.8, 0.9, 1.2),   // Cl (P2) – swapped to left
+                new THREE.Vector3( 0,  -1.8, 0.8),   // F  (P3)
+                new THREE.Vector3( 0,   0, -2.2),    // H  (P4 – away)
+            ];
+            const cCenter = makeSphere(0.65, matC);
+            const br = makeSphere(0.9, matBr); br.position.copy(posS[0]);
+            const cl = makeSphere(0.8, matCl); cl.position.copy(posS[1]);
+            const f  = makeSphere(0.65, matF);  f.position.copy(posS[2]);
+            const h  = makeSphere(0.42, matH);  h.position.copy(posS[3]);
+            g3.add(cCenter, br, cl, f, h);
+            posS.forEach(p => g3.add(makeBond(new THREE.Vector3(0,0,0), p)));
+
+            const atomData = [['Br','#cc4400','#fff'],['Cl','#22aa55','#fff'],['F','#bbbb00','#000'],['H','#cccccc','#000']];
+            atomData.forEach(([lbl,bg,tc], i) => {
+                const sp = makeSprite(lbl, bg, tc, 0.9);
+                const off = posS[i].clone().normalize().multiplyScalar(0.8);
+                sp.position.copy(posS[i]).add(off);
+                g3.add(sp);
+            });
+
+            const prColors = ['#06ffd8','#00b4d8','#7b2fff','#c77dff'];
+            ['①','②','③','④'].forEach((p,i) => {
+                const sp = makeSprite(p, prColors[i],'#fff',0.8);
+                const off = posS[i].clone().normalize().multiplyScalar(-0.7);
+                sp.position.copy(posS[i]).add(off);
+                g3.add(sp);
+            });
+
+            const hIndicator = new THREE.Mesh(
+                new THREE.TorusGeometry(0.55, 0.05, 8, 40),
+                new THREE.MeshBasicMaterial({ color: 0xcccccc, opacity: 0.5, transparent: true })
+            );
+            hIndicator.position.copy(posS[3]);
+            hIndicator.rotation.x = Math.PI / 2;
+            g3.add(hIndicator);
+
+            // Counterclockwise arrow (S)
+            const arrowS = makeCircularArrow(false, 0xc77dff, 2.0, 0.80);
+            arrowS.position.y = 0.1;
+            arrowS.visible = false;
+            g3.add(arrowS);
+
+            // "S" large label
+            const sLabel = makeSprite('S', '#c77dff', '#000000', 2.0);
+            sLabel.position.set(0, 3.2, 0);
+            sLabel.material.opacity = 0;
+            g3.add(sLabel);
+
+            // "↺" direction label
+            const dirLabel = makeSprite('↺','rgba(199,125,255,0.9)','#000',1.4);
+            dirLabel.position.set(-2.6, 0.2, 0);
+            dirLabel.material.opacity = 0;
+            g3.add(dirLabel);
+
+            g3.userData = { arrowS, sLabel, dirLabel };
+        }
+
+        // ==========================================
+        // 6. PRIORITY DIAGRAM (Canvas 2D)
+        // ==========================================
+        const chartCanvas = document.getElementById('priority-chart');
+        const chartCtx = chartCanvas.getContext('2d');
+
+        function drawPriorityDiagram(activeStep) {
+            const W = chartCanvas.offsetWidth || 220;
+            const H = 120;
+            chartCanvas.width = W; chartCanvas.height = H;
+
+            chartCtx.clearRect(0,0,W,H);
+
+            const atoms = [
+                { label: 'Br', z: 35, color: '#cc4400', priority: '①' },
+                { label: 'Cl', z: 17, color: '#22aa55', priority: '②' },
+                { label: 'F',  z:  9, color: '#cccc00', priority: '③' },
+                { label: 'H',  z:  1, color: '#aaaaaa', priority: '④' },
+            ];
+            const maxZ = 35;
+            const barW = (W - 40) / atoms.length - 8;
+            const maxBarH = H - 50;
+
+            // Grid lines
+            chartCtx.strokeStyle = 'rgba(6,255,216,0.1)';
+            chartCtx.lineWidth = 1;
+            [0.25, 0.5, 0.75, 1.0].forEach(f => {
+                const y = H - 30 - maxBarH * f;
+                chartCtx.beginPath();
+                chartCtx.moveTo(20, y); chartCtx.lineTo(W - 10, y);
+                chartCtx.stroke();
+            });
+
+            atoms.forEach((a, i) => {
+                const barH = (a.z / maxZ) * maxBarH;
+                const x = 30 + i * (barW + 8);
+                const y = H - 30 - barH;
+
+                // Glow effect for active
+                const isActive = activeStep >= 1;
+                if (isActive) {
+                    chartCtx.shadowColor = a.color;
+                    chartCtx.shadowBlur = 12;
+                }
+
+                // Bar
+                const grad = chartCtx.createLinearGradient(x, y, x, H - 30);
+                grad.addColorStop(0, a.color);
+                grad.addColorStop(1, a.color + '44');
+                chartCtx.fillStyle = grad;
+                chartCtx.beginPath();
+                chartCtx.roundRect(x, y, barW, barH, [4, 4, 0, 0]);
+                chartCtx.fill();
+                chartCtx.shadowBlur = 0;
+
+                // Priority badge
+                chartCtx.fillStyle = 'rgba(0,0,0,0.6)';
+                chartCtx.beginPath();
+                chartCtx.arc(x + barW/2, y - 12, 10, 0, Math.PI*2);
+                chartCtx.fill();
+                chartCtx.fillStyle = '#06ffd8';
+                chartCtx.font = 'bold 10px monospace';
+                chartCtx.textAlign = 'center'; chartCtx.textBaseline = 'middle';
+                chartCtx.fillText(i+1, x + barW/2, y - 12);
+
+                // Z label on bar
+                chartCtx.fillStyle = '#fff';
+                chartCtx.font = 'bold 9px monospace';
+                if (barH > 20) {
+                    chartCtx.fillText('Z='+a.z, x + barW/2, y + barH/2);
+                }
+
+                // Atom label below
+                chartCtx.fillStyle = a.color;
+                chartCtx.font = 'bold 11px monospace';
+                chartCtx.fillText(a.label, x + barW/2, H - 16);
+            });
+
+            // Axis
+            chartCtx.strokeStyle = 'rgba(6,255,216,0.3)';
+            chartCtx.lineWidth = 1.5;
+            chartCtx.beginPath();
+            chartCtx.moveTo(22, 0); chartCtx.lineTo(22, H - 28);
+            chartCtx.moveTo(22, H - 28); chartCtx.lineTo(W - 5, H - 28);
+            chartCtx.stroke();
+        }
+
+        // ==========================================
+        // 7. 2D SVG DIAGRAMS
+        // ==========================================
+        const svgDiagrams = [
+            // Step 0: Pusat Kiral
+            `<svg viewBox="0 0 280 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;background:transparent">
+              <defs>
+                <marker id="ah0" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#06ffd8"/></marker>
+              </defs>
+              <!-- Central C* -->
+              <circle cx="140" cy="110" r="18" fill="#444" stroke="#06ffd8" stroke-width="2"/>
+              <text x="140" y="115" text-anchor="middle" fill="#06ffd8" font-weight="bold" font-size="13" font-family="monospace">C*</text>
+              <!-- Br (top-left, wedge) -->
+              <polygon points="140,92 118,48 128,48" fill="#cc4400"/>
+              <circle cx="123" cy="42" r="14" fill="#cc4400" stroke="#ff6622" stroke-width="1.5"/>
+              <text x="123" y="47" text-anchor="middle" fill="white" font-weight="bold" font-size="11" font-family="monospace">Br</text>
+              <!-- Cl (top-right) -->
+              <line x1="140" y1="92" x2="180" y2="48" stroke="#22aa55" stroke-width="2.5"/>
+              <circle cx="186" cy="42" r="14" fill="#22aa55" stroke="#44cc77" stroke-width="1.5"/>
+              <text x="186" y="47" text-anchor="middle" fill="white" font-weight="bold" font-size="11" font-family="monospace">Cl</text>
+              <!-- F (right, dash bond) -->
+              <line x1="158" y1="110" x2="210" y2="110" stroke="#cccc00" stroke-width="2" stroke-dasharray="5,3"/>
+              <circle cx="218" cy="110" r="13" fill="#cccc00" stroke="#eeee22" stroke-width="1.5"/>
+              <text x="218" y="115" text-anchor="middle" fill="#000" font-weight="bold" font-size="11" font-family="monospace">F</text>
+              <!-- H (left, dash bond) -->
+              <line x1="122" y1="110" x2="72" y2="110" stroke="#aaaaaa" stroke-width="2" stroke-dasharray="5,3"/>
+              <circle cx="64" cy="110" r="11" fill="#cccccc" stroke="#eeeeee" stroke-width="1.5"/>
+              <text x="64" y="115" text-anchor="middle" fill="#000" font-weight="bold" font-size="11" font-family="monospace">H</text>
+              <!-- Bottom -->
+              <line x1="140" y1="128" x2="140" y2="170" stroke="#888" stroke-width="2"/>
+              <text x="140" y="185" text-anchor="middle" fill="#8ab4cc" font-size="10" font-family="monospace">4 gugus berbeda</text>
+              <!-- Title -->
+              <text x="140" y="210" text-anchor="middle" fill="#06ffd8" font-size="11" font-family="monospace" font-weight="bold">Pusat Kiral – C*</text>
+            </svg>`,
+
+            // Step 1: Aturan CIP
+            `<svg viewBox="0 0 280 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;background:transparent">
+              <!-- Table header -->
+              <rect x="10" y="10" width="260" height="24" rx="6" fill="rgba(6,255,216,0.1)" stroke="rgba(6,255,216,0.3)" stroke-width="1"/>
+              <text x="55" y="26" text-anchor="middle" fill="#06ffd8" font-size="10" font-family="monospace" font-weight="bold">Atom</text>
+              <text x="115" y="26" text-anchor="middle" fill="#06ffd8" font-size="10" font-family="monospace" font-weight="bold">Nomor Atom (Z)</text>
+              <text x="220" y="26" text-anchor="middle" fill="#06ffd8" font-size="10" font-family="monospace" font-weight="bold">Prioritas</text>
+              <!-- Row 1: Br -->
+              <rect x="10" y="38" width="260" height="36" rx="4" fill="rgba(204,68,0,0.15)" stroke="rgba(204,68,0,0.4)" stroke-width="1"/>
+              <circle cx="40" cy="56" r="12" fill="#cc4400"/><text x="40" y="60" text-anchor="middle" fill="white" font-weight="bold" font-size="11" font-family="monospace">Br</text>
+              <text x="140" y="60" text-anchor="middle" fill="#e8f4fd" font-size="18" font-family="monospace" font-weight="bold">35</text>
+              <circle cx="220" cy="56" r="12" fill="#06ffd8"/><text x="220" y="60" text-anchor="middle" fill="#000" font-weight="bold" font-size="14" font-family="monospace">1</text>
+              <!-- Row 2: Cl -->
+              <rect x="10" y="78" width="260" height="36" rx="4" fill="rgba(34,170,85,0.15)" stroke="rgba(34,170,85,0.4)" stroke-width="1"/>
+              <circle cx="40" cy="96" r="12" fill="#22aa55"/><text x="40" y="100" text-anchor="middle" fill="white" font-weight="bold" font-size="11" font-family="monospace">Cl</text>
+              <text x="140" y="100" text-anchor="middle" fill="#e8f4fd" font-size="18" font-family="monospace" font-weight="bold">17</text>
+              <circle cx="220" cy="96" r="12" fill="#00b4d8"/><text x="220" y="100" text-anchor="middle" fill="#000" font-weight="bold" font-size="14" font-family="monospace">2</text>
+              <!-- Row 3: F -->
+              <rect x="10" y="118" width="260" height="36" rx="4" fill="rgba(200,200,0,0.15)" stroke="rgba(200,200,0,0.4)" stroke-width="1"/>
+              <circle cx="40" cy="136" r="12" fill="#cccc00"/><text x="40" y="140" text-anchor="middle" fill="#000" font-weight="bold" font-size="11" font-family="monospace">F</text>
+              <text x="140" y="140" text-anchor="middle" fill="#e8f4fd" font-size="18" font-family="monospace" font-weight="bold">9</text>
+              <circle cx="220" cy="136" r="12" fill="#7b2fff"/><text x="220" y="140" text-anchor="middle" fill="#fff" font-weight="bold" font-size="14" font-family="monospace">3</text>
+              <!-- Row 4: H -->
+              <rect x="10" y="158" width="260" height="36" rx="4" fill="rgba(150,150,150,0.10)" stroke="rgba(150,150,150,0.3)" stroke-width="1"/>
+              <circle cx="40" cy="176" r="12" fill="#aaaaaa"/><text x="40" y="180" text-anchor="middle" fill="#000" font-weight="bold" font-size="11" font-family="monospace">H</text>
+              <text x="140" y="180" text-anchor="middle" fill="#e8f4fd" font-size="18" font-family="monospace" font-weight="bold">1</text>
+              <circle cx="220" cy="176" r="12" fill="#c77dff"/><text x="220" y="180" text-anchor="middle" fill="#000" font-weight="bold" font-size="14" font-family="monospace">4</text>
+              <!-- Rule text -->
+              <text x="140" y="210" text-anchor="middle" fill="#8ab4cc" font-size="10" font-family="monospace">Z lebih besar = Prioritas lebih tinggi</text>
+            </svg>`,
+
+            // Step 2: Konfigurasi R
+            `<svg viewBox="0 0 280 230" xmlns="http://www.w3.org/2000/svg" style="width:100%;background:transparent">
+              <defs>
+                <marker id="arrowR" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#06ffd8"/></marker>
+              </defs>
+              <!-- H pointing away label -->
+              <circle cx="140" cy="30" r="12" fill="#aaaaaa" opacity="0.4" stroke="#aaaaaa" stroke-width="1.5" stroke-dasharray="4,2"/>
+              <text x="140" y="34" text-anchor="middle" fill="#888" font-weight="bold" font-size="10" font-family="monospace">H</text>
+              <text x="140" y="52" text-anchor="middle" fill="#8ab4cc" font-size="9" font-family="monospace">(menjauh)</text>
+              <!-- Central C -->
+              <circle cx="140" cy="115" r="18" fill="#444" stroke="#06ffd8" stroke-width="2"/>
+              <text x="140" y="120" text-anchor="middle" fill="#06ffd8" font-weight="bold" font-size="13" font-family="monospace">C</text>
+              <!-- Br - P1 (left) wedge -->
+              <polygon points="122,115 72,80 82,90" fill="#cc4400"/>
+              <circle cx="65" cy="75" r="15" fill="#cc4400" stroke="#ff6622" stroke-width="2"/>
+              <text x="65" y="80" text-anchor="middle" fill="white" font-weight="bold" font-size="11" font-family="monospace">Br</text>
+              <text x="65" y="98" text-anchor="middle" fill="#06ffd8" font-size="9" font-family="monospace">①</text>
+              <!-- Cl - P2 (right) -->
+              <polygon points="158,115 210,80 200,90" fill="#22aa55"/>
+              <circle cx="217" cy="75" r="15" fill="#22aa55" stroke="#44cc77" stroke-width="2"/>
+              <text x="217" y="80" text-anchor="middle" fill="white" font-weight="bold" font-size="11" font-family="monospace">Cl</text>
+              <text x="217" y="98" text-anchor="middle" fill="#00b4d8" font-size="9" font-family="monospace">②</text>
+              <!-- F - P3 (bottom) -->
+              <line x1="140" y1="133" x2="140" y2="170" stroke="#cccc00" stroke-width="2.5"/>
+              <circle cx="140" cy="182" r="14" fill="#cccc00" stroke="#eeee22" stroke-width="1.5"/>
+              <text x="140" y="187" text-anchor="middle" fill="#000" font-weight="bold" font-size="11" font-family="monospace">F</text>
+              <text x="158" y="182" text-anchor="start" fill="#7b2fff" font-size="9" font-family="monospace">③</text>
+              <!-- Clockwise arrow -->
+              <path d="M 95,105 A 55,55 0 1,1 175,130" fill="none" stroke="#06ffd8" stroke-width="2.5" marker-end="url(#arrowR)" opacity="0.9"/>
+              <!-- R label -->
+              <rect x="106" y="100" width="68" height="28" rx="8" fill="rgba(6,255,216,0.15)" stroke="#06ffd8" stroke-width="1.5"/>
+              <text x="140" y="119" text-anchor="middle" fill="#06ffd8" font-weight="bold" font-size="16" font-family="monospace">↻ R</text>
+              <!-- Caption -->
+              <text x="140" y="218" text-anchor="middle" fill="#06ffd8" font-size="11" font-family="monospace" font-weight="bold">Rectus – Searah Jarum Jam</text>
+            </svg>`,
+
+            // Step 3: Konfigurasi S
+            `<svg viewBox="0 0 280 230" xmlns="http://www.w3.org/2000/svg" style="width:100%;background:transparent">
+              <defs>
+                <marker id="arrowS" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto"><polygon points="10 0,0 3.5,10 7" fill="#c77dff"/></marker>
+              </defs>
+              <!-- H pointing away -->
+              <circle cx="140" cy="30" r="12" fill="#aaaaaa" opacity="0.4" stroke="#aaaaaa" stroke-width="1.5" stroke-dasharray="4,2"/>
+              <text x="140" y="34" text-anchor="middle" fill="#888" font-weight="bold" font-size="10" font-family="monospace">H</text>
+              <text x="140" y="52" text-anchor="middle" fill="#8ab4cc" font-size="9" font-family="monospace">(menjauh)</text>
+              <!-- Central C -->
+              <circle cx="140" cy="115" r="18" fill="#444" stroke="#c77dff" stroke-width="2"/>
+              <text x="140" y="120" text-anchor="middle" fill="#c77dff" font-weight="bold" font-size="13" font-family="monospace">C</text>
+              <!-- Cl - P2 (left, mirror of R) -->
+              <polygon points="122,115 72,80 82,90" fill="#22aa55"/>
+              <circle cx="65" cy="75" r="15" fill="#22aa55" stroke="#44cc77" stroke-width="2"/>
+              <text x="65" y="80" text-anchor="middle" fill="white" font-weight="bold" font-size="11" font-family="monospace">Cl</text>
+              <text x="65" y="98" text-anchor="middle" fill="#00b4d8" font-size="9" font-family="monospace">②</text>
+              <!-- Br - P1 (right, mirror of R) -->
+              <polygon points="158,115 210,80 200,90" fill="#cc4400"/>
+              <circle cx="217" cy="75" r="15" fill="#cc4400" stroke="#ff6622" stroke-width="2"/>
+              <text x="217" y="80" text-anchor="middle" fill="white" font-weight="bold" font-size="11" font-family="monospace">Br</text>
+              <text x="217" y="98" text-anchor="middle" fill="#06ffd8" font-size="9" font-family="monospace">①</text>
+              <!-- F - P3 (bottom) -->
+              <line x1="140" y1="133" x2="140" y2="170" stroke="#cccc00" stroke-width="2.5"/>
+              <circle cx="140" cy="182" r="14" fill="#cccc00" stroke="#eeee22" stroke-width="1.5"/>
+              <text x="140" y="187" text-anchor="middle" fill="#000" font-weight="bold" font-size="11" font-family="monospace">F</text>
+              <text x="158" y="182" text-anchor="start" fill="#7b2fff" font-size="9" font-family="monospace">③</text>
+              <!-- Counterclockwise arrow -->
+              <path d="M 185,105 A 55,55 0 1,0 105,130" fill="none" stroke="#c77dff" stroke-width="2.5" marker-end="url(#arrowS)" opacity="0.9"/>
+              <!-- S label -->
+              <rect x="106" y="100" width="68" height="28" rx="8" fill="rgba(199,125,255,0.15)" stroke="#c77dff" stroke-width="1.5"/>
+              <text x="140" y="119" text-anchor="middle" fill="#c77dff" font-weight="bold" font-size="16" font-family="monospace">↺ S</text>
+              <!-- Caption -->
+              <text x="140" y="218" text-anchor="middle" fill="#c77dff" font-size="11" font-family="monospace" font-weight="bold">Sinister – Berlawanan Jarum Jam</text>
+            </svg>`
+        ];
+
+        // ==========================================
+        // 8. STEP LOADING
+        // ==========================================
+        function togglePlayUI(playing) {
+            isPlaying = playing;
+            document.getElementById('icon-play').classList.toggle('hidden', playing);
+            document.getElementById('icon-pause').classList.toggle('hidden', !playing);
+        }
+
+        function loadStep(step) {
+            if (currentTimeline) { currentTimeline.kill(); }
+            stepGroups.forEach((g, i) => { g.visible = (i === step); });
+            currentStep = step;
+            togglePlayUI(false);
+            playClick();
+
+            // Camera reset per step
+            if (step === 0 || step === 1) {
+                gsap.to(camera.position, { x:0, y:2, z:12, duration:1.2, ease:"power2.inOut" });
+                gsap.to(controls.target, { x:0, y:0, z:0, duration:1.2 });
+            } else {
+                // Steps 2 & 3: front-facing view so H is clearly at back
+                gsap.to(camera.position, { x:0, y:1, z:11, duration:1.2, ease:"power2.inOut" });
+                gsap.to(controls.target, { x:0, y:0, z:0, duration:1.2 });
+            }
+
+            drawPriorityDiagram(step);
+            updateUI();
+
+            const tl = gsap.timeline({
+                onComplete: () => togglePlayUI(false)
+            });
+
+            if (step === 0) {
+                // Animate molecule appearing
+                stepGroups[0].scale.set(0.01, 0.01, 0.01);
+                tl.to(stepGroups[0].scale, { x:1, y:1, z:1, duration:1.0, ease:"elastic.out(1,0.6)" });
+                tl.to(stepGroups[0].rotation, { y: Math.PI * 2, duration:4.0, ease:"power1.inOut" }, "+=0.3");
+            }
+            else if (step === 1) {
+                const { prSprites, zSprites } = stepGroups[1].userData;
+                stepGroups[1].scale.set(0.01,0.01,0.01);
+                tl.to(stepGroups[1].scale, { x:1, y:1, z:1, duration:0.8, ease:"back.out(1.5)" });
+                // Reveal priority badges one by one
+                prSprites.forEach((sp, i) => {
+                    tl.to(sp.material, { opacity:1, duration:0.4, ease:"power2.out" }, `+=0.25`);
+                    tl.to(zSprites[i].material, { opacity:1, duration:0.3, ease:"power2.out" }, '<0.1');
+                });
+                tl.to(stepGroups[1].rotation, { y: Math.PI * 0.5, duration:2, ease:"sine.inOut" }, "+=0.2");
+            }
+            else if (step === 2) {
+                const { arrowR, rLabel, dirLabel } = stepGroups[2].userData;
+                arrowR.visible = false;
+                rLabel.material.opacity = 0;
+                dirLabel.material.opacity = 0;
+                stepGroups[2].scale.set(0.01,0.01,0.01);
+                tl.to(stepGroups[2].scale, { x:1, y:1, z:1, duration:0.9, ease:"back.out(1.4)" });
+                tl.add(() => { arrowR.visible = true; arrowR.scale.set(0.01,0.01,0.01); });
+                tl.to(arrowR.scale, { x:1, y:1, z:1, duration:0.8, ease:"elastic.out(1,0.7)" });
+                tl.to(rLabel.material, { opacity:1, duration:0.6, ease:"power2.out" });
+                tl.to(dirLabel.material, { opacity:1, duration:0.4, ease:"power2.out" }, '<');
+                tl.to(stepGroups[2].rotation, { y: Math.PI*0.15, duration:1.5, ease:"sine.inOut", yoyo:true, repeat:1 });
+                playChime();
+            }
+            else if (step === 3) {
+                const { arrowS, sLabel, dirLabel } = stepGroups[3].userData;
+                arrowS.visible = false;
+                sLabel.material.opacity = 0;
+                dirLabel.material.opacity = 0;
+                stepGroups[3].scale.set(0.01,0.01,0.01);
+                tl.to(stepGroups[3].scale, { x:1, y:1, z:1, duration:0.9, ease:"back.out(1.4)" });
+                tl.add(() => { arrowS.visible = true; arrowS.scale.set(0.01,0.01,0.01); });
+                tl.to(arrowS.scale, { x:1, y:1, z:1, duration:0.8, ease:"elastic.out(1,0.7)" });
+                tl.to(sLabel.material, { opacity:1, duration:0.6, ease:"power2.out" });
+                tl.to(dirLabel.material, { opacity:1, duration:0.4, ease:"power2.out" }, '<');
+                tl.to(stepGroups[3].rotation, { y:-Math.PI*0.15, duration:1.5, ease:"sine.inOut", yoyo:true, repeat:1 });
+                playChime();
+            }
+
+            currentTimeline = tl;
+        }
+
+        // ==========================================
+        // 9. UI UPDATE
+        // ==========================================
+        function updateUI() {
+            const loc = locales[currentLang];
+            const step = loc.steps[currentStep];
+
+            document.getElementById('ui-title').innerText = loc.title;
+            document.getElementById('ui-step-badge').innerText = `Step ${currentStep+1}/4`;
+            document.getElementById('ui-desc').innerText = `${step.name}\n${step.desc}`;
+            document.getElementById('ui-energy-title').innerText = loc.energyTitle;
+            document.getElementById('ui-rxn-coord').innerText = loc.rxnCoord;
+            document.getElementById('ui-ts-label').innerText = loc.tsLabel;
+            document.getElementById('ui-speed-label').innerText = `${loc.speedLabel}: ${document.getElementById('speed-slider').value}x`;
+            document.getElementById('ui-legend-title').innerText = loc.legendTitle;
+
+            // 2D panel
+            const panelLabels = [
+                { ID: 'Diagram 2D – Pusat Kiral', EN: 'Diagram 2D – Chiral Center' },
+                { ID: 'Diagram 2D – Aturan CIP', EN: 'Diagram 2D – CIP Rules' },
+                { ID: 'Diagram 2D – Konfigurasi R', EN: 'Diagram 2D – R Configuration' },
+                { ID: 'Diagram 2D – Konfigurasi S', EN: 'Diagram 2D – S Configuration' },
+            ];
+            document.getElementById('label-2d').innerText = panelLabels[currentStep][currentLang];
+            document.getElementById('svg-2d-container').innerHTML = svgDiagrams[currentStep];
+
+            // Quiz
+            const q = loc.quiz;
+            document.getElementById('quiz-title').innerText = q.title;
+            document.getElementById('quiz-q').innerText = q.q;
+            const quizBtns = document.querySelectorAll('.quiz-opt');
+            quizBtns.forEach((btn, i) => {
+                btn.innerText = q.opts[i];
+                btn.style.background = 'rgba(13,21,48,0.85)';
+                btn.style.borderColor = 'var(--glass-border)';
+                btn.style.color = 'var(--text-secondary)';
+            });
+            document.getElementById('quiz-feedback').classList.add('hidden');
+            document.getElementById('quiz-close').classList.add('hidden');
+
+            // Toggle button text
+            const toggleBtn = document.getElementById('btn-toggle-2d');
+            if (toggleBtn) toggleBtn.innerText = currentLang === 'ID' ? 'Sembunyikan' : 'Hide';
+        }
+
+        // ==========================================
+        // 10. PANEL 2D POSITIONING
+        // ==========================================
+        function repositionPanel2D() {
+            const header = document.querySelector('#main-ui header > div.glass-panel');
+            const panel = document.getElementById('panel-2d');
+            const btnShow = document.getElementById('btn-show-2d');
+            if (!header || !panel) return;
+            const rect = header.getBoundingClientRect();
+            const topPx = rect.bottom + 12;
+            const maxH = window.innerHeight - topPx - 90;
+            const leftPx = rect.left;
+            const widthPx = Math.min(320, rect.width);
+            panel.style.top = topPx + 'px';
+            panel.style.left = leftPx + 'px';
+            panel.style.width = widthPx + 'px';
+            panel.style.maxHeight = maxH + 'px';
+            btnShow.style.top = topPx + 'px';
+            btnShow.style.left = leftPx + 'px';
+        }
+
+        // ==========================================
+        // 11. EVENT LISTENERS
+        // ==========================================
+        document.getElementById('start-btn').addEventListener('click', () => {
+            initAudio();
+            const overlay = document.getElementById('start-overlay');
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                document.getElementById('main-ui').classList.remove('opacity-0');
+                document.getElementById('panel-2d').style.display = 'block';
+                repositionPanel2D();
+                loadStep(0);
+            }, 500);
+        });
+
+        document.getElementById('btn-play').addEventListener('click', () => {
+            if (!currentTimeline) return;
+            initAudio();
+            if (isPlaying) {
+                currentTimeline.pause();
+                togglePlayUI(false);
+            } else {
+                if (currentTimeline.progress() >= 0.99) {
+                    currentTimeline.restart();
+                } else {
+                    currentTimeline.play();
+                }
+                togglePlayUI(true);
+            }
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            if (currentTimeline) { currentTimeline.pause(); currentTimeline.progress(0); togglePlayUI(false); }
+            loadStep(currentStep);
+        });
+
+        document.getElementById('btn-next').addEventListener('click', () => {
+            if (currentStep < 3) loadStep(currentStep + 1);
+        });
+
+        document.getElementById('btn-prev').addEventListener('click', () => {
+            if (currentStep > 0) loadStep(currentStep - 1);
+        });
+
+        document.getElementById('btn-quiz').addEventListener('click', () => {
+            updateUI();
+            const modal = document.getElementById('quiz-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        });
+
+        function updateLangToggle() {
+            document.querySelectorAll('.lang-seg').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === currentLang);
+            });
+        }
+
+        document.querySelectorAll('.lang-seg').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentLang = btn.dataset.lang;
+                updateLangToggle();
+                updateUI();
+            });
+        });
+        updateLangToggle();
+
+        document.getElementById('ts-toggle').addEventListener('change', (e) => {
+            isSlowMo = e.target.checked;
+            gsap.globalTimeline.timeScale(isSlowMo ? 0.3 : parseFloat(document.getElementById('speed-slider').value));
+        });
+
+        document.getElementById('speed-slider').addEventListener('input', (e) => {
+            const speed = parseFloat(e.target.value);
+            const loc = locales[currentLang];
+            document.getElementById('ui-speed-label').innerText = `${loc.speedLabel}: ${speed}x`;
+            if (!isSlowMo && currentTimeline) gsap.globalTimeline.timeScale(speed);
+        });
+
+        // Quiz logic
+        document.querySelectorAll('.quiz-opt').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                const loc = locales[currentLang];
+                const isCorrect = (idx === loc.quiz.correctIdx);
+                const feedback = document.getElementById('quiz-feedback');
+
+                document.querySelectorAll('.quiz-opt').forEach((b, i) => {
+                    b.style.background = (i === loc.quiz.correctIdx)
+                        ? 'rgba(6,255,216,0.2)'
+                        : 'rgba(13,21,48,0.85)';
+                    b.style.borderColor = (i === loc.quiz.correctIdx)
+                        ? 'var(--accent-cyan)'
+                        : 'var(--glass-border)';
+                });
+
+                feedback.classList.remove('hidden');
+                if (isCorrect) {
+                    feedback.innerText = loc.quiz.correct;
+                    feedback.style.color = 'var(--accent-cyan)';
+                    playChime();
+                } else {
+                    e.target.style.background = 'rgba(123,47,255,0.25)';
+                    e.target.style.borderColor = 'var(--accent-violet)';
+                    feedback.innerText = loc.quiz.wrong;
+                    feedback.style.color = 'var(--accent-violet)';
+                }
+                document.getElementById('quiz-close').classList.remove('hidden');
+            });
+        });
+
+        document.getElementById('quiz-close').addEventListener('click', () => {
+            document.getElementById('quiz-modal').classList.add('hidden');
+            document.getElementById('quiz-modal').classList.remove('flex');
+        });
+
+        // Panel 2D toggle
+        let panel2dVisible = true;
+        document.getElementById('btn-toggle-2d').addEventListener('click', () => {
+            panel2dVisible = false;
+            document.getElementById('panel-2d').style.display = 'none';
+            document.getElementById('btn-show-2d').style.display = 'block';
+        });
+        document.getElementById('btn-show-2d').addEventListener('click', () => {
+            panel2dVisible = true;
+            document.getElementById('panel-2d').style.display = 'block';
+            document.getElementById('btn-show-2d').style.display = 'none';
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            drawPriorityDiagram(currentStep);
+            repositionPanel2D();
+        });
+
+        const headerPanel = document.querySelector('#main-ui header > div.glass-panel');
+        if (headerPanel && window.ResizeObserver) {
+            new ResizeObserver(() => repositionPanel2D()).observe(headerPanel);
+        }
+
+        // ==========================================
+        // 12. RENDER LOOP
+        // ==========================================
+        renderer.setAnimationLoop((time) => {
+            controls.update();
+            const elapsed = time * 0.001;
+
+            // Gentle float for current step group
+            if (stepGroups[currentStep]) {
+                stepGroups[currentStep].position.y = Math.sin(elapsed * 0.8) * 0.08;
+            }
+
+            // Subtle rotation for steps 0 and 1 when not playing
+            if ((currentStep === 0 || currentStep === 1) && !isPlaying) {
+                stepGroups[currentStep].rotation.y += 0.003;
+            }
+
+            renderer.render(scene, camera);
+        });
+
+    </script>
+</body>
+</html>

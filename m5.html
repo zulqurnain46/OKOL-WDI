@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="id" id="docLang">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OKOL-WDI — Modul Interaktif Reaksi E2</title>
+    <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0a3d91;
+            --secondary: #1565c0;
+            --accent: #e63946;
+            --gold: #f4a261;
+            --light: #f0f4ff;
+            --dark: #0d1b2a;
+            --success: #2d6a4f;
+            --success-bg: #d8f3dc;
+            --danger: #c1121f;
+            --danger-bg: #ffe0e0;
+            --info: #1a759f;
+            --info-bg: #e0f4ff;
+            --card-bg: #ffffff;
+            --border: #dce3f0;
+            --text-muted: #5a6a7e;
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            background: linear-gradient(160deg, #e8edf8 0%, #f5f0ff 100%);
+            background-attachment: fixed;
+            color: var(--dark);
+            line-height: 1.7;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Language Toggle */
+        [lang="en"] .lang-id { display: none !important; }
+        [lang="id"] .lang-en { display: none !important; }
+
+        .lang-switch {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 1000;
+            background: white;
+            padding: 5px;
+            border-radius: 40px;
+            box-shadow: 0 4px 20px rgba(10,61,145,0.18);
+            display: flex;
+            gap: 4px;
+        }
+        .lang-btn {
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            font-weight: 700;
+            font-size: 0.8em;
+            border-radius: 30px;
+            padding: 5px 12px;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .lang-btn.active { background: var(--primary); color: white; }
+
+        .container { max-width: 1040px; margin: auto; padding: 20px 16px 60px; }
+
+        /* Logo */
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 24px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 18px 28px;
+            border-radius: var(--radius);
+            box-shadow: 0 2px 12px rgba(10,61,145,0.07);
+            border: 1px solid var(--border);
+        }
+        .logo-container img {
+            max-height: 80px;
+            max-width: 160px;
+            object-fit: contain;
+        }
+
+        /* Navbar */
+        .nav-bar {
+            background: white;
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 2px 12px rgba(10,61,145,0.07);
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 4px 8px;
+        }
+        .nav-bar a {
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.88em;
+            padding: 5px 10px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .nav-bar a:hover { background: var(--light); color: var(--accent); }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, #1a56db 100%);
+            color: white;
+            padding: 36px 24px 30px;
+            border-radius: var(--radius);
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 30px rgba(10,61,145,0.25);
+            position: relative;
+            overflow: hidden;
+        }
+        header::before {
+            content: '';
+            position: absolute;
+            top: -40px; right: -40px;
+            width: 220px; height: 220px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 50%;
+        }
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -60px; left: -30px;
+            width: 180px; height: 180px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 50%;
+        }
+        header h1 { margin: 0; font-size: 2em; font-weight: 700; position: relative; z-index: 1; }
+        header h3 { margin: 8px 0 0; font-weight: 300; opacity: 0.88; position: relative; z-index: 1; }
+
+        /* Card */
+        .card {
+            background: var(--card-bg);
+            padding: 28px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            box-shadow: 0 2px 14px rgba(10,61,145,0.07);
+            border: 1px solid var(--border);
+            scroll-margin-top: 80px;
+        }
+        .card-title {
+            color: var(--primary);
+            border-bottom: 2px solid var(--light);
+            padding-bottom: 10px;
+            margin-top: 0;
+            font-size: 1.15em;
+            font-weight: 700;
+        }
+
+        .grid-2 {
+            display: grid;
+            gap: 20px;
+            margin-top: 20px;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        /* Viewer */
+        .viewer-box {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            background: var(--light);
+            text-align: center;
+        }
+        .viewer-box h4 {
+            margin: 0 0 10px;
+            color: var(--secondary);
+            font-size: 0.95em;
+            font-weight: 700;
+        }
+        .view-container {
+            width: 100%;
+            height: 240px;
+            position: relative;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #e0e8f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        .mol-3d { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+        .mol-2d {
+            display: none;
+            font-size: 1.1em;
+            font-weight: 700;
+            color: var(--dark);
+            font-family: 'IBM Plex Mono', monospace;
+            word-break: break-all;
+            padding: 10px;
+            text-align: center;
+            position: absolute;
+            width: 100%;
+        }
+
+        /* Buttons */
+        button {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 7px 13px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.82em;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-weight: 600;
+            margin: 3px;
+            transition: all 0.2s;
+            letter-spacing: 0.01em;
+        }
+        button:hover { background: var(--primary); transform: translateY(-1px); box-shadow: 0 3px 10px rgba(10,61,145,0.2); }
+        button:active { transform: translateY(0); }
+        .btn-warning { background: var(--gold); color: #3d1f00; }
+        .btn-warning:hover { background: #e08c47; }
+        .btn-info { background: var(--info); }
+        .btn-info:hover { background: #0f5680; }
+        .btn-success { background: var(--success); }
+        .btn-success:hover { background: #1d4d38; }
+        .btn-danger-outline {
+            background: transparent;
+            color: var(--accent);
+            border: 2px solid var(--accent);
+        }
+        .btn-danger-outline:hover { background: var(--accent); color: white; }
+        .btn-group { text-align: center; margin-top: 14px; }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 11px 14px; text-align: left; }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:nth-child(even) td { background: #f7faff; }
+
+        /* Info Boxes */
+        .info-box {
+            background: var(--info-bg);
+            border-left: 4px solid var(--info);
+            border-radius: 0 8px 8px 0;
+            padding: 14px 16px;
+            margin: 14px 0;
+            font-size: 0.92em;
+        }
+        .info-box strong { color: var(--info); }
+        .warning-box {
+            background: #fff8ec;
+            border-left: 4px solid var(--gold);
+            border-radius: 0 8px 8px 0;
+            padding: 14px 16px;
+            margin: 14px 0;
+            font-size: 0.92em;
+        }
+        .warning-box strong { color: #a06010; }
+        .success-box {
+            background: var(--success-bg);
+            border-left: 4px solid var(--success);
+            border-radius: 0 8px 8px 0;
+            padding: 14px 16px;
+            margin: 14px 0;
+            font-size: 0.92em;
+        }
+        .success-box strong { color: var(--success); }
+
+        /* Mechanism Steps */
+        .step-tabs {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .step-tab {
+            background: var(--light);
+            color: var(--primary);
+            border: 2px solid var(--border);
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 0.82em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .step-tab:hover { background: var(--primary); color: white; border-color: var(--primary); transform: none; box-shadow: none; }
+        .step-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .step-panel { display: none; animation: fadeIn 0.3s ease; }
+        .step-panel.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Mechanism Diagram */
+        .mechanism-diagram {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin: 14px 0;
+            overflow-x: auto;
+        }
+        .mechanism-diagram svg { max-width: 100%; height: auto; }
+
+        /* Reaction Arrow */
+        .rxn-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 16px 0;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+        .rxn-box {
+            background: var(--light);
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 0.92em;
+            font-weight: 700;
+            text-align: center;
+        }
+        .rxn-box.reactant { border-color: var(--accent); color: var(--accent); }
+        .rxn-box.product  { border-color: var(--success); color: var(--success); }
+        .rxn-arrow { font-size: 1.6em; color: var(--primary); font-weight: 700; }
+        .rxn-cond {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.78em;
+            color: var(--text-muted);
+            font-family: 'IBM Plex Sans', sans-serif;
+        }
+
+        /* ========== QUIZ SECTION ========== */
+        .quiz-progress {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--light);
+            border-radius: 10px;
+            padding: 12px 18px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+        .quiz-progress-text { font-weight: 700; color: var(--primary); font-size: 0.9em; }
+        .score-badge {
+            background: var(--primary);
+            color: white;
+            padding: 5px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.88em;
+        }
+
+        .quiz-item {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 22px;
+            margin-bottom: 18px;
+            transition: border 0.2s;
+        }
+        .quiz-item.answered-correct { border-color: var(--success); }
+        .quiz-item.answered-wrong   { border-color: var(--danger); }
+
+        .quiz-q-header {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 14px;
+        }
+        .quiz-number {
+            background: var(--primary);
+            color: white;
+            min-width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85em;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .quiz-q-text { font-weight: 600; font-size: 0.97em; line-height: 1.6; }
+        .quiz-tag {
+            display: inline-block;
+            font-size: 0.72em;
+            font-weight: 700;
+            padding: 2px 9px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .tag-mekanisme { background: #dbeafe; color: #1d4ed8; }
+        .tag-stereo    { background: #f0fdf4; color: #166534; }
+        .tag-regio     { background: #fef9c3; color: #854d0e; }
+        .tag-kompetisi { background: #fce7f3; color: #9d174d; }
+        .tag-konsep    { background: #ede9fe; color: #6d28d9; }
+
+        .quiz-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            width: 100%;
+            text-align: left;
+            background: #fafbff;
+            color: var(--dark);
+            border: 1.5px solid var(--border);
+            margin: 6px 0;
+            padding: 11px 14px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.2s;
+            transform: none;
+            box-shadow: none;
+        }
+        .quiz-option:hover:not(:disabled) {
+            background: var(--light);
+            border-color: var(--secondary);
+            transform: translateX(4px);
+            box-shadow: none;
+        }
+        .quiz-option:disabled { cursor: default; transform: none; }
+        .quiz-option.correct-choice { background: var(--success-bg); border-color: var(--success); color: var(--success); font-weight: 700; }
+        .quiz-option.wrong-choice   { background: var(--danger-bg);  border-color: var(--danger);  color: var(--danger);  font-weight: 700; }
+        .quiz-option .opt-letter {
+            background: var(--primary);
+            color: white;
+            min-width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .quiz-option.correct-choice .opt-letter { background: var(--success); }
+        .quiz-option.wrong-choice   .opt-letter { background: var(--danger); }
+
+        .feedback {
+            font-weight: 700;
+            margin-top: 12px;
+            font-size: 0.9em;
+            display: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+        .feedback.correct { background: var(--success-bg); color: var(--success); display: block; }
+        .feedback.wrong   { background: var(--danger-bg);  color: var(--danger);  display: block; }
+
+        .pembahasan {
+            background: var(--info-bg);
+            border-left: 4px solid var(--info);
+            padding: 14px 16px;
+            margin-top: 10px;
+            display: none;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.88em;
+            line-height: 1.75;
+        }
+        .pembahasan strong { color: var(--primary); }
+
+        .quiz-summary {
+            background: linear-gradient(135deg, var(--primary), #1a56db);
+            color: white;
+            border-radius: var(--radius);
+            padding: 30px;
+            text-align: center;
+            display: none;
+            margin-top: 20px;
+        }
+        .quiz-summary h3 { margin: 0 0 10px; font-size: 1.5em; }
+        .quiz-summary .big-score { font-size: 3em; font-weight: 700; }
+        .quiz-summary p { opacity: 0.88; margin: 8px 0 20px; }
+        .btn-retake { background: white; color: var(--primary); font-weight: 700; padding: 10px 28px; border-radius: 8px; font-size: 1em; }
+        .btn-retake:hover { background: var(--light); }
+
+        @media (max-width: 768px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .lang-switch { top: 10px; right: 10px; }
+            header h1 { font-size: 1.4em; }
+            .nav-bar { top: 8px; }
+            .rxn-flow { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="lang-switch">
+    <button class="lang-btn active" id="btn-id" onclick="setLanguage('id')">🇮🇩 ID</button>
+    <button class="lang-btn" id="btn-en" onclick="setLanguage('en')">🇬🇧 EN</button>
+</div>
+
+<div class="container">
+
+    <div class="logo-container">
+        <img src="logo-okol-wdi.jpg"     alt="Logo OKOL-WDI">
+        <img src="logo-unsri.jpg"         alt="Logo UNSRI">
+        <img src="logo-bpsdm-sumsel.jpg"  alt="Logo BPSDM SUMSEL">
+        <img src="logo-asn-berakhlak.jpg" alt="Logo ASN BERAKHLAK">
+    </div>
+
+    <nav class="nav-bar">
+        <a href="#materi-pengertian"><span class="lang-id">📖 Pengertian</span><span class="lang-en">📖 Introduction</span></a>
+        <a href="#mekanisme-e2"><span class="lang-id">⚗️ Mekanisme</span><span class="lang-en">⚗️ Mechanism</span></a>
+        <a href="#visualisasi-3d"><span class="lang-id">🔬 Visualisasi 3D</span><span class="lang-en">🔬 3D Visualization</span></a>
+        <a href="#stereokimia"><span class="lang-id">🔷 Stereokimia</span><span class="lang-en">🔷 Stereochemistry</span></a>
+        <a href="#perbandingan"><span class="lang-id">📊 Perbandingan</span><span class="lang-en">📊 Comparison</span></a>
+        <a href="#latihan-soal"><span class="lang-id">📝 Latihan Soal</span><span class="lang-en">📝 Quiz</span></a>
+    </nav>
+
+    <header>
+        <h1>
+            <span class="lang-id">🌐 OKOL-WDI — Modul Interaktif 3D</span>
+            <span class="lang-en">🌐 OKOL-WDI — 3D Interactive Module</span>
+        </h1>
+        <h3>
+            <span class="lang-id">⚗️ Eliminasi Bimolekular: Reaksi E2 dalam Kimia Organik</span>
+            <span class="lang-en">⚗️ Bimolecular Elimination: The E2 Reaction in Organic Chemistry</span>
+        </h3>
+    </header>
+
+    <!-- ===== SECTION 1: KONSEP DASAR ===== -->
+    <div id="materi-pengertian" class="card" style="scroll-margin-top:80px;">
+        <h2 class="card-title"><span class="lang-id">🧠 Konsep Dasar Reaksi Eliminasi E2</span><span class="lang-en">🧠 Basic Concept of E2 Elimination Reaction</span></h2>
+        <div class="grid-2" style="margin-top:0;">
+            <div>
+                <div class="lang-id">
+                    <p>Reaksi <b>E2 (Eliminasi Bimolekular)</b> adalah reaksi eliminasi yang berlangsung dalam <b>satu tahap terkoordinasi (concerted)</b>, di mana basa kuat secara serentak menyerang atom hidrogen-β sambil gugus pergi (leaving group) meninggalkan atom karbon-α, menghasilkan <b>alkena</b>.</p>
+                    <div class="info-box">
+                        <strong>📌 Definisi Kunci:</strong> Nama "E2" berarti <b>E</b>liminasi dengan kinetika <b>orde ke-2</b> (bimolekular). Laju reaksi bergantung pada dua spesies: substrat dan basa.
+                        <br><br><code style="font-family:'IBM Plex Mono';font-size:0.95em;"><b>Laju = k [Substrat][Basa]</b></code>
+                    </div>
+                    <p><b>Komponen utama reaksi E2:</b></p>
+                    <ul>
+                        <li>🔴 <b>Substrat:</b> Alkil halida (primer, sekunder, atau tersier)</li>
+                        <li>🔵 <b>Basa:</b> Basa kuat (OH⁻, OR⁻, NH₂⁻) atau basa bulky (KO<sup>t</sup>Bu)</li>
+                        <li>🟢 <b>Produk:</b> Alkena + Asam konjugat basa + Halida (X⁻)</li>
+                        <li>⚡ <b>Kondisi:</b> Umumnya suhu tinggi, pelarut polar aprotik atau alkohol</li>
+                    </ul>
+                </div>
+                <div class="lang-en">
+                    <p>The <b>E2 (Bimolecular Elimination)</b> reaction is an elimination reaction occurring in a <b>single concerted step</b>, where a strong base simultaneously attacks the β-hydrogen while the leaving group departs from the α-carbon, producing an <b>alkene</b>.</p>
+                    <div class="info-box">
+                        <strong>📌 Key Definition:</strong> The name "E2" stands for <b>E</b>limination with <b>2nd-order</b> kinetics (bimolecular). The reaction rate depends on two species: the substrate and the base.
+                        <br><br><code style="font-family:'IBM Plex Mono';font-size:0.95em;"><b>Rate = k [Substrate][Base]</b></code>
+                    </div>
+                    <p><b>Main components of the E2 reaction:</b></p>
+                    <ul>
+                        <li>🔴 <b>Substrate:</b> Alkyl halide (primary, secondary, or tertiary)</li>
+                        <li>🔵 <b>Base:</b> Strong base (OH⁻, OR⁻, NH₂⁻) or bulky base (KO<sup>t</sup>Bu)</li>
+                        <li>🟢 <b>Products:</b> Alkene + Conjugate acid of base + Halide (X⁻)</li>
+                        <li>⚡ <b>Conditions:</b> Generally high temperature, polar aprotic or alcoholic solvent</li>
+                    </ul>
+                </div>
+            </div>
+            <div>
+                <div class="lang-id">
+                    <b>Karakteristik Utama Reaksi E2</b>
+                    <table>
+                        <thead><tr><th>Aspek</th><th>Keterangan</th></tr></thead>
+                        <tbody>
+                            <tr><td>Kinetika</td><td>Orde ke-2: Laju = k[R-X][Basa]</td></tr>
+                            <tr><td>Tahapan</td><td>Satu tahap (concerted / terkoordinasi)</td></tr>
+                            <tr><td>Intermediate</td><td>Tidak ada (tanpa karbokation)</td></tr>
+                            <tr><td>Geometri</td><td>Anti-periplanar (H dan X: 180°)</td></tr>
+                            <tr><td>Substrat terbaik</td><td>Tersier &gt; Sekunder &gt; Primer</td></tr>
+                            <tr><td>Basa</td><td>Kuat dan/atau bulky</td></tr>
+                            <tr><td>Regioselektivitas</td><td>Aturan Zaitsev (produk lebih tersubstitusi)</td></tr>
+                            <tr><td>Produk</td><td>Alkena (lebih tersubstitusi = lebih stabil)</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="lang-en">
+                    <b>Key Characteristics of E2 Reaction</b>
+                    <table>
+                        <thead><tr><th>Aspect</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td>Kinetics</td><td>2nd order: Rate = k[R-X][Base]</td></tr>
+                            <tr><td>Steps</td><td>One concerted step</td></tr>
+                            <tr><td>Intermediate</td><td>None (no carbocation)</td></tr>
+                            <tr><td>Geometry</td><td>Anti-periplanar (H and X: 180°)</td></tr>
+                            <tr><td>Best substrate</td><td>Tertiary &gt; Secondary &gt; Primary</td></tr>
+                            <tr><td>Base</td><td>Strong and/or bulky</td></tr>
+                            <tr><td>Regioselectivity</td><td>Zaitsev's rule (more substituted product)</td></tr>
+                            <tr><td>Product</td><td>Alkene (more substituted = more stable)</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 2: MEKANISME E2 ===== -->
+    <div id="mekanisme-e2" class="card" style="scroll-margin-top:80px;">
+        <h2 class="card-title"><span class="lang-id">⚗️ Mekanisme Reaksi E2 — Step by Step</span><span class="lang-en">⚗️ E2 Reaction Mechanism — Step by Step</span></h2>
+
+        <!-- Reaction Flow -->
+        <div class="lang-id">
+            <p>Persamaan umum reaksi E2 menggunakan alkil halida dan basa kuat:</p>
+        </div>
+        <div class="lang-en">
+            <p>The general equation of the E2 reaction using an alkyl halide and a strong base:</p>
+        </div>
+
+        <div class="rxn-flow">
+            <div class="rxn-box reactant">R–CH₂–CH(X)–R'<br><small style="font-family:'IBM Plex Sans';font-weight:400;color:var(--text-muted);">Alkil Halida / Alkyl Halide</small></div>
+            <span style="color:var(--text-muted);font-size:1.2em;">+</span>
+            <div class="rxn-box reactant">B:⁻<br><small style="font-family:'IBM Plex Sans';font-weight:400;color:var(--text-muted);">Basa Kuat / Strong Base</small></div>
+            <div class="rxn-cond">
+                <span style="font-size:1.5em; color:var(--primary);">→</span>
+                <span><span class="lang-id">panas, satu tahap</span><span class="lang-en">heat, one step</span></span>
+            </div>
+            <div class="rxn-box product">R–CH=CH–R'<br><small style="font-family:'IBM Plex Sans';font-weight:400;color:var(--text-muted);">Alkena / Alkene</small></div>
+            <span style="color:var(--text-muted);font-size:1.2em;">+</span>
+            <div class="rxn-box product">BH + X⁻<br><small style="font-family:'IBM Plex Sans';font-weight:400;color:var(--text-muted);">Asam konjugat + Halida</small></div>
+        </div>
+
+        <!-- Step-by-step mechanism -->
+        <div class="lang-id"><b>Klik setiap tahap untuk melihat penjelasan detail:</b></div>
+        <div class="lang-en"><b>Click each stage to see detailed explanation:</b></div>
+        <br>
+        <div class="step-tabs">
+            <button class="step-tab active" onclick="showStep('step1', this)">
+                <span class="lang-id">Tahap 1 — Orientasi</span><span class="lang-en">Stage 1 — Orientation</span>
+            </button>
+            <button class="step-tab" onclick="showStep('step2', this)">
+                <span class="lang-id">Tahap 2 — Serangan Basa</span><span class="lang-en">Stage 2 — Base Attack</span>
+            </button>
+            <button class="step-tab" onclick="showStep('step3', this)">
+                <span class="lang-id">Tahap 3 — Produk</span><span class="lang-en">Stage 3 — Products</span>
+            </button>
+            <button class="step-tab" onclick="showStep('step4', this)">
+                <span class="lang-id">Energi Aktivasi</span><span class="lang-en">Activation Energy</span>
+            </button>
+        </div>
+
+        <!-- Stage 1 -->
+        <div class="step-panel active" id="step1">
+            <div class="mechanism-diagram">
+                <svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:200px;">
+                    <!-- Carbon chain -->
+                    <text x="80"  y="110" font-size="14" font-family="IBM Plex Mono" text-anchor="middle" fill="#1565c0" font-weight="700">Cα</text>
+                    <text x="200" y="110" font-size="14" font-family="IBM Plex Mono" text-anchor="middle" fill="#1565c0" font-weight="700">Cβ</text>
+                    <!-- Bond C-C -->
+                    <line x1="95" y1="105" x2="185" y2="105" stroke="#0a3d91" stroke-width="2.5"/>
+                    <!-- Leaving group on Cα -->
+                    <text x="80" y="160" font-size="13" font-family="IBM Plex Mono" text-anchor="middle" fill="#e63946" font-weight="700">X</text>
+                    <line x1="80" y1="118" x2="80" y2="148" stroke="#e63946" stroke-width="2.5"/>
+                    <text x="80" y="175" font-size="10" font-family="IBM Plex Sans" text-anchor="middle" fill="#e63946">(leaving group)</text>
+                    <!-- H on Cβ -->
+                    <text x="200" y="60" font-size="13" font-family="IBM Plex Mono" text-anchor="middle" fill="#2d6a4f" font-weight="700">H</text>
+                    <line x1="200" y1="92" x2="200" y2="72" stroke="#2d6a4f" stroke-width="2.5"/>
+                    <text x="200" y="170" font-size="10" font-family="IBM Plex Sans" text-anchor="middle" fill="#2d6a4f">(H-β)</text>
+                    <!-- Base -->
+                    <text x="340" y="40" font-size="14" font-family="IBM Plex Mono" text-anchor="middle" fill="#7b2d8b" font-weight="700">B:⁻</text>
+                    <text x="340" y="54" font-size="10" font-family="IBM Plex Sans" text-anchor="middle" fill="#7b2d8b">(basa kuat)</text>
+                    <!-- Arrow base approaching H -->
+                    <path d="M 310,42 Q 270,42 220,60" stroke="#7b2d8b" stroke-width="2" fill="none" stroke-dasharray="6,3" marker-end="url(#arrowPurple)"/>
+                    <defs>
+                        <marker id="arrowPurple" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#7b2d8b"/>
+                        </marker>
+                    </defs>
+                    <!-- Anti-periplanar annotation -->
+                    <text x="140" y="135" font-size="11" font-family="IBM Plex Sans" text-anchor="middle" fill="#1a759f" font-style="italic">H dan X harus</text>
+                    <text x="140" y="148" font-size="11" font-family="IBM Plex Sans" text-anchor="middle" fill="#1a759f" font-style="italic">anti-periplanar (180°)</text>
+                    <!-- Labels -->
+                    <text x="580" y="110" font-size="11" font-family="IBM Plex Sans" fill="#5a6a7e" text-anchor="middle">Senyawa harus berorientasi</text>
+                    <text x="580" y="124" font-size="11" font-family="IBM Plex Sans" fill="#5a6a7e" text-anchor="middle">sehingga H-β dan X anti-periplanar</text>
+                    <text x="580" y="138" font-size="11" font-family="IBM Plex Sans" fill="#5a6a7e" text-anchor="middle">sebelum basa dapat bereaksi</text>
+                </svg>
+            </div>
+            <div class="info-box lang-id"><strong>🔑 Tahap 1 — Orientasi Molekul:</strong> Sebelum reaksi dapat berlangsung, molekul substrat harus berotasi sehingga atom <b>H-β</b> (hidrogen pada karbon beta) dan <b>gugus pergi X</b> (pada karbon alfa) berada dalam posisi <b>anti-periplanar</b> — yaitu sudut dihedral ≈ 180°. Ini adalah persyaratan geometri yang WAJIB untuk reaksi E2. Basa kuat kemudian mendekati H-β.</div>
+            <div class="info-box lang-en"><strong>🔑 Stage 1 — Molecular Orientation:</strong> Before the reaction can proceed, the substrate must rotate so that the <b>β-H</b> (hydrogen on the beta carbon) and the <b>leaving group X</b> (on the alpha carbon) are in an <b>anti-periplanar</b> arrangement — a dihedral angle of ≈ 180°. This is the MANDATORY geometric requirement for E2. The strong base then approaches the β-H.</div>
+        </div>
+
+        <!-- Stage 2 -->
+        <div class="step-panel" id="step2">
+            <div class="mechanism-diagram">
+                <svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:200px;">
+                    <defs>
+                        <marker id="arrowBlue2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#0a3d91"/>
+                        </marker>
+                        <marker id="arrowRed2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#e63946"/>
+                        </marker>
+                        <marker id="arrowGreen2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#2d6a4f"/>
+                        </marker>
+                    </defs>
+                    <!-- Base -->
+                    <text x="70" y="55" font-size="14" font-family="IBM Plex Mono" text-anchor="middle" fill="#7b2d8b" font-weight="700">B:⁻</text>
+                    <!-- Arrow B attacks H -->
+                    <path d="M 90,58 L 155,75" stroke="#7b2d8b" stroke-width="2.5" fill="none" marker-end="url(#arrowPurple2)"/>
+                    <defs>
+                        <marker id="arrowPurple2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#7b2d8b"/>
+                        </marker>
+                    </defs>
+                    <!-- Cβ -->
+                    <text x="200" y="100" font-size="14" font-family="IBM Plex Mono" text-anchor="middle" fill="#1565c0" font-weight="700">Cβ</text>
+                    <!-- H on Cβ -->
+                    <text x="170" y="85" font-size="13" font-family="IBM Plex Mono" text-anchor="middle" fill="#2d6a4f" font-weight="700">H</text>
+                    <line x1="183" y1="90" x2="193" y2="97" stroke="#2d6a4f" stroke-width="2.5" stroke-dasharray="4,2"/>
+                    <!-- Arrow: electrons from C-H go to C=C -->
+                    <path d="M 215,96 Q 250,80 285,96" stroke="#2d6a4f" stroke-width="2" fill="none" marker-end="url(#arrowGreen2)" stroke-dasharray="6,3"/>
+                    <!-- C=C bond forming -->
+                    <text x="310" y="100" font-size="14" font-family="IBM Plex Mono" text-anchor="middle" fill="#1565c0" font-weight="700">Cα</text>
+                    <line x1="222" y1="97" x2="295" y2="97" stroke="#0a3d91" stroke-width="3"/>
+                    <!-- double bond hint -->
+                    <line x1="230" y1="104" x2="290" y2="104" stroke="#0a3d91" stroke-width="1.5" stroke-dasharray="4,2"/>
+                    <!-- Leaving group -->
+                    <text x="310" y="150" font-size="13" font-family="IBM Plex Mono" text-anchor="middle" fill="#e63946" font-weight="700">X</text>
+                    <line x1="310" y1="108" x2="310" y2="138" stroke="#e63946" stroke-width="2.5" stroke-dasharray="4,2"/>
+                    <!-- Arrow: LG leaves -->
+                    <path d="M 320,145 Q 360,160 390,150" stroke="#e63946" stroke-width="2" fill="none" marker-end="url(#arrowRed2)"/>
+                    <text x="430" y="155" font-size="12" font-family="IBM Plex Sans" fill="#e63946" font-weight="600">X⁻ pergi!</text>
+                    <!-- Concerted label -->
+                    <text x="520" y="80" font-size="12" font-family="IBM Plex Sans" fill="#c1121f" font-weight="700" text-anchor="middle">⚡ CONCERTED</text>
+                    <text x="520" y="95" font-size="11" font-family="IBM Plex Sans" fill="#5a6a7e" text-anchor="middle">Ketiga peristiwa terjadi</text>
+                    <text x="520" y="108" font-size="11" font-family="IBM Plex Sans" fill="#5a6a7e" text-anchor="middle">SERENTAK dalam satu tahap</text>
+                    <text x="520" y="121" font-size="11" font-family="IBM Plex Sans" fill="#5a6a7e" text-anchor="middle">tanpa intermediate</text>
+                </svg>
+            </div>
+            <div class="warning-box lang-id"><strong>⚡ Tahap 2 — Satu Langkah Terkoordinasi (Concerted):</strong> Dalam satu momen yang sama:
+                <br>① Basa (B:⁻) menyerang dan mengambil H-β (ikatan C–H putus)
+                <br>② Pasangan elektron dari ikatan C–H bergerak membentuk ikatan π baru antara Cβ dan Cα
+                <br>③ Ikatan C–X melemah dan gugus pergi (X⁻) melepaskan diri
+                <br><b>Tidak ada intermediate karbokation</b> — inilah perbedaan fundamental E2 vs E1!
+            </div>
+            <div class="warning-box lang-en"><strong>⚡ Stage 2 — One Concerted Step:</strong> In a single simultaneous moment:
+                <br>① The base (B:⁻) attacks and removes the β-H (C–H bond breaks)
+                <br>② The electron pair from the C–H bond shifts to form a new π bond between Cβ and Cα
+                <br>③ The C–X bond weakens and the leaving group (X⁻) departs
+                <br><b>No carbocation intermediate</b> — this is the fundamental difference between E2 and E1!
+            </div>
+        </div>
+
+        <!-- Stage 3 -->
+        <div class="step-panel" id="step3">
+            <div class="mechanism-diagram">
+                <svg viewBox="0 0 700 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:180px;">
+                    <defs>
+                        <marker id="arrowFinal" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#0a3d91"/>
+                        </marker>
+                    </defs>
+                    <!-- Reactants side -->
+                    <text x="60" y="80" font-size="13" font-family="IBM Plex Mono" text-anchor="middle" fill="#e63946" font-weight="700">B:⁻ + R-CHX-CH₂R'</text>
+                    <!-- Arrow -->
+                    <line x1="200" y1="76" x2="300" y2="76" stroke="#0a3d91" stroke-width="2.5" marker-end="url(#arrowFinal)"/>
+                    <text x="250" y="68" font-size="10" font-family="IBM Plex Sans" text-anchor="middle" fill="#1a759f">satu langkah</text>
+                    <!-- Products side -->
+                    <text x="430" y="60" font-size="13" font-family="IBM Plex Mono" text-anchor="middle" fill="#2d6a4f" font-weight="700">R–CH=CH–R'</text>
+                    <text x="430" y="76" font-size="11" font-family="IBM Plex Sans" text-anchor="middle" fill="#2d6a4f">(Alkena / Alkene)</text>
+                    <text x="430" y="96" font-size="13" font-family="IBM Plex Mono" text-anchor="middle" fill="#7b2d8b" font-weight="700">+ BH</text>
+                    <text x="430" y="110" font-size="11" font-family="IBM Plex Sans" text-anchor="middle" fill="#7b2d8b">(asam konjugat basa)</text>
+                    <text x="430" y="130" font-size="13" font-family="IBM Plex Mono" text-anchor="middle" fill="#e63946" font-weight="700">+ X⁻</text>
+                    <text x="430" y="144" font-size="11" font-family="IBM Plex Sans" text-anchor="middle" fill="#e63946">(ion halida)</text>
+                    <!-- Summary box -->
+                    <rect x="540" y="30" width="150" height="120" rx="8" fill="#f0f4ff" stroke="#dce3f0" stroke-width="1.5"/>
+                    <text x="615" y="50" font-size="11" font-family="IBM Plex Sans" text-anchor="middle" fill="#0a3d91" font-weight="700">Ringkasan Produk</text>
+                    <text x="615" y="68" font-size="10" font-family="IBM Plex Sans" text-anchor="middle" fill="#1565c0">✅ Alkena terbentuk</text>
+                    <text x="615" y="84" font-size="10" font-family="IBM Plex Sans" text-anchor="middle" fill="#1565c0">✅ Derajat ketidakjenuhan +1</text>
+                    <text x="615" y="100" font-size="10" font-family="IBM Plex Sans" text-anchor="middle" fill="#1565c0">✅ Basa terprotonasi (BH)</text>
+                    <text x="615" y="116" font-size="10" font-family="IBM Plex Sans" text-anchor="middle" fill="#1565c0">✅ X⁻ menjadi ion bebas</text>
+                    <text x="615" y="134" font-size="10" font-family="IBM Plex Sans" text-anchor="middle" fill="#1565c0">✅ Tanpa intermediate</text>
+                </svg>
+            </div>
+            <div class="success-box lang-id"><strong>✅ Tahap 3 — Produk Reaksi:</strong> Dari satu momen concerted, dihasilkan tiga produk sekaligus: <b>alkena</b> (ikatan rangkap C=C terbentuk), <b>BH</b> (asam konjugat basa, karena basa mengambil H⁺), dan <b>X⁻</b> (ion halida, gugus pergi meninggalkan sebagai anion). Alkena yang lebih tersubstitusi cenderung lebih stabil (Aturan Zaitsev) dan menjadi produk utama.</div>
+            <div class="success-box lang-en"><strong>✅ Stage 3 — Reaction Products:</strong> From a single concerted moment, three products are formed simultaneously: <b>alkene</b> (C=C double bond forms), <b>BH</b> (conjugate acid of the base, as it removes H⁺), and <b>X⁻</b> (halide ion, the leaving group departs as an anion). The more substituted alkene is generally more stable (Zaitsev's Rule) and becomes the major product.</div>
+        </div>
+
+        <!-- Stage 4: Energy Profile -->
+        <div class="step-panel" id="step4">
+            <div class="mechanism-diagram">
+                <svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:200px;">
+                    <!-- Axes -->
+                    <line x1="60" y1="170" x2="640" y2="170" stroke="#aaa" stroke-width="2"/>
+                    <line x1="60" y1="170" x2="60"  y2="20"  stroke="#aaa" stroke-width="2"/>
+                    <text x="350" y="192" font-size="12" font-family="IBM Plex Sans" text-anchor="middle" fill="#5a6a7e">Koordinat Reaksi / Reaction Coordinate</text>
+                    <text x="20"  y="100" font-size="12" font-family="IBM Plex Sans" text-anchor="middle" fill="#5a6a7e" transform="rotate(-90,20,100)">Energi / Energy</text>
+
+                    <!-- E2 profile: single hump (concerted) -->
+                    <path d="M 100,150 Q 200,140 350,40 Q 500,140 600,130" stroke="#0a3d91" stroke-width="3" fill="none"/>
+                    <!-- Reactant label -->
+                    <circle cx="100" cy="150" r="5" fill="#e63946"/>
+                    <text x="100" y="140" font-size="11" font-family="IBM Plex Sans" text-anchor="middle" fill="#e63946">R-X + B⁻</text>
+                    <!-- TS label -->
+                    <circle cx="350" cy="40" r="5" fill="#c1121f"/>
+                    <text x="350" y="30" font-size="11" font-family="IBM Plex Sans" text-anchor="middle" fill="#c1121f" font-weight="700">⧧ Keadaan Transisi</text>
+                    <text x="350" y="15" font-size="10" font-family="IBM Plex Sans" text-anchor="middle" fill="#c1121f">(Transition State)</text>
+                    <!-- Product label -->
+                    <circle cx="600" cy="130" r="5" fill="#2d6a4f"/>
+                    <text x="600" y="122" font-size="11" font-family="IBM Plex Sans" text-anchor="middle" fill="#2d6a4f">Alkena + BH + X⁻</text>
+                    <!-- Ea arrow -->
+                    <line x1="120" y1="150" x2="120" y2="40" stroke="#1a759f" stroke-width="1.5" stroke-dasharray="5,3"/>
+                    <text x="140" y="95" font-size="11" font-family="IBM Plex Sans" fill="#1a759f" font-weight="700">Ea (E2)</text>
+                    <!-- Single step label -->
+                    <rect x="420" y="55" width="160" height="50" rx="6" fill="#fffbeb" stroke="#f4a261" stroke-width="1.5"/>
+                    <text x="500" y="72" font-size="11" font-family="IBM Plex Mono" text-anchor="middle" fill="#a06010" font-weight="700">SATU PUNCAK</text>
+                    <text x="500" y="86" font-size="10" font-family="IBM Plex Sans" text-anchor="middle" fill="#a06010">= Satu Tahap Concerted</text>
+                    <text x="500" y="98" font-size="10" font-family="IBM Plex Sans" text-anchor="middle" fill="#a06010">Tanpa Intermediate</text>
+                </svg>
+            </div>
+            <div class="info-box lang-id"><strong>📈 Profil Energi E2:</strong> Kurva energi E2 menunjukkan <b>satu puncak tunggal</b> (keadaan transisi / transition state) tanpa cekungan di antara pereaksi dan produk. Ini berbeda dengan E1 yang memiliki dua puncak (terbentuknya karbokation sebagai intermediate). Karena concerted, E2 memiliki <b>energi aktivasi lebih rendah</b> dibanding E1 pada substrat tersier (basa kuat diperlukan untuk menyelesaikan satu langkah ini).</div>
+            <div class="info-box lang-en"><strong>📈 E2 Energy Profile:</strong> The E2 energy curve shows a <b>single peak</b> (transition state) with no energy valley between reactants and products. This contrasts with E1, which has two peaks (carbocation formation as an intermediate). Because it is concerted, E2 has a <b>lower activation energy</b> compared to E1 for tertiary substrates (strong base is required to complete this single step).</div>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 3: VISUALISASI 3D ===== -->
+    <div id="visualisasi-3d" class="card" style="scroll-margin-top:80px;">
+        <h2 class="card-title"><span class="lang-id">🔬 Visualisasi 3D — Substrat & Produk E2</span><span class="lang-en">🔬 3D Visualization — E2 Substrates & Products</span></h2>
+        <div class="lang-id"><p>Bandingkan struktur 3D substrat alkil halida (pereaksi) dan alkena (produk) dari dua contoh reaksi E2 klasik. Gunakan kontrol di bawah setiap molekul untuk eksplorasi interaktif.</p></div>
+        <div class="lang-en"><p>Compare the 3D structures of alkyl halide substrates (reactants) and alkene products from two classic E2 reactions. Use the controls below each molecule for interactive exploration.</p></div>
+
+        <div class="btn-group" style="margin-bottom:14px;">
+            <button onclick="rotateAll(['v-2brb','v-t2b','v-tbb','v-imb'])" class="btn-warning">
+                <span class="lang-id">🔄 Putar Semua Molekul</span><span class="lang-en">🔄 Rotate All Molecules</span>
+            </button>
+            <button onclick="stopRotate()" class="btn-danger-outline">
+                <span class="lang-id">⏹ Stop Rotasi</span><span class="lang-en">⏹ Stop Rotation</span>
+            </button>
+        </div>
+
+        <!-- Pair 1: 2-Bromobutane → trans-2-Butene -->
+        <div class="info-box lang-id" style="margin-bottom:10px;"><strong>Contoh 1:</strong> 2-Bromobutana + KOH/EtOH (panas) → <b>trans-2-Butena</b> (Zaitsev) + KBr + H₂O</div>
+        <div class="info-box lang-en" style="margin-bottom:10px;"><strong>Example 1:</strong> 2-Bromobutane + KOH/EtOH (heat) → <b>trans-2-Butene</b> (Zaitsev) + KBr + H₂O</div>
+        <div class="grid-2">
+            <div class="viewer-box">
+                <h4><span class="lang-id">⚛ Substrat: 2-Bromobutana</span><span class="lang-en">⚛ Substrate: 2-Bromobutane</span></h4>
+                <div class="view-container">
+                    <div class="mol-3d" id="v-2brb"></div>
+                    <div class="mol-2d" id="t2brb">CH₃–CHBr–CH₂–CH₃<br><small style="font-size:0.7em;color:var(--text-muted);">C₄H₉Br | MW = 137.02</small></div>
+                </div>
+                <div class="btn-group">
+                    <button onclick="resetView('v-2brb')">🔄 <span class="lang-id">Reset</span><span class="lang-en">Reset</span></button>
+                    <button onclick="toggleLabels('v-2brb')" class="btn-info">🏷 <span class="lang-id">Label</span><span class="lang-en">Labels</span></button>
+                    <button onclick="toggle2D3D('v-2brb','t2brb')" class="btn-warning">📝 2D/3D</button>
+                </div>
+                <p style="font-size:0.8em;color:var(--text-muted);margin:8px 0 0;"><span class="lang-id">⬤ Abu = C &nbsp;|&nbsp; ⬤ Putih = H &nbsp;|&nbsp; ⬤ Coklat = Br</span><span class="lang-en">⬤ Grey = C &nbsp;|&nbsp; ⬤ White = H &nbsp;|&nbsp; ⬤ Brown = Br</span></p>
+            </div>
+            <div class="viewer-box">
+                <h4><span class="lang-id">✅ Produk Utama: trans-2-Butena</span><span class="lang-en">✅ Major Product: trans-2-Butene</span></h4>
+                <div class="view-container">
+                    <div class="mol-3d" id="v-t2b"></div>
+                    <div class="mol-2d" id="tt2b">CH₃–CH=CH–CH₃<br><small style="font-size:0.7em;color:var(--text-muted);">C₄H₈ | MW = 56.11 | Bp = 0.9°C</small></div>
+                </div>
+                <div class="btn-group">
+                    <button onclick="resetView('v-t2b')">🔄 <span class="lang-id">Reset</span><span class="lang-en">Reset</span></button>
+                    <button onclick="toggleLabels('v-t2b')" class="btn-info">🏷 <span class="lang-id">Label</span><span class="lang-en">Labels</span></button>
+                    <button onclick="toggle2D3D('v-t2b','tt2b')" class="btn-warning">📝 2D/3D</button>
+                </div>
+                <p style="font-size:0.8em;color:var(--text-muted);margin:8px 0 0;"><span class="lang-id">⬤ Abu = C &nbsp;|&nbsp; ⬤ Putih = H &nbsp;| Ikatan rangkap C=C terbentuk</span><span class="lang-en">⬤ Grey = C &nbsp;|&nbsp; ⬤ White = H &nbsp;| C=C double bond formed</span></p>
+            </div>
+        </div>
+
+        <!-- Pair 2: tert-Butyl Bromide → Isobutylene -->
+        <div class="info-box lang-id" style="margin:18px 0 10px;"><strong>Contoh 2:</strong> 2-Bromo-2-metilpropana + KOH/EtOH (panas) → <b>2-Metilpropena (Isobutilena)</b> + KBr + H₂O</div>
+        <div class="info-box lang-en" style="margin:18px 0 10px;"><strong>Example 2:</strong> 2-Bromo-2-methylpropane + KOH/EtOH (heat) → <b>2-Methylpropene (Isobutylene)</b> + KBr + H₂O</div>
+        <div class="grid-2">
+            <div class="viewer-box">
+                <h4><span class="lang-id">⚛ Substrat: 2-Bromo-2-metilpropana (tersier)</span><span class="lang-en">⚛ Substrate: 2-Bromo-2-methylpropane (tertiary)</span></h4>
+                <div class="view-container">
+                    <div class="mol-3d" id="v-tbb"></div>
+                    <div class="mol-2d" id="ttbb">(CH₃)₃C–Br<br><small style="font-size:0.7em;color:var(--text-muted);">C₄H₉Br | tert-butil bromida</small></div>
+                </div>
+                <div class="btn-group">
+                    <button onclick="resetView('v-tbb')">🔄 <span class="lang-id">Reset</span><span class="lang-en">Reset</span></button>
+                    <button onclick="toggleLabels('v-tbb')" class="btn-info">🏷 <span class="lang-id">Label</span><span class="lang-en">Labels</span></button>
+                    <button onclick="toggle2D3D('v-tbb','ttbb')" class="btn-warning">📝 2D/3D</button>
+                </div>
+            </div>
+            <div class="viewer-box">
+                <h4><span class="lang-id">✅ Produk: 2-Metilpropena (Isobutilena)</span><span class="lang-en">✅ Product: 2-Methylpropene (Isobutylene)</span></h4>
+                <div class="view-container">
+                    <div class="mol-3d" id="v-imb"></div>
+                    <div class="mol-2d" id="timb">CH₂=C(CH₃)₂<br><small style="font-size:0.7em;color:var(--text-muted);">C₄H₈ | MW = 56.11 | Bp = -6.9°C</small></div>
+                </div>
+                <div class="btn-group">
+                    <button onclick="resetView('v-imb')">🔄 <span class="lang-id">Reset</span><span class="lang-en">Reset</span></button>
+                    <button onclick="toggleLabels('v-imb')" class="btn-info">🏷 <span class="lang-id">Label</span><span class="lang-en">Labels</span></button>
+                    <button onclick="toggle2D3D('v-imb','timb')" class="btn-warning">📝 2D/3D</button>
+                </div>
+                <p style="font-size:0.8em;color:var(--text-muted);margin:8px 0 0;"><span class="lang-id">Hanya satu produk alkena mungkin dari substrat tersier simetris ini.</span><span class="lang-en">Only one possible alkene product from this symmetrical tertiary substrate.</span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 4: STEREOKIMIA & ZAITSEV ===== -->
+    <div id="stereokimia" class="card" style="scroll-margin-top:80px;">
+        <h2 class="card-title"><span class="lang-id">🔷 Stereokimia E2 — Anti-Periplanar & Aturan Zaitsev</span><span class="lang-en">🔷 E2 Stereochemistry — Anti-Periplanar & Zaitsev's Rule</span></h2>
+        <div class="grid-2" style="margin-top:0;">
+            <div>
+                <div class="lang-id">
+                    <h3 style="color:var(--primary);font-size:1.05em;margin-top:0;">🔷 Persyaratan Anti-Periplanar</h3>
+                    <p>E2 memiliki persyaratan stereokimia yang sangat ketat. Atom <b>H-β</b> dan <b>gugus pergi (X)</b> HARUS berada dalam geometri <b>anti-periplanar</b> — artinya sudut dihedral antara keduanya harus <b>≈ 180°</b> dalam proyeksi Newman.</p>
+                    <div class="warning-box">
+                        <strong>⚠️ Mengapa Anti-Periplanar?</strong> Posisi anti memungkinkan <b>orbital σ*(C–X)</b> berantipara dengan <b>orbital σ(C–H)</b>, sehingga transfer elektron dari C–H ke C–X dapat terjadi secara efisien pada keadaan transisi. Posisi syn-periplanar (0°) jauh lebih jarang dan hanya terjadi pada kondisi khusus.
+                    </div>
+                    <p><b>Implikasi pada Sikloheksana:</b> Pada cincin sikloheksana, reaksi E2 hanya dapat terjadi jika H-β dan X berada dalam posisi <b>diaksial</b> (keduanya aksial). Konformasi diaksial memenuhi persyaratan anti-periplanar 180°.</p>
+                    <div class="info-box">
+                        <strong>📐 Kesimpulan Geometri:</strong><br>
+                        • Anti-periplanar (180°) → ✅ E2 berlangsung cepat<br>
+                        • Syn-periplanar (0°) → ⚠️ E2 sangat lambat/jarang<br>
+                        • Gauche (60°) → ❌ E2 tidak terjadi
+                    </div>
+                </div>
+                <div class="lang-en">
+                    <h3 style="color:var(--primary);font-size:1.05em;margin-top:0;">🔷 Anti-Periplanar Requirement</h3>
+                    <p>E2 has a very strict stereochemical requirement. The <b>β-H</b> and the <b>leaving group (X)</b> MUST be in an <b>anti-periplanar</b> geometry — meaning the dihedral angle between them must be <b>≈ 180°</b> in Newman projection.</p>
+                    <div class="warning-box">
+                        <strong>⚠️ Why Anti-Periplanar?</strong> The anti position allows the <b>σ*(C–X) orbital</b> to be antiparallel with the <b>σ(C–H) orbital</b>, enabling efficient electron transfer from C–H to C–X in the transition state. Syn-periplanar (0°) is much rarer and only occurs under special conditions.
+                    </div>
+                    <p><b>Implication for Cyclohexane:</b> In a cyclohexane ring, E2 can only occur when β-H and X are in <b>diaxial positions</b> (both axial). The diaxial conformation satisfies the 180° anti-periplanar requirement.</p>
+                    <div class="info-box">
+                        <strong>📐 Geometry Summary:</strong><br>
+                        • Anti-periplanar (180°) → ✅ E2 proceeds rapidly<br>
+                        • Syn-periplanar (0°) → ⚠️ E2 very slow/rare<br>
+                        • Gauche (60°) → ❌ E2 does not occur
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="lang-id">
+                    <h3 style="color:var(--primary);font-size:1.05em;margin-top:0;">📏 Aturan Zaitsev vs Hofmann</h3>
+                    <p>Regioselektivitas E2 menentukan <i>alkena mana</i> yang menjadi produk utama ketika lebih dari satu alkena dapat terbentuk.</p>
+                    <table>
+                        <thead><tr><th>Aturan</th><th>Produk Utama</th><th>Kondisi</th></tr></thead>
+                        <tbody>
+                            <tr><td><b>Zaitsev</b></td><td>Alkena lebih tersubstitusi (lebih stabil)</td><td>Basa kecil/tidak bulky (OH⁻, OEt⁻)</td></tr>
+                            <tr><td><b>Hofmann</b></td><td>Alkena kurang tersubstitusi (lebih sedikit cabang)</td><td>Basa bulky (KO<sup>t</sup>Bu, (iPr)₂N⁻)</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="success-box" style="margin-top:14px;">
+                        <strong>🏆 Contoh Zaitsev:</strong><br>
+                        2-Bromobutana + KOH/EtOH →<br>
+                        <b>trans-2-Butena (81%)</b> ← produk utama Zaitsev<br>
+                        1-Butena (19%) ← produk minor Hofmann
+                    </div>
+                    <div class="info-box">
+                        <strong>🧪 Mengapa Zaitsev lebih stabil?</strong> Alkena lebih tersubstitusi memiliki lebih banyak interaksi hiperkonjugasi (orbital σ C–H dengan orbital π*), yang menstabilkan ikatan rangkap. Semakin banyak gugus alkil, semakin stabil alkena (stabilitas: tersier > sekunder > mono > tidak tersubstitusi).
+                    </div>
+                </div>
+                <div class="lang-en">
+                    <h3 style="color:var(--primary);font-size:1.05em;margin-top:0;">📏 Zaitsev's Rule vs Hofmann Elimination</h3>
+                    <p>E2 regioselectivity determines <i>which alkene</i> becomes the major product when more than one alkene can form.</p>
+                    <table>
+                        <thead><tr><th>Rule</th><th>Major Product</th><th>Conditions</th></tr></thead>
+                        <tbody>
+                            <tr><td><b>Zaitsev</b></td><td>More substituted alkene (more stable)</td><td>Small/non-bulky base (OH⁻, OEt⁻)</td></tr>
+                            <tr><td><b>Hofmann</b></td><td>Less substituted alkene (less branched)</td><td>Bulky base (KO<sup>t</sup>Bu, (iPr)₂N⁻)</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="success-box" style="margin-top:14px;">
+                        <strong>🏆 Zaitsev Example:</strong><br>
+                        2-Bromobutane + KOH/EtOH →<br>
+                        <b>trans-2-Butene (81%)</b> ← Zaitsev major product<br>
+                        1-Butene (19%) ← Hofmann minor product
+                    </div>
+                    <div class="info-box">
+                        <strong>🧪 Why is Zaitsev product more stable?</strong> More substituted alkenes have more hyperconjugation interactions (σ C–H orbital with π* orbital), which stabilizes the double bond. More alkyl groups = more stable alkene (stability: tertiary > secondary > mono > unsubstituted).
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 5: PERBANDINGAN E1/E2/SN2 ===== -->
+    <div id="perbandingan" class="card" style="scroll-margin-top:80px;">
+        <h2 class="card-title"><span class="lang-id">📊 Perbandingan E1 vs E2 vs SN2</span><span class="lang-en">📊 Comparison: E1 vs E2 vs SN2</span></h2>
+        <div class="lang-id">
+            <p>Reaksi E2 sering bersaing dengan reaksi E1 (eliminasi unimolekular) dan SN2 (substitusi nukleofilik bimolekular). Memahami faktor penentu merupakan kunci dalam prediksi produk reaksi.</p>
+        </div>
+        <div class="lang-en">
+            <p>E2 reactions often compete with E1 (unimolecular elimination) and SN2 (bimolecular nucleophilic substitution). Understanding the determining factors is key to predicting reaction products.</p>
+        </div>
+
+        <div class="lang-id">
+            <table>
+                <thead><tr><th>Faktor</th><th>E1</th><th>E2</th><th>SN2</th></tr></thead>
+                <tbody>
+                    <tr><td><b>Mekanisme</b></td><td>2 tahap (karbokation)</td><td>1 tahap (concerted)</td><td>1 tahap (concerted)</td></tr>
+                    <tr><td><b>Kinetika</b></td><td>Orde 1: k[R-X]</td><td>Orde 2: k[R-X][B]</td><td>Orde 2: k[R-X][Nu]</td></tr>
+                    <tr><td><b>Basa/Nukleofil</b></td><td>Lemah atau tidak ada</td><td>Kuat (basa)</td><td>Kuat (nukleofil)</td></tr>
+                    <tr><td><b>Substrat terbaik</b></td><td>Tersier &gt; Sekunder</td><td>Tersier &gt; Sekunder &gt; Primer</td><td>Primer &gt; Sekunder (tersier terhalang)</td></tr>
+                    <tr><td><b>Suhu</b></td><td>Tinggi (mendukung eliminasi)</td><td>Tinggi (mendukung eliminasi)</td><td>Rendah (mendukung substitusi)</td></tr>
+                    <tr><td><b>Pelarut</b></td><td>Polar protik</td><td>Polar aprotik / alkohol</td><td>Polar aprotik</td></tr>
+                    <tr><td><b>Stereokimia</b></td><td>Campuran (E/Z)</td><td>Anti-periplanar (lebih trans)</td><td>Inversi konfigurasi (Walden)</td></tr>
+                    <tr><td><b>Produk</b></td><td>Alkena (campuran)</td><td>Alkena (lebih spesifik)</td><td>Produk substitusi</td></tr>
+                    <tr><td><b>Basa bulky (KO<sup>t</sup>Bu)</b></td><td>Tidak berpengaruh</td><td>Mendukung produk Hofmann</td><td>Menghambat SN2, mendorong E2</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="lang-en">
+            <table>
+                <thead><tr><th>Factor</th><th>E1</th><th>E2</th><th>SN2</th></tr></thead>
+                <tbody>
+                    <tr><td><b>Mechanism</b></td><td>2 steps (carbocation)</td><td>1 step (concerted)</td><td>1 step (concerted)</td></tr>
+                    <tr><td><b>Kinetics</b></td><td>1st order: k[R-X]</td><td>2nd order: k[R-X][B]</td><td>2nd order: k[R-X][Nu]</td></tr>
+                    <tr><td><b>Base/Nucleophile</b></td><td>Weak or none</td><td>Strong (base)</td><td>Strong (nucleophile)</td></tr>
+                    <tr><td><b>Best substrate</b></td><td>Tertiary &gt; Secondary</td><td>Tertiary &gt; Secondary &gt; Primary</td><td>Primary &gt; Secondary (tertiary hindered)</td></tr>
+                    <tr><td><b>Temperature</b></td><td>High (favors elimination)</td><td>High (favors elimination)</td><td>Low (favors substitution)</td></tr>
+                    <tr><td><b>Solvent</b></td><td>Polar protic</td><td>Polar aprotic / alcohol</td><td>Polar aprotic</td></tr>
+                    <tr><td><b>Stereochemistry</b></td><td>Mixed (E/Z)</td><td>Anti-periplanar (more trans)</td><td>Configuration inversion (Walden)</td></tr>
+                    <tr><td><b>Products</b></td><td>Alkene (mixture)</td><td>Alkene (more specific)</td><td>Substitution product</td></tr>
+                    <tr><td><b>Bulky base (KO<sup>t</sup>Bu)</b></td><td>No effect</td><td>Favors Hofmann product</td><td>Blocks SN2, promotes E2</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="grid-2" style="margin-top:20px;">
+            <div class="success-box">
+                <div class="lang-id">
+                    <strong>✅ Kapan E2 Dominan?</strong><br>
+                    • Substrat tersier atau sekunder<br>
+                    • Basa kuat (KOH, NaOEt, KO<sup>t</sup>Bu)<br>
+                    • Suhu tinggi<br>
+                    • Basa bulky → produk Hofmann<br>
+                    • Pelarut: alkohol atau DMSO
+                </div>
+                <div class="lang-en">
+                    <strong>✅ When Does E2 Dominate?</strong><br>
+                    • Tertiary or secondary substrate<br>
+                    • Strong base (KOH, NaOEt, KO<sup>t</sup>Bu)<br>
+                    • High temperature<br>
+                    • Bulky base → Hofmann product<br>
+                    • Solvent: alcohol or DMSO
+                </div>
+            </div>
+            <div class="warning-box">
+                <div class="lang-id">
+                    <strong>⚠️ Kapan SN2 Bersaing dengan E2?</strong><br>
+                    • Substrat primer (SN2 lebih disukai)<br>
+                    • Nukleofil kuat, bukan basa bulky<br>
+                    • Suhu rendah<br>
+                    • Pelarut polar aprotik (DMSO, DMF)<br>
+                    • Ion halida sebagai nukleofil
+                </div>
+                <div class="lang-en">
+                    <strong>⚠️ When Does SN2 Compete with E2?</strong><br>
+                    • Primary substrate (SN2 preferred)<br>
+                    • Strong nucleophile, not bulky base<br>
+                    • Low temperature<br>
+                    • Polar aprotic solvent (DMSO, DMF)<br>
+                    • Halide ions as nucleophile
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 6: LATIHAN SOAL ===== -->
+    <div id="latihan-soal" class="card" style="scroll-margin-top:80px;">
+        <h2 class="card-title"><span class="lang-id">📝 Latihan Soal — Reaksi E2</span><span class="lang-en">📝 Quiz & Practice — E2 Reaction</span></h2>
+
+        <div class="quiz-progress">
+            <span class="quiz-progress-text">
+                <span class="lang-id">Dijawab: <span id="answered-count">0</span> / 8</span>
+                <span class="lang-en">Answered: <span id="answered-count-en">0</span> / 8</span>
+            </span>
+            <span class="score-badge">
+                <span class="lang-id">Skor: <span id="score-display">0</span></span>
+                <span class="lang-en">Score: <span id="score-display-en">0</span></span>
+            </span>
+        </div>
+
+        <!-- Q1 -->
+        <div class="quiz-item" id="qi-1">
+            <span class="quiz-tag tag-konsep"><span class="lang-id">Konsep Dasar</span><span class="lang-en">Core Concept</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">1</div>
+                <div class="quiz-q-text lang-id">Pernyataan manakah yang paling tepat menggambarkan reaksi E2?</div>
+                <div class="quiz-q-text lang-en">Which statement best describes the E2 reaction?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(1,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">E2 berlangsung dalam dua tahap, membentuk karbokation sebagai intermediate, dengan laju bergantung hanya pada konsentrasi substrat.</span>
+                <span class="lang-en">E2 proceeds in two steps, forming a carbocation intermediate, with rate depending only on substrate concentration.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(1,'B',false)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">E2 adalah reaksi substitusi yang memerlukan nukleofil kuat dan berlangsung dengan inversi konfigurasi.</span>
+                <span class="lang-en">E2 is a substitution reaction requiring a strong nucleophile and proceeding with inversion of configuration.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(1,'C',true)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">E2 berlangsung dalam satu tahap terkoordinasi (concerted), laju reaksinya bergantung pada konsentrasi substrat DAN basa, dan tidak membentuk intermediate.</span>
+                <span class="lang-en">E2 proceeds in a single concerted step, its rate depends on substrate AND base concentration, and it forms no intermediate.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(1,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">E2 adalah reaksi unimolekular yang lajunya tidak bergantung pada konsentrasi basa yang digunakan.</span>
+                <span class="lang-en">E2 is a unimolecular reaction whose rate is independent of base concentration.</span>
+            </button>
+            <div class="feedback" id="fb-1"></div>
+            <div class="pembahasan" id="pem-1">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Analisis setiap pilihan:<br>• <b>A — Salah:</b> Deskripsi pada pilihan A merupakan ciri reaksi <i>E1</i>, bukan E2. E1 membentuk karbokation dan bersifat unimolekular.<br>• <b>B — Salah:</b> Deskripsi ini merupakan ciri reaksi <i>SN2</i> (substitusi nukleofilik bimolekular), yang menghasilkan inversi konfigurasi, bukan eliminasi.<br>• <b>C — Benar ✅:</b> E2 (Eliminasi Bimolekular) berlangsung dalam satu tahap concerted tanpa intermediate. Karena bimolekular, ekspresi lajunya adalah: <b>Laju = k[R-X][Basa]</b>.<br>• <b>D — Salah:</b> Laju bergantung pada konsentrasi basa (bimolekular), bukan unimolekular.</span>
+                <span class="lang-en"> Analysis of each choice:<br>• <b>A — Wrong:</b> The description in option A characterizes <i>E1</i>, not E2. E1 forms a carbocation and is unimolecular.<br>• <b>B — Wrong:</b> This describes <i>SN2</i> (bimolecular nucleophilic substitution) with inversion of configuration — not elimination.<br>• <b>C — Correct ✅:</b> E2 (Bimolecular Elimination) proceeds in a single concerted step with no intermediate. Because it is bimolecular, the rate expression is: <b>Rate = k[R-X][Base]</b>.<br>• <b>D — Wrong:</b> The rate DOES depend on base concentration (bimolecular), not unimolecular.</span>
+            </div>
+        </div>
+
+        <!-- Q2 -->
+        <div class="quiz-item" id="qi-2">
+            <span class="quiz-tag tag-stereo"><span class="lang-id">Stereokimia</span><span class="lang-en">Stereochemistry</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">2</div>
+                <div class="quiz-q-text lang-id">Persyaratan geometri yang WAJIB dipenuhi agar reaksi E2 dapat berlangsung adalah…</div>
+                <div class="quiz-q-text lang-en">The MANDATORY geometric requirement for the E2 reaction to proceed is…</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(2,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">H-β dan gugus pergi harus berada dalam posisi syn-periplanar (sudut dihedral ≈ 0°).</span>
+                <span class="lang-en">β-H and the leaving group must be in a syn-periplanar position (dihedral angle ≈ 0°).</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(2,'B',true)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">H-β dan gugus pergi harus berada dalam posisi anti-periplanar (sudut dihedral ≈ 180°).</span>
+                <span class="lang-en">β-H and the leaving group must be in an anti-periplanar position (dihedral angle ≈ 180°).</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(2,'C',false)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">H-β dan gugus pergi dapat berada di posisi manapun, karena E2 tidak memiliki persyaratan stereokimia.</span>
+                <span class="lang-en">β-H and the leaving group can be in any position, as E2 has no stereochemical requirement.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(2,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Seluruh molekul substrat harus berbentuk planar (datar) agar orbital dapat berinteraksi.</span>
+                <span class="lang-en">The entire substrate molecule must be planar so that orbitals can interact.</span>
+            </button>
+            <div class="feedback" id="fb-2"></div>
+            <div class="pembahasan" id="pem-2">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Persyaratan <b>anti-periplanar (180°)</b> pada E2 bukan sekadar preferensi — melainkan keharusan kimiawi. Pada posisi anti, <b>orbital ikatan σ(C–H)</b> berantipara (antiparallel) dengan <b>orbital antibonding σ*(C–X)</b>. Kondisi antiparallel ini memungkinkan lobe orbital berinteraksi secara maksimal selama keadaan transisi concerted: elektron dari C–H mengalir ke dalam σ*(C–X) sekaligus membentuk ikatan π baru. Pada posisi gauche (60°) atau syn (0°), tumpang-tindih orbital jauh kurang efektif sehingga E2 tidak terjadi atau sangat lambat. Dalam sikloheksana, ini diterjemahkan sebagai persyaratan <b>diaksial</b>.</span>
+                <span class="lang-en"> The <b>anti-periplanar (180°)</b> requirement in E2 is not merely a preference — it is a chemical necessity. In the anti position, the <b>σ(C–H) bonding orbital</b> is antiparallel to the <b>σ*(C–X) antibonding orbital</b>. This antiparallel arrangement enables maximum orbital interaction during the concerted transition state: electrons from C–H flow into σ*(C–X) while simultaneously forming a new π bond. At gauche (60°) or syn (0°) positions, orbital overlap is far less effective, so E2 does not occur or is very slow. In cyclohexane, this translates to a <b>diaxial</b> requirement.</span>
+            </div>
+        </div>
+
+        <!-- Q3 -->
+        <div class="quiz-item" id="qi-3">
+            <span class="quiz-tag tag-regio"><span class="lang-id">Regioselektivitas</span><span class="lang-en">Regioselectivity</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">3</div>
+                <div class="quiz-q-text lang-id">Pada reaksi E2 antara 2-bromobutana dan KOH/etanol panas, produk organik UTAMA yang dihasilkan adalah…</div>
+                <div class="quiz-q-text lang-en">In the E2 reaction between 2-bromobutane and hot KOH/ethanol, the MAJOR organic product is…</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(3,'A',true)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">trans-2-Butena (CH₃–CH=CH–CH₃, geometri trans), karena merupakan produk Zaitsev yang lebih tersubstitusi dan persyaratan anti-periplanar menghasilkan isomer trans.</span>
+                <span class="lang-en">trans-2-Butene (CH₃–CH=CH–CH₃, trans geometry), as it is the more substituted Zaitsev product and the anti-periplanar requirement favors the trans isomer.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(3,'B',false)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">1-Butena (CH₂=CH–CH₂–CH₃), karena merupakan produk paling sederhana yang dapat terbentuk.</span>
+                <span class="lang-en">1-Butene (CH₂=CH–CH₂–CH₃), as it is the simplest product that can form.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(3,'C',false)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">cis-2-Butena, karena basa menyerang sisi yang menghasilkan isomer cis.</span>
+                <span class="lang-en">cis-2-Butene, because the base attacks from the side that produces the cis isomer.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(3,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">2-Butanol, karena KOH adalah nukleofil yang kuat.</span>
+                <span class="lang-en">2-Butanol, because KOH is a strong nucleophile.</span>
+            </button>
+            <div class="feedback" id="fb-3"></div>
+            <div class="pembahasan" id="pem-3">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Dari 2-bromobutana, ada dua kemungkinan alkena: 1-butena (1 substituen) dan 2-butena (2 substituen). Berdasarkan <b>Aturan Zaitsev</b>, produk lebih tersubstitusi (2-butena, ~81%) mendominasi atas 1-butena (~19%). Lebih lanjut, persyaratan <b>anti-periplanar E2</b> menyebabkan dua gugus metil berakhir pada sisi yang berlawanan dari ikatan rangkap → menghasilkan <b>trans</b>-2-butena sebagai produk utama. cis-2-butena terbentuk dalam jumlah kecil karena memerlukan konformasi gauche yang kurang disukai. Pilihan D salah karena KOH/etanol panas mendorong eliminasi (E2), bukan substitusi.</span>
+                <span class="lang-en"> From 2-bromobutane, two possible alkenes exist: 1-butene (1 substituent) and 2-butene (2 substituents). By <b>Zaitsev's Rule</b>, the more substituted product (2-butene, ~81%) dominates over 1-butene (~19%). Furthermore, the <b>E2 anti-periplanar requirement</b> places the two methyl groups on opposite sides of the double bond → producing <b>trans</b>-2-butene as the major product. cis-2-butene forms in small amounts as it requires an unfavorable gauche conformation. Option D is wrong because hot KOH/ethanol favors elimination (E2), not substitution.</span>
+            </div>
+        </div>
+
+        <!-- Q4 -->
+        <div class="quiz-item" id="qi-4">
+            <span class="quiz-tag tag-mekanisme"><span class="lang-id">Reaktivitas</span><span class="lang-en">Reactivity</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">4</div>
+                <div class="quiz-q-text lang-id">Urutan reaktivitas yang BENAR untuk alkil halida dalam reaksi E2 (dari paling reaktif ke paling kurang reaktif) adalah…</div>
+                <div class="quiz-q-text lang-en">The CORRECT order of alkyl halide reactivity in E2 reactions (from most to least reactive) is…</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(4,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Primer &gt; Sekunder &gt; Tersier</span>
+                <span class="lang-en">Primary &gt; Secondary &gt; Tertiary</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(4,'B',false)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Sekunder &gt; Tersier &gt; Primer</span>
+                <span class="lang-en">Secondary &gt; Tertiary &gt; Primary</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(4,'C',true)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Tersier &gt; Sekunder &gt; Primer</span>
+                <span class="lang-en">Tertiary &gt; Secondary &gt; Primary</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(4,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Semua alkil halida memiliki reaktivitas E2 yang sama karena reaksi hanya bergantung pada basa.</span>
+                <span class="lang-en">All alkyl halides have the same E2 reactivity because the reaction depends only on the base.</span>
+            </button>
+            <div class="feedback" id="fb-4"></div>
+            <div class="pembahasan" id="pem-4">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Reaktivitas E2: <b>Tersier &gt; Sekunder &gt; Primer</b>. Alasan:<br>• <b>Tersier</b> paling reaktif karena: (1) memiliki lebih banyak H-β yang tersedia untuk dieliminasi, (2) keadaan transisi lebih stabil karena menghasilkan alkena lebih tersubstitusi, (3) gugus alkil yang lebih banyak menstabilkan keadaan transisi melalui efek induktif.<br>• <b>Primer</b> paling tidak reaktif dalam E2 karena hanya sedikit H-β dan stabilitas keadaan transisi rendah. Pada primer, SN2 lebih kompetitif dibanding E2.<br>Perlu diingat: urutan ini <i>berbeda</i> dari SN2, di mana Primer &gt; Sekunder &gt; Tersier (tersier tidak dapat SN2 karena hambatan sterik).</span>
+                <span class="lang-en"> E2 reactivity: <b>Tertiary &gt; Secondary &gt; Primary</b>. Reasons:<br>• <b>Tertiary</b> is most reactive because: (1) more β-H atoms available for elimination, (2) transition state is more stable as it leads to a more substituted alkene, (3) more alkyl groups stabilize the transition state through inductive effects.<br>• <b>Primary</b> is least reactive in E2 since there are fewer β-H atoms and the transition state is less stable. For primary substrates, SN2 is more competitive than E2.<br>Note: this order is the <i>reverse</i> of SN2, where Primary &gt; Secondary &gt; Tertiary (tertiary cannot undergo SN2 due to steric hindrance).</span>
+            </div>
+        </div>
+
+        <!-- Q5 -->
+        <div class="quiz-item" id="qi-5">
+            <span class="quiz-tag tag-regio"><span class="lang-id">Aturan Hofmann</span><span class="lang-en">Hofmann Rule</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">5</div>
+                <div class="quiz-q-text lang-id">Ketika 2-bromobutana direaksikan dengan basa <i>bulky</i> kalium tert-butoksida (KO<sup>t</sup>Bu), produk alkena manakah yang lebih dominan dan mengapa?</div>
+                <div class="quiz-q-text lang-en">When 2-bromobutane reacts with the <i>bulky</i> base potassium tert-butoxide (KO<sup>t</sup>Bu), which alkene product is more dominant and why?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(5,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">trans-2-Butena, karena basa bulky maupun kecil selalu mengikuti Aturan Zaitsev.</span>
+                <span class="lang-en">trans-2-Butene, because both bulky and small bases always follow Zaitsev's Rule.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(5,'B',true)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">1-Butena (Hofmann), karena basa bulky terlalu besar untuk mendekati H-β pada karbon internal yang terhalang, sehingga lebih mudah menyerang H-β pada karbon terminal yang lebih mudah diakses.</span>
+                <span class="lang-en">1-Butene (Hofmann), because the bulky base is too large to approach the β-H on the hindered internal carbon, so it preferentially removes the more accessible β-H on the terminal carbon.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(5,'C',false)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Campuran 1-butena dan 2-butena dalam jumlah yang persis sama (50:50).</span>
+                <span class="lang-en">An exactly equal mixture (50:50) of 1-butene and 2-butene.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(5,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Tidak ada alkena yang terbentuk karena KO<sup>t</sup>Bu terlalu besar untuk bereaksi sama sekali.</span>
+                <span class="lang-en">No alkene forms because KO<sup>t</sup>Bu is too large to react at all.</span>
+            </button>
+            <div class="feedback" id="fb-5"></div>
+            <div class="pembahasan" id="pem-5">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Ini adalah contoh klasik <b>Eliminasi Hofmann</b>. Basa bulky seperti KO<sup>t</sup>Bu memiliki rintangan sterik yang besar di sekitar atom oksigennya (tiga gugus <i>tert</i>-butil). Akibatnya:<br>• Basa sulit mendekati H-β pada karbon internal (C-3 pada 2-bromobutana) yang dikelilingi gugus metil dan etil — ini adalah posisi Zaitsev yang terhalang.<br>• Basa lebih mudah mendekati H-β pada karbon <b>terminal</b> (C-1, H pada CH₃ yang bersebelahan dengan CHBr) yang lebih terbuka dan tidak terhalang → menghasilkan <b>1-butena</b>.<br>Prinsip: Basa bulky → produk Hofmann (alkena kurang tersubstitusi). Basa kecil → produk Zaitsev (alkena lebih tersubstitusi).</span>
+                <span class="lang-en"> This is a classic example of <b>Hofmann Elimination</b>. Bulky bases like KO<sup>t</sup>Bu have significant steric hindrance around their oxygen atom (three <i>tert</i>-butyl groups). As a result:<br>• The base struggles to approach the β-H at the internal carbon (C-3 in 2-bromobutane) surrounded by methyl and ethyl groups — this is the hindered Zaitsev position.<br>• The base more easily approaches the β-H on the <b>terminal carbon</b> (C-1, H on the CH₃ adjacent to CHBr) which is more open and unhindered → giving <b>1-butene</b>.<br>Principle: Bulky base → Hofmann product (less substituted alkene). Small base → Zaitsev product (more substituted alkene).</span>
+            </div>
+        </div>
+
+        <!-- Q6 -->
+        <div class="quiz-item" id="qi-6">
+            <span class="quiz-tag tag-stereo"><span class="lang-id">Sikloheksana</span><span class="lang-en">Cyclohexane</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">6</div>
+                <div class="quiz-q-text lang-id">Pada turunan sikloheksana, posisi gugus pergi (X) dan H-β yang HARUS dipenuhi agar reaksi E2 dapat berlangsung dengan efisien adalah…</div>
+                <div class="quiz-q-text lang-en">In cyclohexane derivatives, the position of the leaving group (X) and β-H that MUST be met for efficient E2 reaction is…</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(6,'A',true)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Keduanya harus berada dalam posisi <b>diaksial</b> (trans-diaksial), karena ini memenuhi persyaratan anti-periplanar 180°.</span>
+                <span class="lang-en">Both must be in <b>diaxial</b> positions (trans-diaxial), as this satisfies the 180° anti-periplanar requirement.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(6,'B',false)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Keduanya harus berada dalam posisi diequatorial, agar hambatan sterik diminimalkan.</span>
+                <span class="lang-en">Both must be in diequatorial positions, to minimize steric hindrance.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(6,'C',false)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">X harus aksial dan H-β harus ekuatorial (posisi aksial-ekuatorial).</span>
+                <span class="lang-en">X must be axial and β-H must be equatorial (axial-equatorial position).</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(6,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Posisi tidak berpengaruh pada sikloheksana karena cincin dapat berotasi bebas.</span>
+                <span class="lang-en">Position does not matter in cyclohexane because the ring can rotate freely.</span>
+            </button>
+            <div class="feedback" id="fb-6"></div>
+            <div class="pembahasan" id="pem-6">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Dalam konformasi kursi sikloheksana, ikatan aksial-aksial pada karbon-karbon yang bersebelahan membentuk sudut dihedral ≈ 180° → memenuhi persyaratan anti-periplanar E2. Dengan kata lain, hanya pasangan <b>trans-diaksial</b> yang dapat menjalani E2. Implikasi penting:<br>• Jika X berada di posisi ekuatorial, cincin harus berinversi konformasi terlebih dahulu agar X menjadi aksial sebelum E2 dapat terjadi.<br>• Isomer cis vs trans pada sikloheksana akan memberikan produk E2 yang berbeda karena hanya satu konformasi yang memiliki X dan H-β diaksial.<br>• Ini adalah contoh kontrol konformasi pada reaktivitas kimia organik.</span>
+                <span class="lang-en"> In the chair conformation of cyclohexane, axial-axial bonds on adjacent carbons form a dihedral angle ≈ 180° → satisfying the E2 anti-periplanar requirement. In other words, only <b>trans-diaxial</b> pairs can undergo E2. Important implications:<br>• If X is in an equatorial position, the ring must undergo ring flip first so that X becomes axial before E2 can proceed.<br>• cis vs trans isomers on cyclohexane give different E2 products because only one conformation has both X and β-H diaxial.<br>• This is an example of conformational control in organic chemistry reactivity.</span>
+            </div>
+        </div>
+
+        <!-- Q7 -->
+        <div class="quiz-item" id="qi-7">
+            <span class="quiz-tag tag-kompetisi"><span class="lang-id">E2 vs SN2</span><span class="lang-en">E2 vs SN2</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">7</div>
+                <div class="quiz-q-text lang-id">Kondisi manakah yang paling efektif untuk <b>mendorong reaksi E2</b> dan meminimalkan kompetisi dari SN2?</div>
+                <div class="quiz-q-text lang-en">Which conditions most effectively <b>promote E2</b> and minimize competition from SN2?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(7,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Substrat primer, nukleofil kuat (NaI), pelarut DMSO, suhu rendah (0°C).</span>
+                <span class="lang-en">Primary substrate, strong nucleophile (NaI), DMSO solvent, low temperature (0°C).</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(7,'B',false)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Substrat tersier, basa lemah (CH₃COO⁻), pelarut air, suhu ruang (25°C).</span>
+                <span class="lang-en">Tertiary substrate, weak base (CH₃COO⁻), water solvent, room temperature (25°C).</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(7,'C',true)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Substrat tersier atau sekunder, basa kuat bulky (KO<sup>t</sup>Bu), pelarut <i>t</i>-BuOH atau DMSO, suhu tinggi (80–100°C).</span>
+                <span class="lang-en">Tertiary or secondary substrate, strong bulky base (KO<sup>t</sup>Bu), <i>t</i>-BuOH or DMSO solvent, high temperature (80–100°C).</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(7,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Substrat primer, basa kuat kecil (NaOH), pelarut air, suhu tinggi (100°C).</span>
+                <span class="lang-en">Primary substrate, strong small base (NaOH), water solvent, high temperature (100°C).</span>
+            </button>
+            <div class="feedback" id="fb-7"></div>
+            <div class="pembahasan" id="pem-7">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Analisis setiap pilihan:<br>• <b>A — Salah:</b> Kondisi ini (substrat primer + NaI + DMSO + suhu rendah) sempurna untuk <i>SN2</i>, bukan E2.<br>• <b>B — Salah:</b> Substrat tersier dengan basa lemah pada suhu ruang mendukung <i>E1</i> (karbokation terbentuk, kemudian eliminasi lambat).<br>• <b>C — Benar ✅:</b> Kombinasi ideal untuk E2: substrat tersier/sekunder (banyak H-β, susah SN2 karena hambatan sterik), basa bulky (meminimalkan SN2 lebih lanjut), suhu tinggi (meningkatkan laju eliminasi dan mengurangi SN2), pelarut <i>t</i>-BuOH/DMSO (mendukung E2).<br>• <b>D — Salah:</b> Substrat primer dengan NaOH akan bersaing antara SN2 dan E2. Dengan substrat primer, SN2 masih kompetitif.</span>
+                <span class="lang-en"> Analysis of each choice:<br>• <b>A — Wrong:</b> These conditions (primary substrate + NaI + DMSO + low temp) are ideal for <i>SN2</i>, not E2.<br>• <b>B — Wrong:</b> Tertiary substrate with weak base at room temperature favors <i>E1</i> (carbocation forms, then slow elimination).<br>• <b>C — Correct ✅:</b> The ideal E2 combination: tertiary/secondary substrate (many β-H, SN2 is hindered), bulky base (further reduces SN2), high temperature (increases elimination rate, reduces SN2), <i>t</i>-BuOH/DMSO solvent (supports E2).<br>• <b>D — Wrong:</b> A primary substrate with NaOH creates competition between SN2 and E2. With primary substrates, SN2 remains competitive.</span>
+            </div>
+        </div>
+
+        <!-- Q8 -->
+        <div class="quiz-item" id="qi-8">
+            <span class="quiz-tag tag-stereo"><span class="lang-id">Stereokimia Produk</span><span class="lang-en">Product Stereochemistry</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">8</div>
+                <div class="quiz-q-text lang-id">Mengapa reaksi E2 pada 2-bromobutana cenderung menghasilkan produk <b>trans</b>-2-butena sebagai isomer geometris yang dominan, dibandingkan <b>cis</b>-2-butena?</div>
+                <div class="quiz-q-text lang-en">Why does E2 on 2-bromobutane tend to yield <b>trans</b>-2-butene as the dominant geometric isomer, compared to <b>cis</b>-2-butene?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(8,'A',true)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Persyaratan anti-periplanar E2 mengharuskan H dan Br berada pada sisi berlawanan dalam konformasi anti. Pada konformasi anti ini, kedua gugus metil (CH₃) juga berada di sisi berlawanan dari ikatan C–C yang akan menjadi ikatan rangkap → langsung menghasilkan <i>trans</i>-2-butena.</span>
+                <span class="lang-en">The E2 anti-periplanar requirement dictates that H and Br are on opposite faces in the anti conformation. In this anti conformation, both methyl groups (CH₃) are also on opposite sides of the C–C bond that becomes the double bond → directly yielding <i>trans</i>-2-butene.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(8,'B',false)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">trans-2-Butena lebih stabil secara termodinamika, dan E2 selalu menghasilkan produk yang paling stabil secara termodinamika.</span>
+                <span class="lang-en">trans-2-Butene is thermodynamically more stable, and E2 always gives the most thermodynamically stable product.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(8,'C',false)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Basa hanya dapat menyerang H dari satu arah yang secara kebetulan selalu menghasilkan isomer trans.</span>
+                <span class="lang-en">The base can only attack H from one direction that coincidentally always yields the trans isomer.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(8,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Karena ikatan rangkap C=C tidak dapat membentuk isomer cis pada empat atom karbon.</span>
+                <span class="lang-en">Because a C=C double bond cannot form a cis isomer with four carbon atoms.</span>
+            </button>
+            <div class="feedback" id="fb-8"></div>
+            <div class="pembahasan" id="pem-8">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Ini adalah contoh indah hubungan antara persyaratan mekanistik dan stereokimia produk! Bayangkan proyeksi Newman dari 2-bromobutana:<br>• Untuk eliminasi E2, H dan Br harus <b>anti</b> (sudut dihedral 180°). Pada konformasi ini, gugus CH₃ (dari C-1) dan CH₂CH₃ (dari C-3) juga anti satu sama lain.<br>• Ketika eliminasi concerted berlangsung, orientasi spasial dipertahankan: kedua gugus organik berakhir pada sisi berlawanan dari ikatan π yang baru terbentuk → <b>trans</b>-2-butena.<br>• Untuk menghasilkan <i>cis</i>-2-butena, H dan Br harus dalam konformasi <i>gauche</i>, yang tidak memenuhi persyaratan E2. Ini sebabnya cis-2-butena hanya terbentuk dalam jumlah kecil. <b>Pilihan B</b> meskipun trans memang lebih stabil, mekanisme E2 adalah kinetika (concerted) bukan kontrol termodinamika.</span>
+                <span class="lang-en"> This is a beautiful example of how mechanistic requirements determine product stereochemistry! Imagine the Newman projection of 2-bromobutane:<br>• For E2 elimination, H and Br must be <b>anti</b> (180° dihedral). In this anti conformation, the CH₃ group (from C-1) and CH₂CH₃ (from C-3) are also anti to each other.<br>• When the concerted elimination proceeds, the spatial orientation is preserved: both organic groups end up on opposite sides of the newly formed π bond → <b>trans</b>-2-butene.<br>• To produce <i>cis</i>-2-butene, H and Br would need to be in a <i>gauche</i> conformation, which doesn't satisfy E2 requirements. This is why cis-2-butene forms only in small amounts. <b>Option B</b>: although trans is indeed more stable, E2 is kinetically controlled (concerted), not thermodynamically controlled.</span>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="quiz-summary" id="quiz-summary">
+            <h3 class="lang-id">🎉 Selesai! Hasil Evaluasi Anda</h3>
+            <h3 class="lang-en">🎉 Finished! Your Evaluation Result</h3>
+            <div class="big-score" id="final-score">0 / 8</div>
+            <p id="summary-message"></p>
+            <button class="btn-retake" onclick="retakeQuiz()">
+                <span class="lang-id">🔁 Ulangi Latihan</span><span class="lang-en">🔁 Retake Quiz</span>
+            </button>
+        </div>
+
+    </div><!-- end card -->
+
+</div><!-- end container -->
+
+<script>
+    // ===== LANGUAGE SYSTEM =====
+    function setLanguage(lang) {
+        document.getElementById('docLang').setAttribute('lang', lang);
+        document.getElementById('btn-id').classList.toggle('active', lang === 'id');
+        document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+    }
+
+    // ===== STEP MECHANISM TABS =====
+    function showStep(panelId, btn) {
+        document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.step-tab').forEach(b => b.classList.remove('active'));
+        document.getElementById(panelId).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    // ===== MOLECULE DATA (XYZ) =====
+    const molData = {
+        // 2-Bromobutane: C-C(Br)-C-C chain (no H in XYZ for clarity)
+        broker2but: `11\n2-Bromobutane\nC  -1.90  0.40  0.00\nC  -0.60 -0.40  0.00\nC   0.65  0.42  0.00\nC   1.90 -0.38  0.00\nBr -0.60 -1.90 -0.80\nH  -2.70 -0.28  0.00\nH  -1.95  1.05  0.88\nH  -1.95  1.05 -0.88\nH  -0.55 -0.80  1.02\nH   0.62  1.06  0.88\nH   0.62  1.06 -0.88`,
+        // trans-2-Butene: flat, C=C in center
+        trans2but: `10\ntrans-2-Butene\nC  -1.90  0.20  0.00\nC  -0.65 -0.30  0.00\nC   0.65  0.30  0.00\nC   1.90 -0.20  0.00\nH  -2.70  0.90  0.00\nH  -1.95 -0.85  0.00\nH  -2.05  0.85 -0.88\nH   1.95 -0.85  0.00\nH   2.05  0.85  0.88\nH   2.70 -0.88  0.00`,
+        // tert-Butyl Bromide: (CH3)3CBr
+        tertbutbr: `14\ntert-Butyl Bromide\nC   0.00  0.00  0.00\nC  -1.35 -0.78  0.00\nC   1.35 -0.78  0.00\nC   0.00  1.55  0.00\nBr  0.00 -0.10 -2.00\nH  -1.40 -1.45  0.88\nH  -1.40 -1.45 -0.88\nH  -2.20 -0.05  0.00\nH   1.40 -1.45 -0.88\nH   1.40 -1.45  0.88\nH   2.20 -0.05  0.00\nH   0.00  2.22  0.88\nH   0.00  2.22 -0.88\nH   0.88  1.78  0.00`,
+        // 2-Methylpropene (isobutylene): CH2=C(CH3)2
+        isobuty: `12\n2-Methylpropene\nC   0.00  1.10  0.00\nC   0.00  0.00  0.00\nC  -1.30 -0.75  0.00\nC   1.30 -0.75  0.00\nH  -0.93  1.68  0.00\nH   0.93  1.68  0.00\nH  -1.35 -1.40  0.88\nH  -1.35 -1.40 -0.88\nH  -2.18 -0.08  0.00\nH   1.35 -1.40 -0.88\nH   1.35 -1.40  0.88\nH   2.18 -0.08  0.00`
+    };
+
+    let viewers = {};
+    let initialViews = {};
+    let labelsState = {};
+    let spinInterval = null;
+
+    // ===== INIT VIEWERS =====
+    function initViewer(elementId, xyzData) {
+        let el = document.getElementById(elementId);
+        if (!el) return;
+        let viewer = $3Dmol.createViewer(el, { backgroundColor: 'white' });
+        viewer.addModel(xyzData, "xyz");
+        viewer.setStyle({}, {
+            stick:  { radius: 0.15, colorscheme: 'Jmol' },
+            sphere: { scale: 0.32, colorscheme: 'Jmol' }
+        });
+        viewer.zoomTo();
+        viewer.render();
+        setTimeout(() => { initialViews[elementId] = viewer.getView(); }, 120);
+        viewers[elementId] = viewer;
+        labelsState[elementId] = false;
+    }
+
+    window.onload = function() {
+        initViewer('v-2brb', molData.broker2but);
+        initViewer('v-t2b',  molData.trans2but);
+        initViewer('v-tbb',  molData.tertbutbr);
+        initViewer('v-imb',  molData.isobuty);
+    };
+
+    // ===== RESET VIEW =====
+    function resetView(id) {
+        let v = viewers[id];
+        if (!v) return;
+        v.removeAllLabels();
+        labelsState[id] = false;
+        v.setStyle({}, {
+            stick:  { radius: 0.15, colorscheme: 'Jmol' },
+            sphere: { scale: 0.32, colorscheme: 'Jmol' }
+        });
+        if (initialViews[id]) { v.setView(initialViews[id]); } else { v.zoomTo(); }
+        v.render();
+    }
+
+    // ===== TOGGLE LABELS =====
+    function toggleLabels(id) {
+        let v = viewers[id];
+        if (!v) return;
+        if (!labelsState[id]) {
+            let atoms = v.getModel().selectedAtoms({});
+            atoms.forEach(function(atom) {
+                v.addLabel(atom.elem, {
+                    position: { x: atom.x, y: atom.y, z: atom.z },
+                    backgroundColor: "rgba(0,0,0,0.75)",
+                    fontColor: "white",
+                    fontSize: 15,
+                    alignment: "center"
+                });
+            });
+            labelsState[id] = true;
+        } else {
+            v.removeAllLabels();
+            labelsState[id] = false;
+        }
+        v.render();
+    }
+
+    // ===== TOGGLE 2D / 3D =====
+    function toggle2D3D(viewerId, text2dId) {
+        let vDiv = document.getElementById(viewerId);
+        let tDiv = document.getElementById(text2dId);
+        let showing3d = (vDiv.style.display !== "none");
+        vDiv.style.display = showing3d ? "none" : "block";
+        tDiv.style.display = showing3d ? "flex" : "none";
+        tDiv.style.alignItems = "center";
+        tDiv.style.justifyContent = "center";
+    }
+
+    // ===== ROTATE ALL =====
+    function rotateAll(ids) {
+        if (spinInterval) { clearInterval(spinInterval); spinInterval = null; }
+        spinInterval = setInterval(() => {
+            ids.forEach(id => {
+                if (document.getElementById(id) && document.getElementById(id).style.display !== "none") {
+                    if (viewers[id]) { viewers[id].rotate(1.5, "y"); viewers[id].render(); }
+                }
+            });
+        }, 50);
+    }
+
+    function stopRotate() {
+        if (spinInterval) { clearInterval(spinInterval); spinInterval = null; }
+    }
+
+    // ===== QUIZ SYSTEM =====
+    let score = 0;
+    let answered = 0;
+    const totalQ = 8;
+    const correctAnswers = { 1:'C', 2:'B', 3:'A', 4:'C', 5:'B', 6:'A', 7:'C', 8:'A' };
+
+    function syncScoreDisplays() {
+        document.getElementById('answered-count').textContent = answered;
+        document.getElementById('answered-count-en').textContent = answered;
+        document.getElementById('score-display').textContent = score;
+        document.getElementById('score-display-en').textContent = score;
+    }
+
+    function submitAnswer(qNum, choice, isCorrect) {
+        let item = document.getElementById('qi-' + qNum);
+        if (item.classList.contains('answered-correct') || item.classList.contains('answered-wrong')) return;
+
+        let lang = document.getElementById('docLang').getAttribute('lang');
+        let fb   = document.getElementById('fb-' + qNum);
+        let pem  = document.getElementById('pem-' + qNum);
+
+        item.querySelectorAll('.quiz-option').forEach(btn => {
+            btn.disabled = true;
+            let m = btn.getAttribute('onclick').match(/'([A-D])'/);
+            if (m) {
+                let btnChoice = m[1];
+                if (btnChoice === correctAnswers[qNum]) { btn.classList.add('correct-choice'); }
+                else if (btnChoice === choice && !isCorrect) { btn.classList.add('wrong-choice'); }
+            }
+        });
+
+        if (isCorrect) {
+            fb.className = 'feedback correct';
+            fb.innerHTML = lang === 'id' ? "✅ Jawaban Anda Tepat!" : "✅ Correct Answer!";
+            item.classList.add('answered-correct');
+            score++;
+        } else {
+            fb.className = 'feedback wrong';
+            fb.innerHTML = lang === 'id'
+                ? "❌ Jawaban Kurang Tepat. Lihat pembahasan di bawah."
+                : "❌ Incorrect. See the explanation below.";
+            item.classList.add('answered-wrong');
+        }
+
+        pem.style.display = 'block';
+        answered++;
+        syncScoreDisplays();
+
+        if (answered === totalQ) showSummary();
+    }
+
+    function showSummary() {
+        let lang = document.getElementById('docLang').getAttribute('lang');
+        let summary = document.getElementById('quiz-summary');
+        document.getElementById('final-score').textContent = score + ' / ' + totalQ;
+
+        let msg = '';
+        if (score === totalQ) {
+            msg = lang === 'id'
+                ? '🏆 Sempurna! Anda menguasai seluruh materi Reaksi E2 dengan sangat baik!'
+                : '🏆 Perfect! You have mastered the entire E2 Reaction material excellently!';
+        } else if (score >= 6) {
+            msg = lang === 'id'
+                ? '👏 Bagus! Anda memahami sebagian besar konsep E2. Tinjau kembali soal yang salah.'
+                : '👏 Great job! You understand most E2 concepts. Review the incorrect ones.';
+        } else if (score >= 4) {
+            msg = lang === 'id'
+                ? '📖 Cukup. Beberapa konsep mekanisme dan stereokimia E2 masih perlu dipelajari ulang.'
+                : '📖 Fair. Some E2 mechanism and stereochemistry concepts need revisiting.';
+        } else {
+            msg = lang === 'id'
+                ? '💡 Pelajari kembali materi E2 dari awal — terutama mekanisme, anti-periplanar, dan Aturan Zaitsev. Semangat!'
+                : '💡 Please review the E2 material from the beginning — especially mechanism, anti-periplanar geometry, and Zaitsev\'s Rule. Keep going!';
+        }
+        document.getElementById('summary-message').textContent = msg;
+        summary.style.display = 'block';
+        summary.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function retakeQuiz() {
+        score = 0;
+        answered = 0;
+        syncScoreDisplays();
+        document.getElementById('quiz-summary').style.display = 'none';
+
+        for (let i = 1; i <= totalQ; i++) {
+            let item = document.getElementById('qi-' + i);
+            item.classList.remove('answered-correct', 'answered-wrong');
+            item.querySelectorAll('.quiz-option').forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('correct-choice', 'wrong-choice');
+            });
+            let fb = document.getElementById('fb-' + i);
+            fb.className = 'feedback';
+            fb.innerHTML = '';
+            document.getElementById('pem-' + i).style.display = 'none';
+        }
+        document.getElementById('latihan-soal').scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html lang="id" id="docLang">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OKOL-WDI — Analisa Retrosintesis</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0a3d91;
+            --secondary: #1565c0;
+            --accent: #e63946;
+            --gold: #f4a261;
+            --light: #f0f4ff;
+            --dark: #0d1b2a;
+            --success: #2d6a4f;
+            --success-bg: #d8f3dc;
+            --danger: #c1121f;
+            --danger-bg: #ffe0e0;
+            --info: #1a759f;
+            --info-bg: #e0f4ff;
+            --card-bg: #ffffff;
+            --border: #dce3f0;
+            --text-muted: #5a6a7e;
+            --radius: 12px;
+            --retro-color: #7b2d8b;
+            --retro-bg: #f5e6ff;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            background: linear-gradient(160deg, #e8edf8 0%, #f0e6ff 100%);
+            background-attachment: fixed;
+            color: var(--dark);
+            line-height: 1.7;
+            margin: 0;
+            padding: 0;
+        }
+
+        [lang="en"] .lang-id { display: none !important; }
+        [lang="id"] .lang-en { display: none !important; }
+
+        .lang-switch {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 1000;
+            background: white;
+            padding: 5px;
+            border-radius: 40px;
+            box-shadow: 0 4px 20px rgba(10,61,145,0.18);
+            display: flex;
+            gap: 4px;
+        }
+        .lang-btn {
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            font-weight: 700;
+            font-size: 0.8em;
+            border-radius: 30px;
+            padding: 5px 12px;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .lang-btn.active { background: var(--primary); color: white; }
+
+        .container { max-width: 1040px; margin: auto; padding: 20px 16px 60px; }
+
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 24px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 18px 28px;
+            border-radius: var(--radius);
+            box-shadow: 0 2px 12px rgba(10,61,145,0.07);
+            border: 1px solid var(--border);
+        }
+        .logo-container img {
+            max-height: 80px;
+            max-width: 160px;
+            object-fit: contain;
+        }
+
+        .logo-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 32px;
+            flex-wrap: wrap;
+        }
+        .logo-text-block {
+            text-align: center;
+            font-weight: 700;
+            font-size: 0.75em;
+            color: var(--primary);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 16px;
+            min-width: 90px;
+        }
+
+        .nav-bar {
+            background: white;
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 2px 12px rgba(10,61,145,0.07);
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 4px 8px;
+        }
+        .nav-bar a {
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.88em;
+            padding: 5px 10px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .nav-bar a:hover { background: var(--light); color: var(--accent); }
+
+        header {
+            background: linear-gradient(135deg, #5b0a91 0%, #0a3d91 100%);
+            color: white;
+            padding: 36px 24px 30px;
+            border-radius: var(--radius);
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 30px rgba(91,10,145,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        header::before {
+            content: '';
+            position: absolute;
+            top: -40px; right: -40px;
+            width: 220px; height: 220px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 50%;
+        }
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -60px; left: -30px;
+            width: 180px; height: 180px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 50%;
+        }
+        header h1 { margin: 0; font-size: 2em; font-weight: 700; position: relative; z-index: 1; }
+        header h3 { margin: 8px 0 0; font-weight: 300; opacity: 0.88; position: relative; z-index: 1; }
+
+        .card {
+            background: var(--card-bg);
+            padding: 28px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            box-shadow: 0 2px 14px rgba(10,61,145,0.07);
+            border: 1px solid var(--border);
+            scroll-margin-top: 80px;
+        }
+        .card-title {
+            color: var(--primary);
+            border-bottom: 2px solid var(--light);
+            padding-bottom: 10px;
+            margin-top: 0;
+            font-size: 1.15em;
+            font-weight: 700;
+        }
+
+        .grid-2 {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        /* ========== RETROSYNTESIS DIAGRAM ========== */
+        .retro-box {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            background: var(--light);
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .retro-box h4 {
+            margin: 0 0 10px;
+            color: var(--retro-color);
+            font-size: 0.95em;
+            font-weight: 700;
+        }
+        .retro-svg-container {
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e8f5;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        /* Steps reveal */
+        .retro-step {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .retro-step:hover { border-color: var(--retro-color); background: var(--retro-bg); }
+        .retro-step.active { border-color: var(--retro-color); background: var(--retro-bg); }
+        .retro-step-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            color: var(--retro-color);
+            font-size: 0.95em;
+        }
+        .step-badge {
+            background: var(--retro-color);
+            color: white;
+            min-width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .retro-step-body {
+            display: none;
+            margin-top: 12px;
+            font-size: 0.88em;
+            color: var(--dark);
+            line-height: 1.8;
+            border-top: 1px dashed var(--border);
+            padding-top: 12px;
+        }
+        .retro-step.active .retro-step-body { display: block; }
+
+        /* Arrow retrosintesis */
+        .retro-arrow {
+            font-size: 1.6em;
+            color: var(--retro-color);
+            font-weight: 900;
+            display: inline-block;
+            margin: 0 8px;
+            font-family: serif;
+        }
+
+        /* Synthon box */
+        .synthon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            margin-top: 16px;
+        }
+        .synthon-card {
+            background: white;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .synthon-card:hover { border-color: var(--retro-color); transform: translateY(-2px); box-shadow: 0 4px 14px rgba(123,45,139,0.15); }
+        .synthon-card .s-type {
+            font-size: 0.7em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 8px;
+            padding: 2px 10px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+        .s-electrophile { background: #fee2e2; color: #991b1b; }
+        .s-nucleophile  { background: #dbeafe; color: #1e40af; }
+        .s-reagent      { background: #d1fae5; color: #065f46; }
+        .synthon-card .s-formula {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1.1em;
+            font-weight: 700;
+            color: var(--dark);
+            margin: 8px 0 4px;
+        }
+        .synthon-card .s-desc { font-size: 0.78em; color: var(--text-muted); }
+
+        /* Strategy selector */
+        .strategy-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .stab {
+            background: var(--light);
+            color: var(--primary);
+            border: 2px solid var(--border);
+            padding: 7px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .stab:hover, .stab.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .strategy-content { display: none; }
+        .strategy-content.active { display: block; }
+
+        /* Retro diagram SVG badges */
+        .disc-badge {
+            display: inline-block;
+            background: #dc2626;
+            color: white;
+            font-size: 0.65em;
+            font-weight: 700;
+            padding: 1px 7px;
+            border-radius: 4px;
+            margin: 0 4px;
+            vertical-align: middle;
+            letter-spacing: 0.05em;
+        }
+
+        /* Buttons */
+        button {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 7px 13px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.82em;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-weight: 600;
+            margin: 3px;
+            transition: all 0.2s;
+            letter-spacing: 0.01em;
+        }
+        button:hover { background: var(--primary); transform: translateY(-1px); box-shadow: 0 3px 10px rgba(10,61,145,0.2); }
+        button:active { transform: translateY(0); }
+        .btn-purple { background: var(--retro-color); }
+        .btn-purple:hover { background: #5b0a91; }
+        .btn-warning { background: var(--gold); color: #3d1f00; }
+        .btn-warning:hover { background: #e08c47; }
+        .btn-info { background: var(--info); }
+        .btn-info:hover { background: #0f5680; }
+        .btn-danger-outline {
+            background: transparent;
+            color: var(--accent);
+            border: 2px solid var(--accent);
+        }
+        .btn-danger-outline:hover { background: var(--accent); color: white; }
+        .btn-group { text-align: center; margin-top: 14px; }
+
+        /* Info box */
+        .info-box {
+            background: var(--info-bg);
+            border-left: 4px solid var(--info);
+            border-radius: 0 8px 8px 0;
+            padding: 14px 16px;
+            margin: 14px 0;
+            font-size: 0.9em;
+        }
+        .warning-box {
+            background: #fff7ed;
+            border-left: 4px solid var(--gold);
+            border-radius: 0 8px 8px 0;
+            padding: 14px 16px;
+            margin: 14px 0;
+            font-size: 0.9em;
+        }
+        .success-box {
+            background: var(--success-bg);
+            border-left: 4px solid var(--success);
+            border-radius: 0 8px 8px 0;
+            padding: 14px 16px;
+            margin: 14px 0;
+            font-size: 0.9em;
+        }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 11px 14px; text-align: left; }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:nth-child(even) td { background: #f7faff; }
+
+        /* ========== QUIZ ========== */
+        .quiz-progress {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--light);
+            border-radius: 10px;
+            padding: 12px 18px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+        .quiz-progress-text { font-weight: 700; color: var(--primary); font-size: 0.9em; }
+        .score-badge {
+            background: var(--primary);
+            color: white;
+            padding: 5px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.88em;
+        }
+        .quiz-item {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 22px;
+            margin-bottom: 18px;
+            transition: border 0.2s;
+        }
+        .quiz-item.answered-correct { border-color: var(--success); }
+        .quiz-item.answered-wrong   { border-color: var(--danger); }
+        .quiz-q-header {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 14px;
+        }
+        .quiz-number {
+            background: var(--primary);
+            color: white;
+            min-width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85em;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .quiz-q-text { font-weight: 600; font-size: 0.97em; line-height: 1.6; }
+        .quiz-tag {
+            display: inline-block;
+            font-size: 0.72em;
+            font-weight: 700;
+            padding: 2px 9px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .tag-konsep   { background: #fce7f3; color: #9d174d; }
+        .tag-disconn  { background: #ede9fe; color: #5b21b6; }
+        .tag-synthon  { background: #dbeafe; color: #1d4ed8; }
+        .tag-strategi { background: #fef9c3; color: #854d0e; }
+        .tag-fgi      { background: #f0fdf4; color: #166534; }
+
+        .quiz-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            width: 100%;
+            text-align: left;
+            background: #fafbff;
+            color: var(--dark);
+            border: 1.5px solid var(--border);
+            margin: 6px 0;
+            padding: 11px 14px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.2s;
+            transform: none;
+            box-shadow: none;
+        }
+        .quiz-option:hover:not(:disabled) {
+            background: var(--light);
+            border-color: var(--secondary);
+            transform: translateX(4px);
+            box-shadow: none;
+        }
+        .quiz-option:disabled { cursor: default; transform: none; }
+        .quiz-option.correct-choice { background: var(--success-bg); border-color: var(--success); color: var(--success); font-weight: 700; }
+        .quiz-option.wrong-choice   { background: var(--danger-bg);  border-color: var(--danger);  color: var(--danger);  font-weight: 700; }
+        .quiz-option .opt-letter {
+            background: var(--primary);
+            color: white;
+            min-width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .quiz-option.correct-choice .opt-letter { background: var(--success); }
+        .quiz-option.wrong-choice   .opt-letter { background: var(--danger); }
+
+        .feedback {
+            font-weight: 700;
+            margin-top: 12px;
+            font-size: 0.9em;
+            display: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+        .feedback.correct { background: var(--success-bg); color: var(--success); display: block; }
+        .feedback.wrong   { background: var(--danger-bg);  color: var(--danger);  display: block; }
+
+        .pembahasan {
+            background: var(--info-bg);
+            border-left: 4px solid var(--info);
+            padding: 14px 16px;
+            margin-top: 10px;
+            display: none;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.88em;
+            line-height: 1.75;
+        }
+        .pembahasan strong { color: var(--primary); }
+
+        .quiz-summary {
+            background: linear-gradient(135deg, #5b0a91, var(--primary));
+            color: white;
+            border-radius: var(--radius);
+            padding: 30px;
+            text-align: center;
+            display: none;
+            margin-top: 20px;
+        }
+        .quiz-summary h3 { margin: 0 0 10px; font-size: 1.5em; }
+        .quiz-summary .big-score { font-size: 3em; font-weight: 700; }
+        .quiz-summary p { opacity: 0.88; margin: 8px 0 20px; }
+        .btn-retake { background: white; color: var(--primary); font-weight: 700; padding: 10px 28px; border-radius: 8px; font-size: 1em; }
+        .btn-retake:hover { background: var(--light); }
+
+        /* Retro notation */
+        .retro-notation {
+            font-size: 1.4em;
+            font-weight: 900;
+            color: var(--retro-color);
+            letter-spacing: 0.1em;
+        }
+
+        /* Flow diagram */
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 20px;
+            background: #faf5ff;
+            border-radius: 10px;
+            border: 1px dashed #c084fc;
+            margin: 16px 0;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.88em;
+        }
+        .flow-box {
+            background: white;
+            border: 2px solid var(--retro-color);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 700;
+            color: var(--retro-color);
+            text-align: center;
+            min-width: 90px;
+        }
+        .flow-arrow { font-size: 1.4em; color: #7c3aed; }
+
+        @media (max-width: 768px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .lang-switch { top: 10px; right: 10px; }
+            header h1 { font-size: 1.4em; }
+            .nav-bar { top: 8px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="lang-switch">
+    <button class="lang-btn active" id="btn-id" onclick="setLanguage('id')">🇮🇩 ID</button>
+    <button class="lang-btn" id="btn-en" onclick="setLanguage('en')">🇬🇧 EN</button>
+</div>
+
+<div class="container">
+
+    <!-- LOGO -->
+    <div class="logo-container">
+        <div class="logo-placeholder">
+            <div class="logo-text-block">OKOL-WDI<br>⚗️</div>
+            <div class="logo-text-block">UNSRI<br>🎓</div>
+            <div class="logo-text-block">BPSDM<br>SUMSEL 🏛️</div>
+            <div class="logo-text-block">ASN<br>BERAKHLAK 🌟</div>
+        </div>
+    </div>
+
+    <!-- NAVBAR -->
+    <nav class="nav-bar">
+        <a href="#konsep-dasar"><span class="lang-id">📖 Konsep Dasar</span><span class="lang-en">📖 Basics</span></a>
+        <a href="#notasi-disconn"><span class="lang-id">✂️ Disconnection</span><span class="lang-en">✂️ Disconnection</span></a>
+        <a href="#synthon"><span class="lang-id">⚗️ Synthon & FGI</span><span class="lang-en">⚗️ Synthon & FGI</span></a>
+        <a href="#strategi"><span class="lang-id">🗺️ Strategi</span><span class="lang-en">🗺️ Strategy</span></a>
+        <a href="#contoh-interaktif"><span class="lang-id">🔬 Contoh Interaktif</span><span class="lang-en">🔬 Interactive Example</span></a>
+        <a href="#latihan-soal"><span class="lang-id">📝 Latihan Soal</span><span class="lang-en">📝 Quiz</span></a>
+    </nav>
+
+    <!-- HEADER -->
+    <header>
+        <h1>
+            <span class="lang-id">🌐 OKOL-WDI — Modul Interaktif</span>
+            <span class="lang-en">🌐 OKOL-WDI — Interactive Module</span>
+        </h1>
+        <h3>
+            <span class="lang-id">🔷 Analisa Retrosintesis dalam Kimia Organik</span>
+            <span class="lang-en">🔷 Retrosynthetic Analysis in Organic Chemistry</span>
+        </h3>
+    </header>
+
+    <!-- ===== SECTION 1: KONSEP DASAR ===== -->
+    <div id="konsep-dasar" class="card">
+        <div class="grid-2">
+            <div>
+                <h2 class="card-title"><span class="lang-id">🧠 Apa itu Retrosintesis?</span><span class="lang-en">🧠 What is Retrosynthesis?</span></h2>
+                <div class="lang-id">
+                    <p>Retrosintesis adalah <b>strategi perencanaan sintesis</b> yang berpikir secara <b>mundur</b> dari molekul target ke bahan awal yang tersedia. Pendekatan ini diperkenalkan oleh <b>E.J. Corey</b> (Pemenang Nobel 1990).</p>
+                    <ul>
+                        <li>✅ Mulai dari <b>Produk Target</b> (TM = Target Molecule)</li>
+                        <li>✅ Pecah secara logis menjadi <b>prekursor yang lebih sederhana</b></li>
+                        <li>✅ Identifikasi <b>ikatan yang diputus</b> (disconnection)</li>
+                        <li>✅ Lanjutkan hingga mencapai <b>bahan awal komersial</b></li>
+                    </ul>
+                    <div class="info-box">
+                        💡 <b>Analogi:</b> Seperti memecahkan labirin dari tujuan ke start — jauh lebih mudah daripada mencoba semua jalur dari awal!
+                    </div>
+                </div>
+                <div class="lang-en">
+                    <p>Retrosynthesis is a <b>synthesis planning strategy</b> that thinks <b>backward</b> from a target molecule to available starting materials. Introduced by <b>E.J. Corey</b> (Nobel Laureate 1990).</p>
+                    <ul>
+                        <li>✅ Start from the <b>Target Molecule (TM)</b></li>
+                        <li>✅ Logically break it into <b>simpler precursors</b></li>
+                        <li>✅ Identify the <b>bonds to be broken</b> (disconnection)</li>
+                        <li>✅ Continue until reaching <b>commercial starting materials</b></li>
+                    </ul>
+                    <div class="info-box">
+                        💡 <b>Analogy:</b> Like solving a maze from the goal to the start — much easier than trying all paths from the beginning!
+                    </div>
+                </div>
+            </div>
+            <div>
+                <h2 class="card-title"><span class="lang-id">🔄 Alur Berpikir Retrosintesis</span><span class="lang-en">🔄 Retrosynthetic Thought Flow</span></h2>
+                <div class="flow-diagram">
+                    <div class="flow-box lang-id">Target<br>Molekul (TM)</div>
+                    <div class="flow-box lang-en">Target<br>Molecule (TM)</div>
+                    <div class="flow-arrow">⟹</div>
+                    <div class="flow-box lang-id">Prekursor<br>(Intermediet)</div>
+                    <div class="flow-box lang-en">Precursor<br>(Intermediate)</div>
+                    <div class="flow-arrow">⟹</div>
+                    <div class="flow-box lang-id">Bahan<br>Awal</div>
+                    <div class="flow-box lang-en">Starting<br>Material</div>
+                </div>
+                <div class="info-box">
+                    <b><span class="lang-id">Tanda panah retrosintesis:</span><span class="lang-en">Retrosynthetic arrow:</span></b><br>
+                    <span style="font-size:1.5em; color:var(--retro-color); font-weight:900;">⟹</span>
+                    <span class="lang-id"> (double-headed hollow arrow) — artinya "dapat dibuat dari" atau "berasal dari". Berbeda dengan panah reaksi biasa (→).</span>
+                    <span class="lang-en"> (double-headed hollow arrow) — means "can be made from" or "derived from". Different from a regular reaction arrow (→).</span>
+                </div>
+                <div class="warning-box">
+                    <b><span class="lang-id">⚠️ Penting:</span><span class="lang-en">⚠️ Important:</span></b>
+                    <span class="lang-id"> Retrosintesis adalah <i>analisis</i>, bukan sintesis sesungguhnya. Reaksi sesungguhnya berjalan ke arah sebaliknya (maju ⟶).</span>
+                    <span class="lang-en"> Retrosynthesis is an <i>analysis</i>, not actual synthesis. Real reactions proceed in the forward direction (⟶).</span>
+                </div>
+
+                <table>
+                    <tr>
+                        <th><span class="lang-id">Aspek</span><span class="lang-en">Aspect</span></th>
+                        <th><span class="lang-id">Sintesis (Maju)</span><span class="lang-en">Synthesis (Forward)</span></th>
+                        <th><span class="lang-id">Retrosintesis (Mundur)</span><span class="lang-en">Retrosynthesis (Backward)</span></th>
+                    </tr>
+                    <tr><td><b><span class="lang-id">Arah</span><span class="lang-en">Direction</span></b></td><td>SM → TM</td><td>TM ⟹ SM</td></tr>
+                    <tr><td><b><span class="lang-id">Panah</span><span class="lang-en">Arrow</span></b></td><td>→ (solid)</td><td>⟹ (hollow)</td></tr>
+                    <tr><td><b><span class="lang-id">Tujuan</span><span class="lang-en">Purpose</span></b></td><td><span class="lang-id">Menghasilkan produk</span><span class="lang-en">Produce product</span></td><td><span class="lang-id">Merencanakan rute</span><span class="lang-en">Plan a route</span></td></tr>
+                    <tr><td><b><span class="lang-id">Alat</span><span class="lang-en">Tool</span></b></td><td><span class="lang-id">Reaksi kimia</span><span class="lang-en">Chemical reactions</span></td><td><span class="lang-id">Logika disconnection</span><span class="lang-en">Disconnection logic</span></td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 2: NOTASI & DISCONNECTION ===== -->
+    <div id="notasi-disconn" class="card">
+        <h2 class="card-title">✂️ <span class="lang-id">Disconnection & Notasi</span><span class="lang-en">Disconnection & Notation</span></h2>
+
+        <div class="grid-2">
+            <div>
+                <h3 style="color:var(--retro-color); margin-top:0; font-size:1em;">
+                    <span class="lang-id">🔗 Apa itu Disconnection?</span>
+                    <span class="lang-en">🔗 What is Disconnection?</span>
+                </h3>
+                <div class="lang-id">
+                    <p>Disconnection adalah proses <b>memutus ikatan secara imajinatif</b> pada molekul target untuk mengidentifikasi dari mana fragmen-fragmen tersebut berasal. Ikatan yang diputus ditandai dengan <span class="disc-badge">✂</span>.</p>
+                    <p>Aturan dasar disconnection:</p>
+                    <ul>
+                        <li>🔴 Putus ikatan <b>C–C</b> yang terbentuk dalam reaksi</li>
+                        <li>🔴 Putus ikatan <b>C–X</b> (C–heteroatom) untuk FGI</li>
+                        <li>🟡 Pilih ikatan yang memberikan <b>prekursor paling sederhana</b></li>
+                        <li>🟢 Pastikan setiap fragmen memiliki <b>reagen padanannya</b></li>
+                    </ul>
+                </div>
+                <div class="lang-en">
+                    <p>Disconnection is the process of <b>imaginatively breaking bonds</b> in the target molecule to identify where fragments originate. The broken bond is marked with <span class="disc-badge">✂</span>.</p>
+                    <p>Basic disconnection rules:</p>
+                    <ul>
+                        <li>🔴 Break <b>C–C</b> bonds formed during reactions</li>
+                        <li>🔴 Break <b>C–X</b> (C–heteroatom) bonds for FGI</li>
+                        <li>🟡 Choose bonds that give the <b>simplest precursors</b></li>
+                        <li>🟢 Ensure every fragment has a <b>synthetic equivalent reagent</b></li>
+                    </ul>
+                </div>
+
+                <div class="success-box">
+                    <b><span class="lang-id">📌 Konsep Kunci:</span><span class="lang-en">📌 Key Concept:</span></b><br>
+                    <span class="lang-id">Setiap disconnection harus berkorespondensi dengan <b>reaksi kimia nyata yang diketahui</b>! Jika tidak ada reaksi yang diketahui, disconnection tidak valid.</span>
+                    <span class="lang-en">Every disconnection must correspond to a <b>known real chemical reaction</b>! If no such reaction is known, the disconnection is invalid.</span>
+                </div>
+            </div>
+            <div>
+                <h3 style="color:var(--retro-color); margin-top:0; font-size:1em;">
+                    <span class="lang-id">📊 Jenis-Jenis Disconnection</span>
+                    <span class="lang-en">📊 Types of Disconnection</span>
+                </h3>
+
+                <!-- SVG: Disconnection visual -->
+                <div class="retro-svg-container">
+                    <svg viewBox="0 0 500 280" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+                        <!-- Background -->
+                        <rect width="500" height="280" fill="#faf5ff" rx="8"/>
+
+                        <!-- Title -->
+                        <text x="250" y="24" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="12" font-weight="700" fill="#5b21b6">One-Group vs Two-Group Disconnection</text>
+
+                        <!-- ONE GROUP -->
+                        <rect x="20" y="35" width="210" height="105" rx="8" fill="white" stroke="#c4b5fd" stroke-width="1.5"/>
+                        <text x="125" y="55" text-anchor="middle" font-family="IBM Plex Sans" font-size="10" font-weight="700" fill="#5b21b6">One-Group (1GD)</text>
+                        <!-- TM -->
+                        <rect x="35" y="63" width="70" height="28" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+                        <text x="70" y="82" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" font-weight="700" fill="#5b21b6">R–C=O</text>
+                        <!-- Arrow -->
+                        <text x="115" y="82" text-anchor="middle" font-size="14" font-weight="900" fill="#7c3aed">⟹</text>
+                        <!-- Precursor -->
+                        <rect x="135" y="63" width="80" height="28" rx="5" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+                        <text x="175" y="82" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" font-weight="700" fill="#166534">R–OH + [O]</text>
+                        <!-- Description -->
+                        <text x="125" y="115" text-anchor="middle" font-family="IBM Plex Sans" font-size="9" fill="#374151">• 1 gugus fungsi diputus</text>
+                        <text x="125" y="128" text-anchor="middle" font-family="IBM Plex Sans" font-size="9" fill="#374151">• Contoh: alkohol → aldehid</text>
+
+                        <!-- TWO GROUP -->
+                        <rect x="270" y="35" width="210" height="105" rx="8" fill="white" stroke="#fca5a5" stroke-width="1.5"/>
+                        <text x="375" y="55" text-anchor="middle" font-family="IBM Plex Sans" font-size="10" font-weight="700" fill="#991b1b">Two-Group (2GD)</text>
+                        <!-- TM -->
+                        <rect x="283" y="63" width="70" height="28" rx="5" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+                        <text x="318" y="82" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" font-weight="700" fill="#991b1b">R–C–C–OH</text>
+                        <!-- Arrow -->
+                        <text x="363" y="82" text-anchor="middle" font-size="14" font-weight="900" fill="#dc2626">⟹</text>
+                        <!-- Precursor -->
+                        <rect x="378" y="58" width="88" height="38" rx="5" fill="#fff7ed" stroke="#f59e0b" stroke-width="1.5"/>
+                        <text x="422" y="74" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" font-weight="700" fill="#92400e">R–CHO</text>
+                        <text x="422" y="87" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" font-weight="700" fill="#92400e">+ R'MgX</text>
+                        <!-- Description -->
+                        <text x="375" y="115" text-anchor="middle" font-family="IBM Plex Sans" font-size="9" fill="#374151">• 2 gugus/ikatan diputus</text>
+                        <text x="375" y="128" text-anchor="middle" font-family="IBM Plex Sans" font-size="9" fill="#374151">• Contoh: alkohol dari Grignard</text>
+
+                        <!-- Divider -->
+                        <line x1="240" y1="35" x2="240" y2="140" stroke="#e9d5ff" stroke-width="1" stroke-dasharray="5,3"/>
+
+                        <!-- FGI Section -->
+                        <rect x="20" y="158" width="460" height="105" rx="8" fill="white" stroke="#86efac" stroke-width="1.5"/>
+                        <text x="250" y="178" text-anchor="middle" font-family="IBM Plex Sans" font-size="10" font-weight="700" fill="#166534">FGI (Functional Group Interconversion)</text>
+
+                        <!-- FGI chain -->
+                        <rect x="32" y="187" width="75" height="28" rx="5" fill="#d1fae5" stroke="#059669" stroke-width="1.5"/>
+                        <text x="69" y="206" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" font-weight="700" fill="#065f46">R–COOH</text>
+
+                        <text x="120" y="206" text-anchor="middle" font-size="13" fill="#059669" font-weight="900">⟹</text>
+                        <rect x="135" y="187" width="70" height="28" rx="5" fill="#d1fae5" stroke="#059669" stroke-width="1.5"/>
+                        <text x="170" y="206" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" font-weight="700" fill="#065f46">R–CHO</text>
+
+                        <text x="218" y="206" text-anchor="middle" font-size="13" fill="#059669" font-weight="900">⟹</text>
+                        <rect x="230" y="187" width="70" height="28" rx="5" fill="#d1fae5" stroke="#059669" stroke-width="1.5"/>
+                        <text x="265" y="206" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" font-weight="700" fill="#065f46">R–CH₂OH</text>
+
+                        <text x="315" y="206" text-anchor="middle" font-size="13" fill="#059669" font-weight="900">⟹</text>
+                        <rect x="327" y="187" width="70" height="28" rx="5" fill="#d1fae5" stroke="#059669" stroke-width="1.5"/>
+                        <text x="362" y="206" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" font-weight="700" fill="#065f46">R–Br</text>
+
+                        <text x="412" y="206" text-anchor="middle" font-size="13" fill="#059669" font-weight="900">⟹</text>
+                        <rect x="424" y="187" width="44" height="28" rx="5" fill="#d1fae5" stroke="#059669" stroke-width="1.5"/>
+                        <text x="446" y="206" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" font-weight="700" fill="#065f46">RH</text>
+
+                        <text x="250" y="248" text-anchor="middle" font-family="IBM Plex Sans" font-size="9" fill="#374151">Mengubah gugus fungsi yang ada ke gugus yang lebih mudah diakses secara retrosintesis</text>
+                        <text x="250" y="262" text-anchor="middle" font-family="IBM Plex Sans" font-size="9" fill="#374151">Converting functional groups to ones more accessible via retrosynthesis</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 3: SYNTHON & FGI ===== -->
+    <div id="synthon" class="card">
+        <h2 class="card-title">⚗️ <span class="lang-id">Synthon & Reagen Sintetik</span><span class="lang-en">Synthon & Synthetic Equivalents</span></h2>
+
+        <div class="grid-2">
+            <div>
+                <div class="lang-id">
+                    <p><b>Synthon</b> adalah fragmen ideal yang terbentuk setelah disconnection — biasanya berupa ion atau spesi bermuatan yang mungkin tidak nyata dalam wujud bebas. Oleh karena itu, digunakan <b>reagen sintetik (synthetic equivalent)</b> — reagen nyata yang berkelakuan seperti synthon tersebut.</p>
+                </div>
+                <div class="lang-en">
+                    <p><b>Synthons</b> are ideal fragments formed after disconnection — usually charged species or ions that may not exist as free entities. Therefore, <b>synthetic equivalents</b> are used — real reagents that behave like that synthon.</p>
+                </div>
+
+                <div class="synthon-grid">
+                    <div class="synthon-card">
+                        <span class="s-type s-electrophile">⊕ Electrophilic Synthon</span>
+                        <div class="s-formula">R⁺, R–C⁺=O</div>
+                        <div class="s-desc lang-id">Fragmen kekurangan elektron. <br>Menerima pasangan elektron.</div>
+                        <div class="s-desc lang-en">Electron-deficient fragment. <br>Accepts electron pairs.</div>
+                        <hr style="border-color:var(--border); margin:8px 0;">
+                        <div class="s-desc"><b>Reagen ≡:</b> R–X, R–CHO, R–CO–Cl</div>
+                    </div>
+                    <div class="synthon-card">
+                        <span class="s-type s-nucleophile">⊖ Nucleophilic Synthon</span>
+                        <div class="s-formula">R⁻, R–C⁻</div>
+                        <div class="s-desc lang-id">Fragmen kaya elektron. <br>Mendonor pasangan elektron.</div>
+                        <div class="s-desc lang-en">Electron-rich fragment. <br>Donates electron pairs.</div>
+                        <hr style="border-color:var(--border); margin:8px 0;">
+                        <div class="s-desc"><b>Reagen ≡:</b> R–MgX (Grignard), R–Li, NaCN, enolat</div>
+                    </div>
+                    <div class="synthon-card">
+                        <span class="s-type s-reagent">↔ Ambiphilic Synthon</span>
+                        <div class="s-formula">Umpolung</div>
+                        <div class="s-desc lang-id">Reaktivitas terbalik. <br>Atom C yang biasanya elektrofilik, bertindak nukleofilik.</div>
+                        <div class="s-desc lang-en">Reversed reactivity. <br>Normally electrophilic carbon acts as nucleophile.</div>
+                        <hr style="border-color:var(--border); margin:8px 0;">
+                        <div class="s-desc"><b>Reagen ≡:</b> Dithian (Corey–Seebach)</div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <h3 style="color:var(--retro-color); margin-top:0; font-size:1em;">
+                    <span class="lang-id">🔄 FGI — Interkonversi Gugus Fungsi</span>
+                    <span class="lang-en">🔄 FGI — Functional Group Interconversion</span>
+                </h3>
+                <div class="lang-id">
+                    <p>FGI adalah teknik mengubah gugus fungsi target ke gugus yang lebih mudah diretrosintesis, <b>tanpa mengubah kerangka karbon</b>. FGI dilakukan <i>sebelum</i> disconnection.</p>
+                </div>
+                <div class="lang-en">
+                    <p>FGI is the technique of converting the target's functional group to one more amenable to retrosynthesis, <b>without changing the carbon skeleton</b>. FGI is performed <i>before</i> disconnection.</p>
+                </div>
+
+                <table>
+                    <tr>
+                        <th><span class="lang-id">Gugus Target</span><span class="lang-en">Target Group</span></th>
+                        <th>FGI ⟹</th>
+                        <th><span class="lang-id">Reaksi Maju</span><span class="lang-en">Forward Reaction</span></th>
+                    </tr>
+                    <tr>
+                        <td>–COOH <span class="lang-id">(asam)</span><span class="lang-en">(acid)</span></td>
+                        <td>–CHO</td>
+                        <td>KMnO₄ / CrO₃ <span class="lang-id">(oksidasi)</span><span class="lang-en">(oxidation)</span></td>
+                    </tr>
+                    <tr>
+                        <td>–OH <span class="lang-id">(alkohol)</span><span class="lang-en">(alcohol)</span></td>
+                        <td>–Br / –Cl</td>
+                        <td>SOCl₂, PBr₃ <span class="lang-id">(halogenasi)</span><span class="lang-en">(halogenation)</span></td>
+                    </tr>
+                    <tr>
+                        <td>–C=O <span class="lang-id">(keton)</span><span class="lang-en">(ketone)</span></td>
+                        <td>–CH–OH</td>
+                        <td>NaBH₄, LiAlH₄ <span class="lang-id">(reduksi)</span><span class="lang-en">(reduction)</span></td>
+                    </tr>
+                    <tr>
+                        <td>–NH₂ <span class="lang-id">(amina)</span><span class="lang-en">(amine)</span></td>
+                        <td>–NO₂</td>
+                        <td>Fe/HCl <span class="lang-id">(reduksi)</span><span class="lang-en">(reduction)</span></td>
+                    </tr>
+                    <tr>
+                        <td>–C≡N <span class="lang-id">(nitril)</span><span class="lang-en">(nitrile)</span></td>
+                        <td>–COOH</td>
+                        <td>H₂O/H⁺ <span class="lang-id">(hidrolisis)</span><span class="lang-en">(hydrolysis)</span></td>
+                    </tr>
+                    <tr>
+                        <td>=C= <span class="lang-id">(alkena)</span><span class="lang-en">(alkene)</span></td>
+                        <td>–C–C– + X₂</td>
+                        <td>HX, X₂ <span class="lang-id">(adisi)</span><span class="lang-en">(addition)</span></td>
+                    </tr>
+                </table>
+
+                <div class="warning-box" style="margin-top:12px;">
+                    <b><span class="lang-id">⚠️ Prinsip FGI:</span><span class="lang-en">⚠️ FGI Principle:</span></b>
+                    <span class="lang-id"> FGI selalu mengkonservasi <b>jumlah atom karbon</b>. Hanya gugus fungsi yang berubah, bukan kerangka molekulnya.</span>
+                    <span class="lang-en"> FGI always conserves the <b>number of carbon atoms</b>. Only the functional group changes, not the molecular skeleton.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 4: STRATEGI ===== -->
+    <div id="strategi" class="card">
+        <h2 class="card-title">🗺️ <span class="lang-id">Strategi Retrosintesis</span><span class="lang-en">Retrosynthetic Strategies</span></h2>
+
+        <div class="strategy-tabs">
+            <button class="stab active" onclick="showStrategy('linear')">
+                <span class="lang-id">📏 Sintesis Linear</span><span class="lang-en">📏 Linear Synthesis</span>
+            </button>
+            <button class="stab" onclick="showStrategy('convergent')">
+                <span class="lang-id">🔀 Sintesis Konvergen</span><span class="lang-en">🔀 Convergent Synthesis</span>
+            </button>
+            <button class="stab" onclick="showStrategy('retron')">
+                <span class="lang-id">🎯 Retron & Transform</span><span class="lang-en">🎯 Retron & Transform</span>
+            </button>
+        </div>
+
+        <!-- LINEAR -->
+        <div class="strategy-content active" id="strat-linear">
+            <div class="grid-2">
+                <div>
+                    <div class="lang-id">
+                        <p><b>Sintesis Linear</b> adalah jalur di mana bahan awal tunggal diubah secara berurutan dalam satu jalur langkah-per-langkah.</p>
+                        <ul>
+                            <li>⚠️ Efisiensi total = perkalian yield tiap langkah</li>
+                            <li>⚠️ 10 langkah × 90% yield = <b>hanya ~35% total!</b></li>
+                            <li>✅ Mudah dipantau dan direncanakan</li>
+                            <li>❌ Tidak efisien untuk molekul kompleks</li>
+                        </ul>
+                    </div>
+                    <div class="lang-en">
+                        <p><b>Linear Synthesis</b> is a pathway where a single starting material is transformed sequentially in a step-by-step route.</p>
+                        <ul>
+                            <li>⚠️ Overall efficiency = product of each step's yield</li>
+                            <li>⚠️ 10 steps × 90% yield = <b>only ~35% overall!</b></li>
+                            <li>✅ Easy to monitor and plan</li>
+                            <li>❌ Inefficient for complex molecules</li>
+                        </ul>
+                    </div>
+                </div>
+                <div>
+                    <svg viewBox="0 0 380 120" style="width:100%;height:auto;background:#faf5ff;border-radius:8px;border:1px solid #ddd;">
+                        <text x="190" y="18" text-anchor="middle" font-family="IBM Plex Sans" font-size="11" font-weight="700" fill="#5b21b6">Linear Synthesis</text>
+                        <rect x="10" y="30" width="55" height="30" rx="5" fill="white" stroke="#7c3aed" stroke-width="1.5"/>
+                        <text x="37" y="50" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" font-weight="700" fill="#5b21b6">SM</text>
+                        <text x="78" y="50" text-anchor="middle" font-size="12" fill="#7c3aed">→</text>
+                        <rect x="95" y="30" width="55" height="30" rx="5" fill="white" stroke="#9333ea" stroke-width="1.5"/>
+                        <text x="122" y="50" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" font-weight="700" fill="#6b21a8">Int-1</text>
+                        <text x="163" y="50" text-anchor="middle" font-size="12" fill="#7c3aed">→</text>
+                        <rect x="180" y="30" width="55" height="30" rx="5" fill="white" stroke="#a855f7" stroke-width="1.5"/>
+                        <text x="207" y="50" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" font-weight="700" fill="#7e22ce">Int-2</text>
+                        <text x="248" y="50" text-anchor="middle" font-size="12" fill="#7c3aed">→</text>
+                        <rect x="265" y="30" width="55" height="30" rx="5" fill="#5b21b6" stroke="#4c1d95" stroke-width="1.5"/>
+                        <text x="292" y="50" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" font-weight="700" fill="white">TM</text>
+                        <text x="190" y="90" text-anchor="middle" font-family="IBM Plex Sans" font-size="9" fill="#374151">SM → Int-1 → Int-2 → TM (satu jalur berurutan)</text>
+                        <text x="190" y="107" text-anchor="middle" font-family="IBM Plex Sans" font-size="9" fill="#374151">Total yield: y₁ × y₂ × y₃</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONVERGENT -->
+        <div class="strategy-content" id="strat-convergent">
+            <div class="grid-2">
+                <div>
+                    <div class="lang-id">
+                        <p><b>Sintesis Konvergen</b> adalah strategi superior di mana beberapa fragmen disintesis secara paralel, lalu digabungkan. Digunakan untuk molekul kompleks.</p>
+                        <ul>
+                            <li>✅ Yield total jauh lebih tinggi</li>
+                            <li>✅ Pekerjaan dapat dibagi paralel</li>
+                            <li>✅ Ideal untuk sintesis total alkaloid, obat kompleks</li>
+                            <li>⚠️ Perlu koordinasi lebih cermat</li>
+                        </ul>
+                    </div>
+                    <div class="lang-en">
+                        <p><b>Convergent Synthesis</b> is a superior strategy where several fragments are synthesized in parallel, then coupled. Used for complex molecules.</p>
+                        <ul>
+                            <li>✅ Overall yield is much higher</li>
+                            <li>✅ Work can be done in parallel</li>
+                            <li>✅ Ideal for total synthesis of alkaloids, complex drugs</li>
+                            <li>⚠️ Requires more careful coordination</li>
+                        </ul>
+                    </div>
+                </div>
+                <div>
+                    <svg viewBox="0 0 380 150" style="width:100%;height:auto;background:#faf5ff;border-radius:8px;border:1px solid #ddd;">
+                        <text x="190" y="18" text-anchor="middle" font-family="IBM Plex Sans" font-size="11" font-weight="700" fill="#5b21b6">Convergent Synthesis</text>
+                        <!-- Branch A -->
+                        <rect x="10" y="28" width="50" height="26" rx="4" fill="white" stroke="#16a34a" stroke-width="1.5"/>
+                        <text x="35" y="45" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" font-weight="700" fill="#166534">SM-A</text>
+                        <text x="72" y="45" text-anchor="middle" font-size="11" fill="#16a34a">→</text>
+                        <rect x="85" y="28" width="55" height="26" rx="4" fill="white" stroke="#16a34a" stroke-width="1.5"/>
+                        <text x="112" y="45" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" font-weight="700" fill="#166534">Frag-A</text>
+                        <!-- Branch B -->
+                        <rect x="10" y="95" width="50" height="26" rx="4" fill="white" stroke="#dc2626" stroke-width="1.5"/>
+                        <text x="35" y="112" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" font-weight="700" fill="#991b1b">SM-B</text>
+                        <text x="72" y="112" text-anchor="middle" font-size="11" fill="#dc2626">→</text>
+                        <rect x="85" y="95" width="55" height="26" rx="4" fill="white" stroke="#dc2626" stroke-width="1.5"/>
+                        <text x="112" y="112" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" font-weight="700" fill="#991b1b">Frag-B</text>
+                        <!-- Convergence arrows -->
+                        <line x1="140" y1="41" x2="200" y2="75" stroke="#7c3aed" stroke-width="2" marker-end="url(#arr)"/>
+                        <line x1="140" y1="108" x2="200" y2="75" stroke="#7c3aed" stroke-width="2" marker-end="url(#arr)"/>
+                        <!-- TM -->
+                        <text x="210" y="82" text-anchor="middle" font-size="12" fill="#7c3aed">+</text>
+                        <rect x="220" y="60" width="55" height="30" rx="5" fill="white" stroke="#9333ea" stroke-width="1.5"/>
+                        <text x="247" y="80" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" font-weight="700" fill="#7e22ce">A+B</text>
+                        <text x="288" y="80" text-anchor="middle" font-size="12" fill="#7c3aed">→</text>
+                        <rect x="300" y="60" width="70" height="30" rx="5" fill="#5b21b6" stroke="#4c1d95" stroke-width="1.5"/>
+                        <text x="335" y="80" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" font-weight="700" fill="white">TM</text>
+                        <defs>
+                            <marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                                <path d="M0,0 L0,6 L6,3 z" fill="#7c3aed"/>
+                            </marker>
+                        </defs>
+                        <text x="190" y="143" text-anchor="middle" font-family="IBM Plex Sans" font-size="9" fill="#374151">Dua jalur paralel bergabung di tahap akhir</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- RETRON -->
+        <div class="strategy-content" id="strat-retron">
+            <div class="grid-2">
+                <div>
+                    <div class="lang-id">
+                        <p><b>Retron</b> adalah substruktur minimal dalam TM yang mengindikasikan suatu reaksi (transform) tertentu. Mengidentifikasi retron = langkah kunci retrosintesis efisien.</p>
+                        <p><b>Transform</b> adalah lawan dari suatu reaksi — proses yang membalik suatu reaksi kimia secara analitik.</p>
+                        <ul>
+                            <li>🎯 Retron aldol: β-hidroksi karbonil → aldehida + enol</li>
+                            <li>🎯 Retron Diels-Alder: sikloheksena → diena + dienofil</li>
+                            <li>🎯 Retron Wittig: alkena → keton + ylida</li>
+                            <li>🎯 Retron Grignard: alkohol tersier → keton + RMgX</li>
+                        </ul>
+                    </div>
+                    <div class="lang-en">
+                        <p><b>Retron</b> is a minimal substructure within the TM that indicates a specific reaction (transform). Identifying retrons = key step in efficient retrosynthesis.</p>
+                        <p><b>Transform</b> is the reverse of a reaction — a process that analytically reverses a chemical reaction.</p>
+                        <ul>
+                            <li>🎯 Aldol retron: β-hydroxy carbonyl → aldehyde + enol</li>
+                            <li>🎯 Diels-Alder retron: cyclohexene → diene + dienophile</li>
+                            <li>🎯 Wittig retron: alkene → ketone + ylide</li>
+                            <li>🎯 Grignard retron: tertiary alcohol → ketone + RMgX</li>
+                        </ul>
+                    </div>
+                </div>
+                <div>
+                    <table>
+                        <tr>
+                            <th>Retron <span class="lang-id">(dalam TM)</span><span class="lang-en">(in TM)</span></th>
+                            <th>Transform</th>
+                            <th><span class="lang-id">Reaksi Maju</span><span class="lang-en">Forward Reaction</span></th>
+                        </tr>
+                        <tr>
+                            <td>β-OH–C=O</td>
+                            <td>Retro-Aldol</td>
+                            <td>Aldol <span class="lang-id">kondensasi</span><span class="lang-en">condensation</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="lang-id">Sikloheksena</span><span class="lang-en">Cyclohexene</span></td>
+                            <td>Retro-Diels-Alder</td>
+                            <td>Diels-Alder [4+2]</td>
+                        </tr>
+                        <tr>
+                            <td>R–CH=CH–R'</td>
+                            <td>Retro-Wittig</td>
+                            <td>Wittig <span class="lang-id">reaksi</span><span class="lang-en">reaction</span></td>
+                        </tr>
+                        <tr>
+                            <td>R₃C–OH (<span class="lang-id">tersier</span><span class="lang-en">tertiary</span>)</td>
+                            <td>Retro-Grignard</td>
+                            <td>Grignard + <span class="lang-id">keton</span><span class="lang-en">ketone</span></td>
+                        </tr>
+                        <tr>
+                            <td>–CHOH–CHOH</td>
+                            <td>Retro-Pinacol</td>
+                            <td>Pinacol <span class="lang-id">kopling</span><span class="lang-en">coupling</span></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 5: CONTOH INTERAKTIF ===== -->
+    <div id="contoh-interaktif" class="card">
+        <h2 class="card-title">🔬 <span class="lang-id">Contoh Interaktif — Retrosintesis Langkah-demi-Langkah</span><span class="lang-en">Interactive Example — Step-by-Step Retrosynthesis</span></h2>
+
+        <p class="lang-id" style="color:var(--text-muted);font-size:0.9em;">Klik setiap langkah untuk melihat analisis retrosintesis. Contoh: <b>Sintesis 2-Pentanol</b> dari bahan dasar sederhana.</p>
+        <p class="lang-en" style="color:var(--text-muted);font-size:0.9em;">Click each step to reveal the retrosynthetic analysis. Example: <b>Synthesis of 2-Pentanol</b> from simple starting materials.</p>
+
+        <!-- Target molecule SVG -->
+        <div class="retro-svg-container" style="margin-bottom:20px;">
+            <svg viewBox="0 0 500 100" style="width:100%;height:auto;">
+                <rect width="500" height="100" fill="#faf5ff" rx="8"/>
+                <text x="250" y="22" text-anchor="middle" font-family="IBM Plex Sans" font-size="11" font-weight="700" fill="#5b21b6">Target Molecule: 2-Pentanol</text>
+                <!-- Structure -->
+                <text x="250" y="60" text-anchor="middle" font-family="IBM Plex Mono" font-size="16" font-weight="700" fill="#1e1b4b">CH₃–CH(OH)–CH₂–CH₂–CH₃</text>
+                <text x="250" y="85" text-anchor="middle" font-family="IBM Plex Sans" font-size="10" fill="#374151">C₅H₁₂O | Alkohol Sekunder / Secondary Alcohol</text>
+            </svg>
+        </div>
+
+        <!-- Step 1 -->
+        <div class="retro-step" id="step1" onclick="toggleStep(1)">
+            <div class="retro-step-header">
+                <div class="step-badge">1</div>
+                <span class="lang-id">Identifikasi Gugus Fungsi pada TM</span>
+                <span class="lang-en">Identify Functional Group in TM</span>
+                <span style="margin-left:auto; font-size:0.85em; color:var(--text-muted);" id="stepicon1">▼ Klik</span>
+            </div>
+            <div class="retro-step-body" id="stepbody1">
+                <p class="lang-id">TM adalah <b>2-Pentanol</b> — alkohol sekunder (–OH terikat pada C-2). Gugus fungsi: <b>alkohol sekunder</b>.</p>
+                <p class="lang-en">TM is <b>2-Pentanol</b> — secondary alcohol (–OH at C-2). Functional group: <b>secondary alcohol</b>.</p>
+                <div class="retro-svg-container">
+                    <svg viewBox="0 0 480 90" style="width:100%;height:auto;">
+                        <rect width="480" height="90" fill="#fff" rx="4"/>
+                        <text x="240" y="30" text-anchor="middle" font-family="IBM Plex Mono" font-size="14" font-weight="700" fill="#1e1b4b">CH₃–<tspan fill="#dc2626">CH(OH)</tspan>–CH₂–CH₂–CH₃</text>
+                        <text x="240" y="55" text-anchor="middle" font-family="IBM Plex Sans" font-size="10" fill="#dc2626">↑ Gugus OH sekunder (C-2) / Secondary OH group (C-2)</text>
+                        <text x="240" y="78" text-anchor="middle" font-family="IBM Plex Sans" font-size="9" fill="#374151">Alkohol sekunder dapat diretrosintesis via: Grignard + keton, atau reduksi keton</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="retro-step" id="step2" onclick="toggleStep(2)">
+            <div class="retro-step-header">
+                <div class="step-badge">2</div>
+                <span class="lang-id">Pilih Disconnection — Retron Grignard</span>
+                <span class="lang-en">Choose Disconnection — Grignard Retron</span>
+                <span style="margin-left:auto; font-size:0.85em; color:var(--text-muted);" id="stepicon2">▼ Klik</span>
+            </div>
+            <div class="retro-step-body" id="stepbody2">
+                <p class="lang-id">Alkohol sekunder → retron Grignard. Putus ikatan C–C yang berdekatan dengan C–OH. Disconnect di <b>C1–C2</b>:</p>
+                <p class="lang-en">Secondary alcohol → Grignard retron. Break the C–C bond adjacent to C–OH. Disconnect at <b>C1–C2</b>:</p>
+                <div class="retro-svg-container">
+                    <svg viewBox="0 0 480 120" style="width:100%;height:auto;">
+                        <rect width="480" height="120" fill="#fff" rx="4"/>
+                        <!-- TM with cut -->
+                        <text x="30" y="40" font-family="IBM Plex Mono" font-size="13" font-weight="700" fill="#1e1b4b">CH₃</text>
+                        <text x="68" y="40" font-family="IBM Plex Sans" font-size="13" fill="#374151">–</text>
+                        <text x="75" y="40" font-family="IBM Plex Mono" font-size="13" font-weight="700" fill="#1e1b4b">CH(OH)</text>
+                        <!-- cut mark -->
+                        <line x1="63" y1="20" x2="63" y2="55" stroke="#dc2626" stroke-width="2" stroke-dasharray="3,2"/>
+                        <text x="63" y="15" text-anchor="middle" fill="#dc2626" font-size="10">✂</text>
+                        <text x="160" y="40" font-family="IBM Plex Sans" font-size="13" fill="#374151">–</text>
+                        <text x="170" y="40" font-family="IBM Plex Mono" font-size="13" font-weight="700" fill="#1e1b4b">CH₂CH₂CH₃</text>
+                        <!-- Arrow -->
+                        <text x="240" y="65" text-anchor="middle" font-size="18" fill="#7c3aed" font-weight="900">⟹</text>
+                        <!-- Synthons -->
+                        <text x="60" y="95" text-anchor="middle" font-family="IBM Plex Mono" font-size="12" font-weight="700" fill="#dc2626">CH₃⁺</text>
+                        <text x="100" y="95" text-anchor="middle" font-family="IBM Plex Sans" font-size="12" fill="#374151">+</text>
+                        <text x="210" y="95" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" font-weight="700" fill="#1d4ed8">⁻CH(OH)CH₂CH₂CH₃</text>
+                        <text x="50" y="112" text-anchor="middle" font-family="IBM Plex Sans" font-size="8" fill="#dc2626">Electrophile synthon</text>
+                        <text x="210" y="112" text-anchor="middle" font-family="IBM Plex Sans" font-size="8" fill="#1d4ed8">Nucleophile synthon</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="retro-step" id="step3" onclick="toggleStep(3)">
+            <div class="retro-step-header">
+                <div class="step-badge">3</div>
+                <span class="lang-id">Identifikasi Reagen Sintetik (Synthetic Equivalents)</span>
+                <span class="lang-en">Identify Synthetic Equivalents (Reagents)</span>
+                <span style="margin-left:auto; font-size:0.85em; color:var(--text-muted);" id="stepicon3">▼ Klik</span>
+            </div>
+            <div class="retro-step-body" id="stepbody3">
+                <p class="lang-id">Konversi synthon ke reagen nyata yang tersedia di laboratorium:</p>
+                <p class="lang-en">Convert synthons to real available laboratory reagents:</p>
+                <table>
+                    <tr>
+                        <th>Synthon</th>
+                        <th><span class="lang-id">Jenis</span><span class="lang-en">Type</span></th>
+                        <th>Synthetic Equivalent</th>
+                        <th><span class="lang-id">Keterangan</span><span class="lang-en">Notes</span></th>
+                    </tr>
+                    <tr>
+                        <td><code>CH₃⁺</code></td>
+                        <td><span style="color:#dc2626; font-weight:700;">Elektrofil</span></td>
+                        <td><b>CH₃I</b> <span class="lang-id">(iodometan)</span><span class="lang-en">(iodomethane)</span></td>
+                        <td><span class="lang-id">Reagen alkilasi</span><span class="lang-en">Alkylating agent</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>⁻CH(OH)CH₂CH₂CH₃</code></td>
+                        <td><span style="color:#1d4ed8; font-weight:700;">Nukleofilik</span></td>
+                        <td><b>CH₃CH₂CH₂CHO</b> + <b>RMgBr</b></td>
+                        <td><span class="lang-id">Butanal + Grignard</span><span class="lang-en">Butanal + Grignard</span></td>
+                    </tr>
+                </table>
+                <div class="success-box" style="margin-top:12px;">
+                    <b><span class="lang-id">✅ Alternatif lebih sederhana:</span><span class="lang-en">✅ Simpler alternative:</span></b>
+                    <span class="lang-id"> Gunakan <b>CH₃MgBr</b> (methylmagnesium bromide) + <b>butanal</b>. Reagen Grignard bertindak nukleofilik menyerang karbonil butanal → menghasilkan 2-pentanol setelah hidrolisis.</span>
+                    <span class="lang-en"> Use <b>CH₃MgBr</b> (methylmagnesium bromide) + <b>butanal</b>. The Grignard reagent nucleophilically attacks butanal's carbonyl → gives 2-pentanol after hydrolysis.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="retro-step" id="step4" onclick="toggleStep(4)">
+            <div class="retro-step-header">
+                <div class="step-badge">4</div>
+                <span class="lang-id">Tulis Rute Sintesis Maju (Forward Route)</span>
+                <span class="lang-en">Write the Forward Synthesis Route</span>
+                <span style="margin-left:auto; font-size:0.85em; color:var(--text-muted);" id="stepicon4">▼ Klik</span>
+            </div>
+            <div class="retro-step-body" id="stepbody4">
+                <p class="lang-id">Balik arah retrosintesis untuk mendapatkan rute sintesis sesungguhnya:</p>
+                <p class="lang-en">Reverse the retrosynthetic direction to get the actual synthesis route:</p>
+                <div class="retro-svg-container">
+                    <svg viewBox="0 0 500 140" style="width:100%;height:auto;">
+                        <rect width="500" height="140" fill="#f0fdf4" rx="4"/>
+                        <text x="250" y="20" text-anchor="middle" font-family="IBM Plex Sans" font-size="11" font-weight="700" fill="#166534">Forward Synthesis Route</text>
+                        <!-- Step 1: Make CH3MgBr -->
+                        <rect x="10" y="30" width="100" height="35" rx="5" fill="white" stroke="#16a34a" stroke-width="1.5"/>
+                        <text x="60" y="48" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" font-weight="700" fill="#166534">CH₃Br + Mg</text>
+                        <text x="60" y="60" text-anchor="middle" font-family="IBM Plex Sans" font-size="8" fill="#374151">dry ether</text>
+                        <text x="120" y="53" text-anchor="middle" font-size="12" fill="#16a34a">→</text>
+                        <rect x="130" y="30" width="90" height="35" rx="5" fill="white" stroke="#16a34a" stroke-width="1.5"/>
+                        <text x="175" y="48" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" font-weight="700" fill="#166534">CH₃MgBr</text>
+                        <text x="175" y="60" text-anchor="middle" font-family="IBM Plex Sans" font-size="8" fill="#374151">Grignard reagent</text>
+                        <!-- Arrow + Butanal -->
+                        <text x="230" y="53" text-anchor="middle" font-size="12" fill="#16a34a">+</text>
+                        <rect x="240" y="30" width="85" height="35" rx="5" fill="white" stroke="#16a34a" stroke-width="1.5"/>
+                        <text x="282" y="48" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" font-weight="700" fill="#166534">C₃H₇CHO</text>
+                        <text x="282" y="60" text-anchor="middle" font-family="IBM Plex Sans" font-size="8" fill="#374151">Butanal</text>
+                        <text x="336" y="53" text-anchor="middle" font-size="12" fill="#16a34a">→</text>
+                        <!-- Alkoxide -->
+                        <rect x="346" y="30" width="80" height="35" rx="5" fill="white" stroke="#059669" stroke-width="1.5"/>
+                        <text x="386" y="48" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" font-weight="700" fill="#065f46">Alkoksida</text>
+                        <text x="386" y="60" text-anchor="middle" font-family="IBM Plex Sans" font-size="8" fill="#374151">intermediate</text>
+                        <!-- Step 2: Hydrolysis -->
+                        <text x="250" y="90" text-anchor="middle" font-family="IBM Plex Sans" font-size="10" fill="#374151">↓ H₃O⁺ / H₂O (hidrolisis / hydrolysis)</text>
+                        <!-- Product -->
+                        <rect x="150" y="103" width="200" height="30" rx="5" fill="#5b21b6" stroke="#4c1d95" stroke-width="1.5"/>
+                        <text x="250" y="123" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" font-weight="700" fill="white">CH₃CH(OH)CH₂CH₂CH₃</text>
+                        <text x="250" y="138" text-anchor="middle" font-family="IBM Plex Sans" font-size="8" fill="#7c3aed">2-Pentanol ✅</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-purple" onclick="revealAllSteps()">
+                <span class="lang-id">🔍 Tampilkan Semua Langkah</span>
+                <span class="lang-en">🔍 Reveal All Steps</span>
+            </button>
+            <button class="btn-danger-outline" onclick="resetSteps()">
+                <span class="lang-id">🔄 Reset</span>
+                <span class="lang-en">🔄 Reset</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 6: LATIHAN SOAL ===== -->
+    <div id="latihan-soal" class="card">
+        <h2 class="card-title">
+            <span class="lang-id">📝 Evaluasi & Latihan Soal — Analisa Retrosintesis</span>
+            <span class="lang-en">📝 Evaluation & Quiz — Retrosynthetic Analysis</span>
+        </h2>
+        <p class="lang-id" style="color:var(--text-muted); font-size:0.9em;">Terdapat <b>8 soal</b> yang mencakup seluruh materi retrosintesis. Klik jawaban untuk melihat pembahasan lengkap.</p>
+        <p class="lang-en" style="color:var(--text-muted); font-size:0.9em;">There are <b>8 questions</b> covering all retrosynthesis topics. Click an answer to see the full explanation.</p>
+
+        <div class="quiz-progress">
+            <span class="quiz-progress-text">
+                <span class="lang-id">Soal Terjawab: </span><span class="lang-en">Questions Answered: </span>
+                <span id="answered-count">0</span> / 8
+            </span>
+            <span class="score-badge">
+                <span class="lang-id">Skor: </span><span class="lang-en">Score: </span>
+                <span id="score-display">0</span> / 8
+            </span>
+        </div>
+
+        <!-- Q1 -->
+        <div class="quiz-item" id="qi-1">
+            <span class="quiz-tag tag-konsep"><span class="lang-id">Konsep Dasar</span><span class="lang-en">Basic Concept</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">1</div>
+                <div class="quiz-q-text lang-id">Siapakah tokoh yang memperkenalkan metode retrosintesis dan menerima Hadiah Nobel Kimia 1990 atas kontribusinya?</div>
+                <div class="quiz-q-text lang-en">Who introduced the retrosynthetic analysis method and received the 1990 Nobel Prize in Chemistry for it?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(1,'A',false)"><span class="opt-letter">A</span><span>Robert B. Woodward</span></button>
+            <button class="quiz-option" onclick="submitAnswer(1,'B',true)"><span class="opt-letter">B</span><span>Elias J. Corey (E.J. Corey)</span></button>
+            <button class="quiz-option" onclick="submitAnswer(1,'C',false)"><span class="opt-letter">C</span><span>Linus Pauling</span></button>
+            <button class="quiz-option" onclick="submitAnswer(1,'D',false)"><span class="opt-letter">D</span><span>Friedrich Wöhler</span></button>
+            <div class="feedback" id="fb-1"></div>
+            <div class="pembahasan" id="pem-1">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> <b>E.J. Corey</b> dari Harvard University memperkenalkan konsep retrosintesis (retrosynthetic analysis) secara sistematis, termasuk notasi panah ⟹ dan terminologi "disconnection", "synthon", serta "synthetic equivalent". Beliau memenangkan Nobel Kimia 1990 untuk pengembangan teori dan metodik dalam sintesis organik. <b>Robert B. Woodward</b> adalah kimiawan sintesis organik legendaris, tetapi dia menerima Nobel 1965, bukan 1990.</span>
+                <span class="lang-en"> <b>E.J. Corey</b> from Harvard University systematically introduced retrosynthetic analysis, including the ⟹ arrow notation and terminology such as "disconnection", "synthon", and "synthetic equivalent". He won the Nobel Prize in Chemistry 1990 for theory and methodology in organic synthesis. <b>Robert B. Woodward</b> was a legendary organic synthesis chemist, but he received the Nobel in 1965, not 1990.</span>
+            </div>
+        </div>
+
+        <!-- Q2 -->
+        <div class="quiz-item" id="qi-2">
+            <span class="quiz-tag tag-disconn"><span class="lang-id">Disconnection</span><span class="lang-en">Disconnection</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">2</div>
+                <div class="quiz-q-text lang-id">Apa yang dimaksud dengan "disconnection" dalam retrosintesis?</div>
+                <div class="quiz-q-text lang-en">What does "disconnection" mean in retrosynthesis?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(2,'A',false)"><span class="opt-letter">A</span><span class="lang-id">Memutus molekul dengan reaksi kimia nyata di laboratorium.</span><span class="lang-en">Breaking a molecule with an actual chemical reaction in the lab.</span></button>
+            <button class="quiz-option" onclick="submitAnswer(2,'B',false)"><span class="opt-letter">B</span><span class="lang-id">Proses memisahkan campuran senyawa organik dengan kromatografi.</span><span class="lang-en">The process of separating organic compound mixtures by chromatography.</span></button>
+            <button class="quiz-option" onclick="submitAnswer(2,'C',true)"><span class="opt-letter">C</span><span class="lang-id">Proses memutus ikatan secara imajinatif/analitik untuk mengidentifikasi prekursor yang diperlukan.</span><span class="lang-en">Imaginatively/analytically breaking a bond to identify required precursors.</span></button>
+            <button class="quiz-option" onclick="submitAnswer(2,'D',false)"><span class="opt-letter">D</span><span class="lang-id">Reaksi eliminasi yang menghasilkan alkena dari alkohol.</span><span class="lang-en">An elimination reaction producing alkenes from alcohols.</span></button>
+            <div class="feedback" id="fb-2"></div>
+            <div class="pembahasan" id="pem-2">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Disconnection adalah langkah <b>analitik/imajinatif</b> — bukan reaksi nyata! Kita secara mental "memotong" ikatan pada molekul target untuk melihat dari mana bagian-bagiannya bisa berasal. Setiap disconnection harus berkorespondensi dengan reaksi kimia nyata yang diketahui (sintonisnya valid). Pilihan A salah karena disconnection tidak dilakukan secara fisik. Pilihan B dan D sama sekali tidak relevan dengan konsep disconnection dalam retrosintesis.</span>
+                <span class="lang-en"> Disconnection is an <b>analytical/imaginative</b> step — not an actual reaction! We mentally "cut" a bond in the target molecule to see where its parts could come from. Every disconnection must correspond to a known real chemical reaction (valid synthon). Option A is wrong because disconnection is not a physical act. Options B and D are completely irrelevant to the concept of disconnection in retrosynthesis.</span>
+            </div>
+        </div>
+
+        <!-- Q3 -->
+        <div class="quiz-item" id="qi-3">
+            <span class="quiz-tag tag-synthon"><span>Synthon</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">3</div>
+                <div class="quiz-q-text lang-id">Reagen sintetik (synthetic equivalent) manakah yang paling tepat digunakan untuk mensimulasikan synthon nukleofilik <b>R–C⁻</b> dalam reaksi Grignard?</div>
+                <div class="quiz-q-text lang-en">Which synthetic equivalent best simulates the nucleophilic synthon <b>R–C⁻</b> in a Grignard reaction?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(3,'A',false)"><span class="opt-letter">A</span><span>R–OH (alkohol)</span></button>
+            <button class="quiz-option" onclick="submitAnswer(3,'B',true)"><span class="opt-letter">B</span><span>R–MgX (Grignard reagent)</span></button>
+            <button class="quiz-option" onclick="submitAnswer(3,'C',false)"><span class="opt-letter">C</span><span>R–X (alkil halida)</span></button>
+            <button class="quiz-option" onclick="submitAnswer(3,'D',false)"><span class="opt-letter">D</span><span>R–COOH (asam karboksilat)</span></button>
+            <div class="feedback" id="fb-3"></div>
+            <div class="pembahasan" id="pem-3">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Synthon nukleofilik <b>R–C⁻</b> tidak bisa ada sebagai spesi bebas karena sangat tidak stabil. Reagen sintetik yang paling mendekati perilaku R–C⁻ adalah <b>R–MgX (reagen Grignard)</b>. Ikatan C–Mg bersifat polar sehingga karbon memiliki densitas elektron tinggi (δ⁻) dan dapat berperan sebagai nukleofilik kuat, menyerang gugus karbonil. R–X (pilihan C) justru elektrofil, bukan nukleofilik. R–OH adalah alkohol biasa. R–COOH adalah asam.</span>
+                <span class="lang-en"> The nucleophilic synthon <b>R–C⁻</b> cannot exist as a free species — it is extremely unstable. The best synthetic equivalent is <b>R–MgX (Grignard reagent)</b>. The C–Mg bond is polar, giving carbon high electron density (δ⁻) so it acts as a strong nucleophile, attacking carbonyl groups. R–X (option C) is actually electrophilic. R–OH is just an alcohol. R–COOH is an acid.</span>
+            </div>
+        </div>
+
+        <!-- Q4 -->
+        <div class="quiz-item" id="qi-4">
+            <span class="quiz-tag tag-fgi"><span>FGI</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">4</div>
+                <div class="quiz-q-text lang-id">Manakah pernyataan yang BENAR mengenai FGI (Functional Group Interconversion)?</div>
+                <div class="quiz-q-text lang-en">Which statement is CORRECT regarding FGI (Functional Group Interconversion)?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(4,'A',false)"><span class="opt-letter">A</span><span class="lang-id">FGI mengubah kerangka karbon molekul sekaligus gugus fungsinya.</span><span class="lang-en">FGI changes the carbon skeleton of the molecule along with the functional group.</span></button>
+            <button class="quiz-option" onclick="submitAnswer(4,'B',false)"><span class="opt-letter">B</span><span class="lang-id">FGI hanya boleh dilakukan setelah disconnection selesai.</span><span class="lang-en">FGI may only be performed after disconnection is complete.</span></button>
+            <button class="quiz-option" onclick="submitAnswer(4,'C',true)"><span class="opt-letter">C</span><span class="lang-id">FGI mengubah gugus fungsi tanpa mengubah kerangka karbon, dan biasanya dilakukan sebelum disconnection.</span><span class="lang-en">FGI converts the functional group without changing the carbon skeleton, and is usually done before disconnection.</span></button>
+            <button class="quiz-option" onclick="submitAnswer(4,'D',false)"><span class="opt-letter">D</span><span class="lang-id">FGI dan disconnection adalah istilah yang sama.</span><span class="lang-en">FGI and disconnection are the same concept.</span></button>
+            <div class="feedback" id="fb-4"></div>
+            <div class="pembahasan" id="pem-4">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> FGI (Interkonversi Gugus Fungsi) adalah teknik mengubah <b>hanya gugus fungsi</b> dari molekul — bukan kerangka karbonnya. Misalnya: R–COOH → R–CHO (oksidasi balik via reduksi), atau R–OH → R–Br (halogenasi). FGI biasanya dilakukan <i>sebelum</i> disconnection untuk menyederhanakan analisis. Pilihan A salah karena kerangka karbon dipertahankan. Pilihan B salah — urutan umumnya adalah FGI dahulu, baru disconnect. Pilihan D salah total — FGI dan disconnection adalah dua teknik berbeda.</span>
+                <span class="lang-en"> FGI (Functional Group Interconversion) is a technique that changes <b>only the functional group</b> of a molecule — not its carbon skeleton. For example: R–COOH → R–CHO (reverse oxidation via reduction), or R–OH → R–Br (halogenation). FGI is typically done <i>before</i> disconnection to simplify the analysis. Option A is wrong because the carbon skeleton is preserved. Option B is wrong — the general order is FGI first, then disconnect. Option D is completely wrong — FGI and disconnection are two different techniques.</span>
+            </div>
+        </div>
+
+        <!-- Q5 -->
+        <div class="quiz-item" id="qi-5">
+            <span class="quiz-tag tag-strategi"><span class="lang-id">Strategi</span><span class="lang-en">Strategy</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">5</div>
+                <div class="quiz-q-text lang-id">Sintesis konvergen (convergent synthesis) lebih disukai daripada sintesis linear untuk molekul kompleks. Mengapa?</div>
+                <div class="quiz-q-text lang-en">Convergent synthesis is preferred over linear synthesis for complex molecules. Why?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(5,'A',false)"><span class="opt-letter">A</span><span class="lang-id">Karena lebih mudah dipantau dan hanya melibatkan satu jalur reaksi.</span><span class="lang-en">Because it is easier to monitor and involves only one reaction pathway.</span></button>
+            <button class="quiz-option" onclick="submitAnswer(5,'B',true)"><span class="opt-letter">B</span><span class="lang-id">Karena beberapa fragmen disintesis paralel dan digabungkan di akhir, sehingga yield total jauh lebih tinggi dibanding sintesis linear.</span><span class="lang-en">Because multiple fragments are synthesized in parallel and combined at the end, resulting in a much higher overall yield than linear synthesis.</span></button>
+            <button class="quiz-option" onclick="submitAnswer(5,'C',false)"><span class="opt-letter">C</span><span class="lang-id">Karena tidak memerlukan reagen Grignard dalam prosesnya.</span><span class="lang-en">Because it does not require Grignard reagents in the process.</span></button>
+            <button class="quiz-option" onclick="submitAnswer(5,'D',false)"><span class="opt-letter">D</span><span class="lang-id">Karena lebih murah karena hanya menggunakan satu jenis bahan awal.</span><span class="lang-en">Because it is cheaper as it uses only one type of starting material.</span></button>
+            <div class="feedback" id="fb-5"></div>
+            <div class="pembahasan" id="pem-5">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Dalam sintesis linear, yield total = y₁ × y₂ × ... × yₙ. Contoh: 10 langkah masing-masing 90% → total hanya <b>34.9%</b>. Dalam sintesis konvergen, jalur-jalur yang lebih pendek berjalan <i>paralel</i> dan digabungkan — sehingga tidak semua langkah saling dikalikan. Yield total jauh lebih tinggi. Kunci keunggulan konvergen: <b>efisiensi atom dan waktu</b>. Pilihan A mendeskripsikan sintesis linear. Pilihan C dan D tidak relevan secara ilmiah dengan perbedaan antara dua strategi ini.</span>
+                <span class="lang-en"> In linear synthesis, total yield = y₁ × y₂ × ... × yₙ. Example: 10 steps each at 90% → total only <b>34.9%</b>. In convergent synthesis, shorter parallel routes are combined — so not all steps multiply against each other. Overall yield is much higher. Key advantage of convergent: <b>atom and time efficiency</b>. Option A describes linear synthesis. Options C and D are scientifically irrelevant to the difference between the two strategies.</span>
+            </div>
+        </div>
+
+        <!-- Q6 -->
+        <div class="quiz-item" id="qi-6">
+            <span class="quiz-tag tag-disconn"><span>Disconnection</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">6</div>
+                <div class="quiz-q-text lang-id">Dalam retrosintesis, <b>retron Diels-Alder</b> mengindikasikan bahwa substruktur apa dalam TM yang perlu diidentifikasi?</div>
+                <div class="quiz-q-text lang-en">In retrosynthesis, the <b>Diels-Alder retron</b> indicates which substructure must be identified in the TM?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(6,'A',false)"><span class="opt-letter">A</span><span class="lang-id">β-Hidroksi karbonil (β-hydroxy carbonyl)</span><span class="lang-en">β-Hydroxy carbonyl</span></button>
+            <button class="quiz-option" onclick="submitAnswer(6,'B',false)"><span class="opt-letter">B</span><span class="lang-id">Alkohol tersier dengan tiga gugus berbeda</span><span class="lang-en">Tertiary alcohol with three different groups</span></button>
+            <button class="quiz-option" onclick="submitAnswer(6,'C',true)"><span class="opt-letter">C</span><span class="lang-id">Cincin sikloheksena (6-anggota dengan satu ikatan rangkap)</span><span class="lang-en">A cyclohexene ring (6-membered with one double bond)</span></button>
+            <button class="quiz-option" onclick="submitAnswer(6,'D',false)"><span class="opt-letter">D</span><span class="lang-id">Alkena dengan gugus fosforus terikat</span><span class="lang-en">Alkene with a phosphorus group attached</span></button>
+            <div class="feedback" id="fb-6"></div>
+            <div class="pembahasan" id="pem-6">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Retron Diels-Alder adalah <b>sikloheksena</b> (cincin 6 anggota dengan 1 ikatan rangkap C=C). Ketika kita melihat substruktur ini dalam TM, ini adalah sinyal bahwa TM tersebut <i>kemungkinan</i> bisa disintesis menggunakan reaksi Diels-Alder [4+2] dengan cara memecah cincinnya menjadi diena (4π) dan dienofil (2π). Retron aldol (pilihan A) adalah β-hidroksi karbonil. Retron Grignard (pilihan B) adalah alkohol tersier. Retron Wittig (pilihan D) adalah alkena — bukan sikloheksena.</span>
+                <span class="lang-en"> The Diels-Alder retron is a <b>cyclohexene</b> (6-membered ring with one C=C double bond). When this substructure is found in a TM, it signals that the TM can potentially be synthesized using the Diels-Alder [4+2] reaction by breaking the ring into a diene (4π) and dienophile (2π). The aldol retron (option A) is the β-hydroxy carbonyl. The Grignard retron (option B) is a tertiary alcohol. The Wittig retron (option D) is an alkene — not a cyclohexene.</span>
+            </div>
+        </div>
+
+        <!-- Q7 -->
+        <div class="quiz-item" id="qi-7">
+            <span class="quiz-tag tag-konsep"><span class="lang-id">Konsep Dasar</span><span class="lang-en">Basic Concept</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">7</div>
+                <div class="quiz-q-text lang-id">Apakah perbedaan utama antara panah retrosintesis (⟹) dengan panah reaksi biasa (→)?</div>
+                <div class="quiz-q-text lang-en">What is the main difference between the retrosynthetic arrow (⟹) and a regular reaction arrow (→)?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(7,'A',false)"><span class="opt-letter">A</span><span class="lang-id">Panah ⟹ menunjukkan reaksi yang berlangsung lebih cepat dari →.</span><span class="lang-en">The ⟹ arrow indicates a faster reaction than →.</span></button>
+            <button class="quiz-option" onclick="submitAnswer(7,'B',false)"><span class="opt-letter">B</span><span class="lang-id">Panah ⟹ dan → identik; hanya berbeda gaya penulisan.</span><span class="lang-en">⟹ and → are identical; only differ in writing style.</span></button>
+            <button class="quiz-option" onclick="submitAnswer(7,'C',true)"><span class="opt-letter">C</span><span class="lang-id">Panah ⟹ menunjukkan arah analitik mundur (TM → prekursor), sedangkan → menunjukkan reaksi kimia nyata yang maju (SM → produk).</span><span class="lang-en">⟹ shows analytical backward direction (TM → precursor), while → shows actual forward chemical reactions (SM → product).</span></button>
+            <button class="quiz-option" onclick="submitAnswer(7,'D',false)"><span class="opt-letter">D</span><span class="lang-id">Panah ⟹ hanya digunakan untuk reaksi reversibel.</span><span class="lang-en">The ⟹ arrow is only used for reversible reactions.</span></button>
+            <div class="feedback" id="fb-7"></div>
+            <div class="pembahasan" id="pem-7">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Ini adalah perbedaan fundamental dalam notasi kimia organik. Panah ⟹ (<i>retrosynthetic arrow</i> atau <i>double-headed hollow arrow</i>) berjalan dari <b>produk ke prekursor</b> dan merupakan notasi <i>analitik</i>, bukan reaksi sesungguhnya. Sebaliknya, panah → menunjukkan reaksi kimia yang nyata terjadi dari bahan awal ke produk. Retrosintesis adalah <i>perencanaan</i>, bukan pelaksanaan. Pilihan D keliru karena ⟹ bukan simbol kesetimbangan (yang dilambangkan ⇌).</span>
+                <span class="lang-en"> This is a fundamental difference in organic chemistry notation. The ⟹ arrow (retrosynthetic/double-headed hollow arrow) goes from <b>product to precursor</b> and is an <i>analytical</i> notation — not an actual reaction. Conversely, → shows an actual chemical reaction proceeding from starting material to product. Retrosynthesis is <i>planning</i>, not execution. Option D is wrong because ⟹ is not an equilibrium symbol (which is ⇌).</span>
+            </div>
+        </div>
+
+        <!-- Q8 -->
+        <div class="quiz-item" id="qi-8">
+            <span class="quiz-tag tag-synthon"><span>Synthon</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">8</div>
+                <div class="quiz-q-text lang-id">Seorang kimiawan ingin mensintesis <b>3-pentanol</b> (CH₃CH₂CH(OH)CH₂CH₃) menggunakan pendekatan retrosintesis Grignard. Kombinasi bahan awal mana yang paling logis?</div>
+                <div class="quiz-q-text lang-en">A chemist wants to synthesize <b>3-pentanol</b> (CH₃CH₂CH(OH)CH₂CH₃) using Grignard retrosynthesis. Which starting material combination is most logical?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(8,'A',false)"><span class="opt-letter">A</span><span class="lang-id">CH₃MgBr + pentanal (C₄H₉CHO)</span><span class="lang-en">CH₃MgBr + pentanal (C₄H₉CHO)</span></button>
+            <button class="quiz-option" onclick="submitAnswer(8,'B',true)"><span class="opt-letter">B</span><span class="lang-id">C₂H₅MgBr + propanal (CH₃CH₂CHO) — atau ekuivalennya</span><span class="lang-en">C₂H₅MgBr + propanal (CH₃CH₂CHO) — or equivalent</span></button>
+            <button class="quiz-option" onclick="submitAnswer(8,'C',false)"><span class="opt-letter">C</span><span class="lang-id">NaBH₄ + 3-pentanon</span><span class="lang-en">NaBH₄ + 3-pentanone</span></button>
+            <button class="quiz-option" onclick="submitAnswer(8,'D',false)"><span class="opt-letter">D</span><span class="lang-id">CH₃CH₂OH + CH₃CH₂OH (kopling dua alkohol)</span><span class="lang-en">CH₃CH₂OH + CH₃CH₂OH (coupling of two alcohols)</span></button>
+            <div class="feedback" id="fb-8"></div>
+            <div class="pembahasan" id="pem-8">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> 3-Pentanol adalah alkohol <b>sekunder</b> dengan gugus –OH di C-3, dikelilingi dua gugus etil simetris. Disconnect di C2–C3 → synthon: <b>C₂H₅⁺</b> (elektrofil) + <b>⁻C₃H₆OH</b> (nukleofilik). Reagen sintetiknya: <b>C₂H₅MgBr</b> + <b>propanal</b>. Pilihan A salah karena CH₃MgBr hanya 1 karbon, menghasilkan 2-pentanol bukan 3-pentanol. Pilihan C (NaBH₄ + 3-pentanon) sebenarnya benar secara reaksi, namun soalnya spesifik meminta pendekatan <i>Grignard</i>, sehingga pilihan B yang menggunakan reagen Grignard adalah jawaban yang dimaksud. Pilihan D adalah kimia yang tidak valid.</span>
+                <span class="lang-en"> 3-Pentanol is a <b>secondary</b> alcohol with –OH at C-3, flanked by two symmetric ethyl groups. Disconnect at C2–C3 → synthons: <b>C₂H₅⁺</b> (electrophilic) + <b>⁻C₃H₆OH</b> (nucleophilic). Synthetic equivalents: <b>C₂H₅MgBr</b> + <b>propanal</b>. Option A is wrong because CH₃MgBr is only 1 carbon → gives 2-pentanol not 3-pentanol. Option C (NaBH₄ + 3-pentanone) is chemically correct as a reaction, but the question specifically asks for the <i>Grignard</i> approach, so option B using the Grignard reagent is the intended answer. Option D is chemically invalid.</span>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="quiz-summary" id="quiz-summary">
+            <h3 class="lang-id">🎉 Selesai! Hasil Evaluasi Anda</h3>
+            <h3 class="lang-en">🎉 Finished! Your Evaluation Result</h3>
+            <div class="big-score" id="final-score">0 / 8</div>
+            <p id="summary-message"></p>
+            <button class="btn-retake" onclick="retakeQuiz()">
+                <span class="lang-id">🔁 Ulangi Latihan</span><span class="lang-en">🔁 Retake Quiz</span>
+            </button>
+        </div>
+
+    </div><!-- end card -->
+
+</div><!-- end container -->
+
+<script>
+    // ===== LANGUAGE =====
+    function setLanguage(lang) {
+        document.getElementById('docLang').setAttribute('lang', lang);
+        document.getElementById('btn-id').classList.toggle('active', lang === 'id');
+        document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+    }
+
+    // ===== STRATEGY TABS =====
+    function showStrategy(id) {
+        document.querySelectorAll('.strategy-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.stab').forEach(el => el.classList.remove('active'));
+        document.getElementById('strat-' + id).classList.add('active');
+        event.target.classList.add('active');
+    }
+
+    // ===== INTERACTIVE STEPS =====
+    const totalSteps = 4;
+    function toggleStep(n) {
+        let step = document.getElementById('step' + n);
+        let icon = document.getElementById('stepicon' + n);
+        let isActive = step.classList.contains('active');
+        step.classList.toggle('active', !isActive);
+        icon.textContent = isActive ? '▼ Klik' : '▲ Tutup';
+    }
+
+    function revealAllSteps() {
+        for (let i = 1; i <= totalSteps; i++) {
+            document.getElementById('step' + i).classList.add('active');
+            document.getElementById('stepicon' + i).textContent = '▲ Tutup';
+        }
+    }
+
+    function resetSteps() {
+        for (let i = 1; i <= totalSteps; i++) {
+            document.getElementById('step' + i).classList.remove('active');
+            document.getElementById('stepicon' + i).textContent = '▼ Klik';
+        }
+    }
+
+    // ===== QUIZ SYSTEM =====
+    let score = 0;
+    let answered = 0;
+    const totalQ = 8;
+    const correctAnswers = { 1:'B', 2:'C', 3:'B', 4:'C', 5:'B', 6:'C', 7:'C', 8:'B' };
+
+    function submitAnswer(qNum, choice, isCorrect) {
+        let item = document.getElementById('qi-' + qNum);
+        if (item.classList.contains('answered-correct') || item.classList.contains('answered-wrong')) return;
+
+        let lang = document.getElementById('docLang').getAttribute('lang');
+        let fb   = document.getElementById('fb-' + qNum);
+        let pem  = document.getElementById('pem-' + qNum);
+
+        item.querySelectorAll('.quiz-option').forEach(btn => {
+            btn.disabled = true;
+            let btnChoice = btn.getAttribute('onclick').match(/'([A-D])'/)[1];
+            if (btnChoice === correctAnswers[qNum]) btn.classList.add('correct-choice');
+            else if (btnChoice === choice && !isCorrect) btn.classList.add('wrong-choice');
+        });
+
+        if (isCorrect) {
+            fb.className = 'feedback correct';
+            fb.innerHTML = lang === 'id' ? "✅ Jawaban Anda Tepat!" : "✅ Correct Answer!";
+            item.classList.add('answered-correct');
+            score++;
+        } else {
+            fb.className = 'feedback wrong';
+            fb.innerHTML = lang === 'id'
+                ? "❌ Jawaban Kurang Tepat. Lihat pembahasan di bawah."
+                : "❌ Incorrect. See the explanation below.";
+            item.classList.add('answered-wrong');
+        }
+
+        pem.style.display = 'block';
+        answered++;
+        document.getElementById('answered-count').textContent = answered;
+        document.getElementById('score-display').textContent = score;
+        if (answered === totalQ) showSummary();
+    }
+
+    function showSummary() {
+        let lang = document.getElementById('docLang').getAttribute('lang');
+        document.getElementById('final-score').textContent = score + ' / ' + totalQ;
+        let msg = '';
+        if (score === totalQ) {
+            msg = lang === 'id'
+                ? '🏆 Sempurna! Anda menguasai seluruh materi retrosintesis dengan sangat baik!'
+                : '🏆 Perfect! You have mastered all retrosynthesis topics excellently!';
+        } else if (score >= 6) {
+            msg = lang === 'id'
+                ? '👏 Bagus! Anda memahami sebagian besar materi. Tinjau kembali soal yang salah.'
+                : '👏 Great job! You understand most of the material. Review the incorrect ones.';
+        } else if (score >= 4) {
+            msg = lang === 'id'
+                ? '📖 Cukup. Masih ada beberapa konsep retrosintesis yang perlu dipelajari ulang.'
+                : '📖 Fair. Some retrosynthesis concepts still need to be revisited.';
+        } else {
+            msg = lang === 'id'
+                ? '💡 Pelajari kembali materi dari awal, terutama konsep synthon dan disconnection. Semangat!'
+                : '💡 Review the material from the start, especially synthon and disconnection concepts. Keep going!';
+        }
+        document.getElementById('summary-message').textContent = msg;
+        let summary = document.getElementById('quiz-summary');
+        summary.style.display = 'block';
+        summary.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function retakeQuiz() {
+        score = 0;
+        answered = 0;
+        document.getElementById('answered-count').textContent = 0;
+        document.getElementById('score-display').textContent = 0;
+        document.getElementById('quiz-summary').style.display = 'none';
+        for (let i = 1; i <= totalQ; i++) {
+            let item = document.getElementById('qi-' + i);
+            item.classList.remove('answered-correct', 'answered-wrong');
+            item.querySelectorAll('.quiz-option').forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('correct-choice', 'wrong-choice');
+            });
+            document.getElementById('fb-' + i).className = 'feedback';
+            document.getElementById('fb-' + i).innerHTML = '';
+            document.getElementById('pem-' + i).style.display = 'none';
+        }
+        document.getElementById('latihan-soal').scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
+</body>
+</html>

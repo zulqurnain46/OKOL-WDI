@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mekanisme SN1 3D – OKOL-WDI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:ital,wght@0,300;0,400;0,600;0,700;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        :root {
+            --primary: #0a0e1a;
+            --secondary: #0d1530;
+            --accent-blue: #00b4d8;
+            --accent-cyan: #06ffd8;
+            --accent-purple: #7b2fff;
+            --accent-violet: #c77dff;
+            --glow-cyan: rgba(6,255,216,0.4);
+            --glow-purple: rgba(123,47,255,0.3);
+            --text-primary: #e8f4fd;
+            --text-secondary: #8ab4cc;
+            --text-muted: #4a6070;
+            --glass: rgba(13,21,48,0.72);
+            --glass-border: rgba(6,255,216,0.18);
+            --font-display: 'Orbitron', monospace;
+            --font-body: 'Exo 2', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body { margin: 0; overflow: hidden; background-color: var(--primary); color: var(--text-primary); font-family: var(--font-body); }
+        ::selection { background: var(--accent-purple); color: #fff; }
+        #webgl-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
+        .bg-grid {
+            position: fixed; inset: 0; pointer-events: none; z-index: 1;
+            background-image:
+                linear-gradient(rgba(6,255,216,0.018) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(6,255,216,0.018) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse at 50% 50%, black, transparent 85%);
+        }
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 32px rgba(0,0,0,0.5), 0 0 0 0 rgba(6,255,216,0);
+            transition: box-shadow 0.3s, border-color 0.3s;
+        }
+        .glass-panel:hover { border-color: rgba(6,255,216,0.35); box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 24px var(--glow-cyan); }
+        .ui-layer { position: absolute; z-index: 10; pointer-events: none; }
+        .interactive { pointer-events: auto; }
+        input[type=range] { -webkit-appearance: none; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--accent-cyan); cursor: pointer; margin-top: -6px; box-shadow: 0 0 8px var(--glow-cyan); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: rgba(6,255,216,0.15); border-radius: 2px; }
+        .glow-text { text-shadow: 0 0 8px var(--glow-cyan); }
+        canvas#energy-chart { width: 100%; height: 150px; }
+
+        /* START OVERLAY */
+        #start-overlay {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: var(--primary); z-index: 50;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: flex-start;
+            padding-top: 18vh;
+            transition: opacity 0.6s;
+        }
+        #start-overlay::before {
+            content: '';
+            position: absolute; inset: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse at 20% 40%, rgba(123,47,255,0.18) 0%, transparent 55%),
+                radial-gradient(ellipse at 80% 30%, rgba(0,180,216,0.14) 0%, transparent 55%),
+                radial-gradient(ellipse at 50% 80%, rgba(6,255,216,0.10) 0%, transparent 55%);
+        }
+        .overlay-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(6,255,216,0.08);
+            border: 1px solid rgba(6,255,216,0.3);
+            border-radius: 20px; padding: 6px 20px;
+            font-family: var(--font-mono); font-size: 0.72rem;
+            color: var(--accent-cyan); letter-spacing: 2px;
+            margin-bottom: 1.6rem;
+            animation: pulse-border 2s ease infinite;
+            position: relative; z-index: 1;
+        }
+        .overlay-badge::before { content: '◉'; font-size: 0.6rem; animation: blink 1.5s ease infinite; }
+        @keyframes pulse-border {
+            0%,100% { box-shadow: 0 0 0 0 rgba(6,255,216,0.3); }
+            50% { box-shadow: 0 0 0 6px rgba(6,255,216,0); }
+        }
+        @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+        .overlay-title {
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 5vw, 3.4rem);
+            font-weight: 900; line-height: 1.1;
+            text-align: center; margin-bottom: 0.5rem;
+            position: relative; z-index: 1;
+        }
+        .overlay-title .t1 {
+            background: linear-gradient(135deg, #fff 0%, var(--accent-cyan) 50%, var(--accent-violet) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            display: block;
+        }
+        .overlay-title .t2 {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            display: block; font-size: 0.5em;
+            letter-spacing: 4px; margin-top: 6px;
+        }
+        .overlay-sub {
+            font-family: var(--font-body);
+            font-size: 0.92rem; font-weight: 300;
+            color: var(--text-secondary);
+            margin: 1.2rem 0 2rem; letter-spacing: 0.5px;
+            position: relative; z-index: 1;
+        }
+        .btn-start {
+            position: relative; z-index: 1;
+            padding: 14px 36px; border-radius: 50px; border: none;
+            font-family: var(--font-body); font-weight: 700; font-size: 0.92rem;
+            letter-spacing: 0.5px; cursor: pointer;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            color: #fff; box-shadow: 0 0 30px var(--glow-cyan);
+            transition: all 0.3s; overflow: hidden;
+        }
+        .btn-start::before {
+            content: ''; position: absolute; inset: 0;
+            background: rgba(255,255,255,0.12);
+            transform: translateX(-100%) skewX(-15deg); transition: transform 0.5s;
+        }
+        .btn-start:hover::before { transform: translateX(100%) skewX(-15deg); }
+        .btn-start:hover { transform: translateY(-3px); box-shadow: 0 8px 40px var(--glow-cyan); }
+        .overlay-formula {
+            position: relative; z-index: 1;
+            font-family: var(--font-mono); font-size: 0.72rem;
+            color: var(--accent-purple); opacity: 0.7;
+            letter-spacing: 2px; margin-top: 2rem;
+        }
+        .lang-toggle-wrap {
+            display: flex; background: rgba(0,0,0,0.28);
+            border-radius: 10px; padding: 3px; gap: 3px;
+        }
+        .lang-seg {
+            padding: 5px 14px; border-radius: 7px; border: none;
+            font-family: var(--font-mono); font-weight: 700;
+            font-size: 0.72rem; letter-spacing: 1.5px; cursor: pointer;
+            transition: all 0.25s; color: var(--text-muted); background: transparent; line-height: 1;
+        }
+        .lang-seg:hover { color: var(--accent-cyan); background: rgba(6,255,216,0.08); }
+        .lang-seg.active {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            color: #0a0e1a; box-shadow: 0 0 10px var(--glow-cyan);
+        }
+        input:checked[type='checkbox'].toggle-checkbox { transform: translateX(100%); border-color: var(--accent-cyan); }
+        input:checked[type='checkbox'].toggle-checkbox + .toggle-label { background-color: var(--accent-cyan); }
+        #btn-play { background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple)); box-shadow: 0 0 20px var(--glow-cyan); }
+        #btn-play:hover { box-shadow: 0 0 35px var(--glow-cyan); }
+        #btn-reset:hover { background: rgba(123,47,255,0.25); color: var(--accent-violet); }
+        #ui-title { font-family: var(--font-display); font-size: 1rem; font-weight: 700; letter-spacing: 1px; color: var(--accent-cyan); }
+        #ui-step-badge { font-family: var(--font-mono); background: rgba(6,255,216,0.08); color: var(--accent-cyan); border-color: rgba(6,255,216,0.3); }
+        #ui-energy-title { font-family: var(--font-display); font-size: 0.75rem; letter-spacing: 1px; color: var(--accent-cyan); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--primary); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-cyan); border-radius: 3px; }
+        .overlay-logos {
+            position: relative; z-index: 1;
+            display: flex; align-items: center; justify-content: center;
+            gap: 16px; margin-bottom: 2rem;
+        }
+        .overlay-logo-item {
+            width: 52px; height: 52px; border-radius: 10px;
+            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden; transition: all 0.3s; box-shadow: 0 0 0 0 var(--glow-cyan);
+        }
+        .overlay-logo-item:hover { border-color: var(--accent-cyan); box-shadow: 0 0 16px var(--glow-cyan); transform: translateY(-3px); }
+        .overlay-logo-item img { width: 100%; height: 100%; object-fit: contain; padding: 6px; }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <div class="bg-grid"></div>
+    <div id="webgl-container"></div>
+
+    <!-- START OVERLAY -->
+    <div id="start-overlay" class="interactive">
+        <div class="overlay-logos">
+            <div class="overlay-logo-item"><img src="logo1.png" alt="Logo 1"></div>
+            <div class="overlay-logo-item"><img src="logo2.png" alt="Logo 2"></div>
+            <div class="overlay-logo-item"><img src="logo3.png" alt="Logo 3"></div>
+            <div class="overlay-logo-item"><img src="logo4.png" alt="Logo 4"></div>
+        </div>
+        <span class="overlay-badge">OKOL-WDI • LAB KIMIA ORGANIK</span>
+        <h1 class="overlay-title">
+            <span class="t1">SN1 Reaction</span>
+            <span class="t2">Mekanisme 3D Interaktif</span>
+        </h1>
+        <p class="overlay-sub">Interactive 3D Mechanism &bull; Unimolecular Nucleophilic Substitution &bull; Ionic</p>
+        <button id="start-btn" class="btn-start">▶ &nbsp;Start Experience / Mulai</button>
+        <p class="overlay-formula">R-X → R⁺ + X⁻ → R-Nu &nbsp;|&nbsp; Pelarut Protik Polar</p>
+    </div>
+
+    <!-- MAIN UI -->
+    <div class="ui-layer w-full h-full flex flex-col justify-between p-4 md:p-6 opacity-0" id="main-ui">
+        <header class="flex justify-between items-start">
+            <div class="glass-panel rounded-2xl p-4 max-w-sm interactive">
+                <h2 class="font-bold mb-1" style="font-family:var(--font-display);color:var(--accent-cyan);font-size:0.95rem;letter-spacing:1px" id="ui-title">Mekanisme SN1</h2>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-xs px-2 py-1 rounded border" style="background:rgba(6,255,216,0.08);color:var(--accent-cyan);border-color:rgba(6,255,216,0.3);font-family:var(--font-mono)" id="ui-step-badge">Step 1/4</span>
+                    <span class="text-xs px-2 py-1 rounded border" style="background:rgba(123,47,255,0.12);color:var(--accent-violet);border-color:rgba(123,47,255,0.3);font-family:var(--font-mono)">Ionic Mech</span>
+                </div>
+                <p class="text-sm" style="color:var(--text-secondary)" id="ui-desc">Loading...</p>
+            </div>
+            <div class="flex flex-col gap-3 interactive">
+                <div class="glass-panel rounded-xl p-2 w-fit self-end">
+                    <div class="lang-toggle-wrap">
+                        <button class="lang-seg" id="lang-btn-en" data-lang="EN">EN</button>
+                        <button class="lang-seg" id="lang-btn-id" data-lang="ID">ID</button>
+                    </div>
+                </div>
+                <div class="glass-panel rounded-xl p-3 flex flex-col gap-3">
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <span class="text-sm" style="color:var(--text-secondary)" id="ui-ts-label">Slow-Mo TS</span>
+                        <input type="checkbox" id="ts-toggle" class="cursor-pointer" style="width:15px;height:15px;accent-color:var(--accent-cyan);"/>
+                    </label>
+                    <div class="flex flex-col gap-1">
+                        <span class="text-xs" style="color:var(--text-muted)" id="ui-speed-label">Speed: 1x</span>
+                        <input type="range" id="speed-slider" min="0.2" max="2" step="0.1" value="1" class="w-full">
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Energy Diagram Right -->
+        <div class="absolute right-6 top-1/2 -translate-y-1/2 glass-panel rounded-2xl p-4 w-64 interactive hidden md:block">
+            <h3 class="text-sm font-semibold mb-2" style="font-family:var(--font-display);color:var(--accent-cyan);font-size:0.75rem;letter-spacing:1px" id="ui-energy-title">Energy Profile</h3>
+            <canvas id="energy-chart"></canvas>
+            <div class="flex justify-between mt-1" style="font-size:10px;color:var(--text-muted)">
+                <span id="ui-rxn-coord">Reaction Coordinate</span>
+            </div>
+        </div>
+
+        <!-- Footer Controls -->
+        <footer class="flex justify-center mb-2">
+            <div class="glass-panel rounded-full p-2 flex items-center gap-4 interactive shadow-[0_0_20px_rgba(0,0,0,0.8)]">
+                <button id="btn-prev" class="w-10 h-10 flex items-center justify-center rounded-full transition-colors" style="color:var(--text-secondary)" onmouseover="this.style.background='rgba(6,255,216,0.1)'" onmouseout="this.style.background='transparent'">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
+                </button>
+                <button id="btn-play" class="w-14 h-14 flex items-center justify-center rounded-full text-white transition-transform transform hover:scale-105">
+                    <svg id="icon-play" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    <svg id="icon-pause" class="hidden" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                </button>
+                <button id="btn-next" class="w-10 h-10 flex items-center justify-center rounded-full transition-colors" style="color:var(--text-secondary)" onmouseover="this.style.background='rgba(6,255,216,0.1)'" onmouseout="this.style.background='transparent'">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+                </button>
+                <div class="w-px h-8 mx-2" style="background:rgba(6,255,216,0.15)"></div>
+                <button id="btn-reset" class="w-10 h-10 flex items-center justify-center rounded-full transition-colors" style="color:var(--accent-violet)" title="Reset Step" onmouseover="this.style.background='rgba(123,47,255,0.2)'" onmouseout="this.style.background='transparent'">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 2D Diagram Panel -->
+    <div id="panel-2d"
+         class="absolute z-20 glass-panel rounded-2xl p-3 interactive"
+         style="display:none;left:1.5rem;top:210px;width:320px;max-height:calc(100vh - 290px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(6,255,216,0.3) transparent;">
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold" style="color:var(--accent-cyan);font-family:var(--font-mono)" id="label-2d">Diagram 2D – Ionisasi</span>
+            <button id="btn-toggle-2d"
+                    class="text-[10px] px-2 py-1 rounded-lg"
+                    style="background:rgba(13,21,48,0.8);border:1px solid var(--glass-border);color:var(--text-secondary);transition:all 0.2s">
+                Sembunyikan
+            </button>
+        </div>
+        <div id="svg-2d-container" style="overflow:visible; width:100%;"></div>
+    </div>
+
+    <button id="btn-show-2d"
+            class="z-20 glass-panel rounded-xl px-3 py-2 text-xs font-semibold interactive"
+            style="display:none;position:absolute;left:1.5rem;top:210px;color:var(--accent-cyan);font-family:var(--font-mono);transition:all 0.2s">
+        ▤ Diagram 2D
+    </button>
+
+    <!-- Quiz Modal -->
+    <div id="quiz-modal" class="absolute top-0 left-0 w-full h-full backdrop-blur-sm z-50 hidden flex-col items-center justify-center interactive" style="background:rgba(10,14,26,0.88)">
+        <div class="glass-panel p-8 rounded-2xl max-w-md w-full transform scale-95 transition-transform duration-300" style="border-top:4px solid var(--accent-cyan)" id="quiz-box">
+            <h2 class="text-2xl font-bold mb-4" style="font-family:var(--font-display);color:var(--text-primary);font-size:1.1rem;letter-spacing:1px" id="quiz-title">Kuis Konsep</h2>
+            <p class="mb-6" style="color:var(--text-secondary);font-size:0.92rem" id="quiz-q">Substrat mana yang paling mudah mengalami reaksi SN1?</p>
+            <div class="space-y-3">
+                <button class="w-full text-left px-4 py-3 rounded-xl quiz-opt" style="background:rgba(13,21,48,0.85);border:1px solid var(--glass-border);color:var(--text-secondary);transition:all 0.2s;font-size:0.88rem" data-correct="false">A) CH₃Br (Metil bromida)</button>
+                <button class="w-full text-left px-4 py-3 rounded-xl quiz-opt" style="background:rgba(13,21,48,0.85);border:1px solid var(--glass-border);color:var(--text-secondary);transition:all 0.2s;font-size:0.88rem" data-correct="false">B) CH₃CH₂Br (Etil bromida)</button>
+                <button class="w-full text-left px-4 py-3 rounded-xl quiz-opt" style="background:rgba(13,21,48,0.85);border:1px solid var(--glass-border);color:var(--text-secondary);transition:all 0.2s;font-size:0.88rem" data-correct="true">C) (CH₃)₃CBr (tert-Butil bromida)</button>
+            </div>
+            <div id="quiz-feedback" class="mt-4 text-center font-bold hidden"></div>
+            <button id="quiz-close" class="mt-6 w-full py-2 rounded-xl font-semibold hidden" style="background:rgba(13,21,48,0.8);border:1px solid var(--glass-border);color:var(--text-secondary)">Tutup & Tinjau</button>
+        </div>
+    </div>
+
+    <!-- CORE SCRIPT -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // ==========================================
+        // 1. KAMUS & LOKALISASI (Bilingual)
+        // ==========================================
+        const locales = {
+            EN: {
+                title: "SN1 Reaction Mechanism",
+                steps: [
+                    {
+                        name: "Ionization",
+                        desc: "R-X → R⁺ + X⁻\nThe C-X bond breaks heterolytically in the rate-determining step (RDS). Both electrons go to the electronegative leaving group X, forming a carbocation R⁺. This step requires a polar protic solvent to stabilize the ions."
+                    },
+                    {
+                        name: "Carbocation",
+                        desc: "(CH₃)₃C⁺\nThe tertiary carbocation intermediate is planar (sp² hybridized) with an empty p-orbital perpendicular to the plane. It is stabilized by hyperconjugation and inductive effects of three adjacent alkyl groups. Rate ∝ [R-X] only."
+                    },
+                    {
+                        name: "Nucleophilic Attack",
+                        desc: "R⁺ + Nu⁻ → Products\nThe nucleophile attacks the empty p-orbital of the planar sp² carbocation. Attack can occur from BOTH faces (top and bottom) with equal probability, as there is no stereospecificity in the intermediate."
+                    },
+                    {
+                        name: "Product Formation",
+                        desc: "Racemic Mixture (50:50)\nAttack from both faces gives two enantiomeric products in equal amounts. If the starting material was optically active (chiral), the SN1 product will be a racemic mixture — a key diagnostic feature of SN1 reactions."
+                    }
+                ],
+                tsLabel: "Slow-Mo TS",
+                speedLabel: "Speed",
+                energyTitle: "Energy Profile",
+                rxnCoord: "Reaction Coordinate",
+                quiz: {
+                    title: "Concept Check",
+                    q: "Which substrate most readily undergoes an SN1 reaction?",
+                    opts: ["A) CH₃Br (Methyl bromide)", "B) CH₃CH₂Br (Ethyl bromide)", "C) (CH₃)₃CBr (tert-Butyl bromide)"],
+                    correct: "Correct! tert-Butyl bromide forms the most stable 3° carbocation, favoring SN1.",
+                    wrong: "Incorrect. Think about carbocation stability — which carbon bears the most alkyl groups?"
+                }
+            },
+            ID: {
+                title: "Mekanisme Reaksi SN1",
+                steps: [
+                    {
+                        name: "Ionisasi",
+                        desc: "R-X → R⁺ + X⁻\nIkatan C-X putus secara heterolitik pada tahap penentu laju (RDS). Kedua elektron berpindah ke gugus pergi elektronegatif X, membentuk karbokation R⁺. Tahap ini membutuhkan pelarut protik polar untuk menstabilkan ion."
+                    },
+                    {
+                        name: "Karbokation",
+                        desc: "(CH₃)₃C⁺\nIntermediet karbokation tersier bersifat planar (hibridisasi sp²) dengan orbital p kosong tegak lurus bidang. Distabilkan oleh hiperkonjugasi dan efek induktif tiga gugus alkil di sekitarnya. Laju ∝ [R-X] saja."
+                    },
+                    {
+                        name: "Serangan Nukleofil",
+                        desc: "R⁺ + Nu⁻ → Produk\nNukleofil menyerang orbital p kosong dari karbokation sp² planar. Serangan dapat terjadi dari KEDUA sisi (atas dan bawah) dengan probabilitas sama, karena tidak ada stereoselektivitas pada intermediet planar ini."
+                    },
+                    {
+                        name: "Pembentukan Produk",
+                        desc: "Campuran Rasemat (50:50)\nSerangan dari kedua sisi menghasilkan dua produk enantiomer dalam jumlah sama. Jika bahan awal aktif optis (kiral), produk SN1 berupa campuran rasemat — ciri diagnostik utama reaksi SN1."
+                    }
+                ],
+                tsLabel: "TS Gerak Lambat",
+                speedLabel: "Kecepatan",
+                energyTitle: "Profil Energi",
+                rxnCoord: "Koordinat Reaksi",
+                quiz: {
+                    title: "Kuis Konsep",
+                    q: "Substrat mana yang paling mudah mengalami reaksi SN1?",
+                    opts: ["A) CH₃Br (Metil bromida)", "B) CH₃CH₂Br (Etil bromida)", "C) (CH₃)₃CBr (tert-Butil bromida)"],
+                    correct: "Benar! tert-Butil bromida membentuk karbokation tersier (3°) paling stabil, mendukung SN1.",
+                    wrong: "Salah. Pikirkan kestabilan karbokation — karbon mana yang menanggung gugus alkil paling banyak?"
+                }
+            }
+        };
+
+        let currentLang = 'ID';
+        let currentStep = 0;
+        let isPlaying = false;
+        let isSlowMoTS = false;
+
+        // ==========================================
+        // 2. AUDIO
+        // ==========================================
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        function playSnapSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(900, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.2);
+            gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+        }
+        function playPopSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.12);
+            gain.gain.setValueAtTime(0, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.12);
+        }
+
+        // ==========================================
+        // 3. SCENE THREE.JS
+        // ==========================================
+        const container = document.getElementById('webgl-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0e1a);
+        scene.fog = new THREE.FogExp2(0x0a0e1a, 0.016);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 2, 13);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; controls.dampingFactor = 0.05;
+        controls.minDistance = 5; controls.maxDistance = 22;
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
+        scene.add(ambientLight);
+        const mainLight = new THREE.DirectionalLight(0xffffff, 2);
+        mainLight.position.set(5, 10, 7);
+        mainLight.castShadow = true; mainLight.shadow.bias = -0.001;
+        scene.add(mainLight);
+        const blueRim = new THREE.PointLight(0x4080ff, 3, 20);
+        blueRim.position.set(-5, -2, -5); scene.add(blueRim);
+        const solvLight = new THREE.PointLight(0xffd700, 0, 18);
+        solvLight.position.set(0, 6, 0); scene.add(solvLight);
+        const nuLight = new THREE.PointLight(0xff6600, 0, 12);
+        nuLight.position.set(0, 0, 0); scene.add(nuLight);
+
+        // ==========================================
+        // 4. PABRIK MOLEKUL
+        // ==========================================
+        const mats = {
+            C:    new THREE.MeshPhysicalMaterial({ color: 0x444444, roughness: 0.2, metalness: 0.1, clearcoat: 0.5 }),
+            Cpos: new THREE.MeshPhysicalMaterial({ color: 0x226688, roughness: 0.2, metalness: 0.2, clearcoat: 0.6, emissive: 0x003344, emissiveIntensity: 0.4 }),
+            R:    new THREE.MeshPhysicalMaterial({ color: 0x2266bb, roughness: 0.3, metalness: 0.1, clearcoat: 0.3 }),
+            Br:   new THREE.MeshPhysicalMaterial({ color: 0x8b2a00, roughness: 0.3, metalness: 0.15, clearcoat: 0.4 }),
+            Brn:  new THREE.MeshPhysicalMaterial({ color: 0x993300, roughness: 0.3, metalness: 0.1, emissive: 0x330000, emissiveIntensity: 0.3 }),
+            Nu:   new THREE.MeshPhysicalMaterial({ color: 0xcc4400, roughness: 0.25, metalness: 0.1, clearcoat: 0.4 }),
+            bond: new THREE.MeshPhysicalMaterial({ color: 0xaaaaaa, roughness: 0.5, metalness: 0.5 }),
+            orbital: new THREE.MeshPhysicalMaterial({ color: 0x06ffd8, roughness: 0.1, metalness: 0, transparent: true, opacity: 0.28, side: THREE.DoubleSide }),
+            charge: new THREE.MeshBasicMaterial({ color: 0xffee00 }),
+            arrow: new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide }),
+            arrowOrange: new THREE.MeshBasicMaterial({ color: 0xff8800, side: THREE.DoubleSide }),
+        };
+        const geos = {
+            C:    new THREE.SphereGeometry(0.70, 32, 32),
+            R:    new THREE.SphereGeometry(0.58, 32, 32),
+            Br:   new THREE.SphereGeometry(0.90, 32, 32),
+            Nu:   new THREE.SphereGeometry(0.54, 32, 32),
+            bond: new THREE.CylinderGeometry(0.12, 0.12, 1, 16),
+            orbital: new THREE.SphereGeometry(0.55, 20, 20),
+            charge: new THREE.SphereGeometry(0.18, 12, 12),
+        };
+
+        function createAtom(type) {
+            const t = (type === 'C+') ? 'Cpos' : type;
+            const mesh = new THREE.Mesh(geos[type === 'C+' ? 'C' : type] || geos.C, mats[t] || mats.C);
+            mesh.castShadow = true; mesh.receiveShadow = true;
+            return mesh;
+        }
+        function createBond(length) {
+            const b = new THREE.Mesh(geos.bond, mats.bond);
+            b.scale.y = length; b.castShadow = true;
+            return b;
+        }
+        function createOrbitalLobe() {
+            const m = new THREE.Mesh(geos.orbital, mats.orbital.clone());
+            gsap.to(m.scale, { x: 1.4, y: 1.4, z: 1.4, duration: 1.1, repeat: -1, yoyo: true, ease: "sine.inOut" });
+            const glow = new THREE.PointLight(0x06ffd8, 0.8, 4);
+            m.add(glow); return m;
+        }
+        function createChargeDot(positive = true) {
+            const d = new THREE.Mesh(geos.charge, mats.charge.clone());
+            const glow = new THREE.PointLight(positive ? 0xffee00 : 0xff3333, 1.5, 5);
+            d.add(glow);
+            gsap.to(d.scale, { x: 1.3, y: 1.3, z: 1.3, duration: 0.7, repeat: -1, yoyo: true, ease: "sine.inOut" });
+            return d;
+        }
+        function createCurvedArrow(startPt, endPt, controlPt, mat) {
+            const useMat = mat || mats.arrow;
+            const curve = new THREE.QuadraticBezierCurve3(startPt, controlPt, endPt);
+            const tubeGeo = new THREE.TubeGeometry(curve, 48, 0.055, 10, false);
+            const arrow = new THREE.Mesh(tubeGeo, useMat);
+            const headGeo = new THREE.ConeGeometry(0.16, 0.40, 12);
+            const head = new THREE.Mesh(headGeo, useMat);
+            const tangent = curve.getTangent(1).normalize();
+            const up = new THREE.Vector3(0, 1, 0);
+            head.quaternion.setFromUnitVectors(up, tangent);
+            head.position.copy(endPt).addScaledVector(tangent, -0.15);
+            const group = new THREE.Group();
+            group.add(arrow, head); return group;
+        }
+
+        // ==========================================
+        // 5. KONSTRUKSI MOLEKUL PER LANGKAH
+        // ==========================================
+        const stepGroups = [new THREE.Group(), new THREE.Group(), new THREE.Group(), new THREE.Group()];
+        stepGroups.forEach(g => { scene.add(g); g.visible = false; });
+
+        const bondLen = 2.0;
+        // Tetrahedral unit vectors
+        const tV0 = new THREE.Vector3(0, 1, 0);
+        const tV1 = new THREE.Vector3(0.9428, -0.3333, 0);
+        const tV2 = new THREE.Vector3(-0.4714, -0.3333, 0.8165);
+        const tV3 = new THREE.Vector3(-0.4714, -0.3333, -0.8165);
+        // sp2 planar unit vectors (XY plane)
+        const pV0 = new THREE.Vector3(1, 0, 0);
+        const pV1 = new THREE.Vector3(-0.5, 0.866, 0);
+        const pV2 = new THREE.Vector3(-0.5, -0.866, 0);
+
+        // ────── LANGKAH 0: IONISASI ──────
+        const g0 = stepGroups[0];
+        const c0 = createAtom('C'); g0.add(c0);
+        // 3 R groups (tetrahedral, minus Br direction)
+        const r0Atoms = [];
+        const r0Bonds = [];
+        const r0TPos = [tV0.clone().multiplyScalar(bondLen), tV1.clone().multiplyScalar(bondLen), tV2.clone().multiplyScalar(bondLen)];
+        r0TPos.forEach(pos => {
+            const r = createAtom('R'); r.position.copy(pos); r0Atoms.push(r); g0.add(r);
+            const b = createBond(bondLen);
+            b.position.copy(pos).multiplyScalar(0.5);
+            b.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), pos.clone().normalize());
+            r0Bonds.push(b); g0.add(b);
+        });
+        // Br leaving group
+        const br0 = createAtom('Br');
+        const brInitPos = tV3.clone().multiplyScalar(bondLen * 1.1);
+        br0.position.copy(brInitPos); g0.add(br0);
+        const bondCBr = createBond(bondLen * 1.1);
+        bondCBr.position.copy(brInitPos).multiplyScalar(0.5);
+        bondCBr.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), brInitPos.clone().normalize());
+        g0.add(bondCBr);
+        // + charge (hidden initially)
+        const plusCharge0 = createChargeDot(true);
+        plusCharge0.position.set(0.9, 0.9, 0); plusCharge0.visible = false;
+        g0.add(plusCharge0);
+        // Curved arrow: from C-Br midpoint → Br (heterolytic cleavage)
+        const ionArrow = createCurvedArrow(
+            brInitPos.clone().multiplyScalar(0.5).add(new THREE.Vector3(0.3, 0, 0)),
+            brInitPos.clone().add(new THREE.Vector3(-0.3, 0.5, 0)),
+            new THREE.Vector3(-0.5, 0.8, -1.2)
+        );
+        ionArrow.visible = false; g0.add(ionArrow);
+        // Br⁻ label glow
+        const brMinusDot = createChargeDot(false);
+        brMinusDot.position.set(0.7, 0.6, 0); brMinusDot.visible = false;
+        br0.add(brMinusDot);
+
+        // ────── LANGKAH 1: KARBOKATION ──────
+        const g1 = stepGroups[1];
+        const c1 = createAtom('C+'); g1.add(c1);
+        // 3 R groups (sp2 planar)
+        const r1Atoms = [];
+        const r1Bonds = [];
+        const r1PPos = [pV0.clone().multiplyScalar(bondLen), pV1.clone().multiplyScalar(bondLen), pV2.clone().multiplyScalar(bondLen)];
+        r1PPos.forEach(pos => {
+            const r = createAtom('R'); r.position.copy(pos); r1Atoms.push(r); g1.add(r);
+            const b = createBond(bondLen);
+            b.position.copy(pos).multiplyScalar(0.5);
+            b.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), pos.clone().normalize());
+            r1Bonds.push(b); g1.add(b);
+        });
+        // p-orbital lobes (above and below)
+        const lobeTop = createOrbitalLobe(); lobeTop.position.set(0, 0, 2.2); g1.add(lobeTop);
+        const lobeBot = createOrbitalLobe(); lobeBot.position.set(0, 0, -2.2); g1.add(lobeBot);
+        // + charge indicator
+        const plusCharge1 = createChargeDot(true);
+        plusCharge1.position.set(0.85, 0.85, 0); g1.add(plusCharge1);
+        // Br⁻ far away
+        const br1 = createAtom('Brn');
+        br1.position.set(-4.5, -2.5, -3.5); g1.add(br1);
+        const brMinus1 = createChargeDot(false);
+        brMinus1.position.set(0.7, 0.6, 0); br1.add(brMinus1);
+
+        // ────── LANGKAH 2: SERANGAN NUKLEOFIL ──────
+        const g2 = stepGroups[2];
+        const c2 = createAtom('C+'); g2.add(c2);
+        const r2Atoms = [];
+        const r2Bonds = [];
+        r1PPos.forEach(pos => {
+            const r = createAtom('R'); r.position.copy(pos); r2Atoms.push(r); g2.add(r);
+            const b = createBond(bondLen);
+            b.position.copy(pos).multiplyScalar(0.5);
+            b.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), pos.clone().normalize());
+            r2Bonds.push(b); g2.add(b);
+        });
+        const lobeTop2 = createOrbitalLobe(); lobeTop2.position.set(0, 0, 2.2); g2.add(lobeTop2);
+        const lobeBot2 = createOrbitalLobe(); lobeBot2.position.set(0, 0, -2.2); g2.add(lobeBot2);
+        const plusCharge2 = createChargeDot(true);
+        plusCharge2.position.set(0.85, 0.85, 0); g2.add(plusCharge2);
+        // Two nucleophiles (top and bottom)
+        const nu2Top = createAtom('Nu'); nu2Top.position.set(0, 0, 5.5); g2.add(nu2Top);
+        const nu2Bot = createAtom('Nu'); nu2Bot.position.set(0, 0, -5.5); g2.add(nu2Bot);
+        // Arrows from Nu → C
+        const arrTop = createCurvedArrow(
+            new THREE.Vector3(0, 0, 4.5),
+            new THREE.Vector3(0, 0, 1.5),
+            new THREE.Vector3(0.8, 0.5, 3),
+            mats.arrowOrange
+        );
+        const arrBot = createCurvedArrow(
+            new THREE.Vector3(0, 0, -4.5),
+            new THREE.Vector3(0, 0, -1.5),
+            new THREE.Vector3(-0.8, 0.5, -3),
+            mats.arrowOrange
+        );
+        arrTop.visible = false; arrBot.visible = false;
+        g2.add(arrTop, arrBot);
+        // New bonds (hidden initially)
+        const bondNuTop = createBond(1.8);
+        bondNuTop.position.set(0, 0, 0.9); bondNuTop.rotation.x = Math.PI / 2; bondNuTop.visible = false;
+        const bondNuBot = createBond(1.8);
+        bondNuBot.position.set(0, 0, -0.9); bondNuBot.rotation.x = Math.PI / 2; bondNuBot.visible = false;
+        g2.add(bondNuTop, bondNuBot);
+
+        // ────── LANGKAH 3: PRODUK RASEMAT ──────
+        const g3 = stepGroups[3];
+        // Product A (left) - one enantiomer
+        const prodA = new THREE.Group();
+        const cA = createAtom('C'); prodA.add(cA);
+        const nuA = createAtom('Nu'); nuA.position.copy(tV0.clone().multiplyScalar(bondLen)); prodA.add(nuA);
+        const bondNuA = createBond(bondLen);
+        bondNuA.position.copy(nuA.position).multiplyScalar(0.5);
+        bondNuA.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), nuA.position.clone().normalize());
+        prodA.add(bondNuA);
+        [tV1, tV2, tV3].forEach(v => {
+            const r = createAtom('R'); r.position.copy(v.clone().multiplyScalar(bondLen)); prodA.add(r);
+            const b = createBond(bondLen);
+            b.position.copy(r.position).multiplyScalar(0.5);
+            b.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), r.position.clone().normalize());
+            prodA.add(b);
+        });
+        prodA.position.set(-3.5, 0, 0); g3.add(prodA);
+
+        // Product B (right) - mirror enantiomer
+        const prodB = new THREE.Group();
+        const cB = createAtom('C'); prodB.add(cB);
+        const nuB = createAtom('Nu');
+        // Mirror: Nu goes in -Y direction (opposite face)
+        const nuBPos = tV0.clone().multiplyScalar(bondLen); nuBPos.y *= -1;
+        nuB.position.copy(nuBPos); prodB.add(nuB);
+        const bondNuB = createBond(bondLen);
+        bondNuB.position.copy(nuBPos).multiplyScalar(0.5);
+        bondNuB.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), nuBPos.clone().normalize());
+        prodB.add(bondNuB);
+        [tV1, tV2, tV3].forEach(v => {
+            const r = createAtom('R');
+            const rpos = v.clone().multiplyScalar(bondLen); rpos.y *= -1;
+            r.position.copy(rpos); prodB.add(r);
+            const b = createBond(bondLen);
+            b.position.copy(rpos).multiplyScalar(0.5);
+            b.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), rpos.clone().normalize());
+            prodB.add(b);
+        });
+        prodB.position.set(3.5, 0, 0); g3.add(prodB);
+        // "50:50" label via point lights
+        const lightA = new THREE.PointLight(0x06ffd8, 2, 6); lightA.position.set(-3.5, 3, 0); g3.add(lightA);
+        const lightB = new THREE.PointLight(0xff8800, 2, 6); lightB.position.set(3.5, 3, 0); g3.add(lightB);
+
+        // ==========================================
+        // 6. TIMELINE ANIMASI (GSAP)
+        // ==========================================
+        let currentTimeline = null;
+
+        function getBaseSpeed() { return parseFloat(document.getElementById('speed-slider').value); }
+        function onUpdateTS(tl, pStart, pEnd) {
+            const p = tl.progress();
+            if (isSlowMoTS && p > pStart && p < pEnd) {
+                gsap.globalTimeline.timeScale(getBaseSpeed() * 0.18);
+            } else {
+                gsap.globalTimeline.timeScale(getBaseSpeed());
+            }
+            updateEnergyDiagram(currentStep, p);
+        }
+
+        const timelines = [
+            // ── Timeline 0: Ionisasi ──
+            () => {
+                const tl = gsap.timeline({ paused: true, onUpdate: function() { onUpdateTS(this, 0.35, 0.65); } });
+                // Reset state
+                tl.set(br0.position, { x: brInitPos.x, y: brInitPos.y, z: brInitPos.z });
+                tl.set(bondCBr, { visible: true });
+                tl.set([ionArrow, plusCharge0], { visible: false });
+                tl.set(brMinusDot, { visible: false });
+                tl.set(solvLight, { intensity: 0 });
+
+                // Solvent effect (polar protic solvent glow)
+                tl.to(solvLight, { intensity: 35, duration: 0.4, yoyo: true, repeat: 2, ease: "power2.inOut" }, 0);
+
+                // C-Br bond gradually stretches
+                tl.to(br0.position, { x: brInitPos.x * 1.8, y: brInitPos.y * 1.6, z: brInitPos.z * 2.5, duration: 1.8, ease: "power2.inOut" }, 0.8);
+
+                // Show curved arrow (heterolytic cleavage)
+                tl.set(ionArrow, { visible: true }, 1.0);
+
+                // TS reached — bond snaps
+                tl.call(playSnapSound, [], 2.0);
+                tl.set([bondCBr, ionArrow], { visible: false }, 2.0);
+                tl.set([plusCharge0, brMinusDot], { visible: true }, 2.0);
+
+                // C+ stays, Br⁻ departs
+                tl.to(br0.position, { x: -5, y: -3, z: -5.5, duration: 1.4, ease: "back.out(1.4)" }, 2.0);
+
+                // R groups adjust slightly (sp3 → beginning of sp2)
+                r0TPos.forEach((pos, i) => {
+                    const target = pV0.clone();
+                    if (i === 0) target.copy(pV0).multiplyScalar(bondLen);
+                    else if (i === 1) target.copy(pV1).multiplyScalar(bondLen);
+                    else target.copy(pV2).multiplyScalar(bondLen);
+                    tl.to(r0Atoms[i].position, { x: target.x, y: target.y, z: target.z, duration: 0.8, ease: "power2.out" }, 2.1);
+                    tl.to(r0Bonds[i].position, { x: target.x/2, y: target.y/2, z: target.z/2, duration: 0.8, ease: "power2.out" }, 2.1);
+                    tl.to(r0Bonds[i].quaternion, {
+                        duration: 0.8, ease: "power2.out",
+                        onUpdate() {
+                            const cp = r0Atoms[i].position;
+                            const nq = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), cp.clone().normalize());
+                            r0Bonds[i].quaternion.copy(nq);
+                        }
+                    }, 2.1);
+                });
+
+                return tl;
+            },
+
+            // ── Timeline 1: Karbokation ──
+            () => {
+                const tl = gsap.timeline({ paused: true, onUpdate: function() { onUpdateTS(this, 0.3, 0.7); } });
+                // Orbital lobes pulse (already animating via gsap.to in setup)
+                tl.to([lobeTop.scale, lobeBot.scale], { x: 1.6, y: 1.6, z: 1.6, duration: 1.2, yoyo: true, repeat: -1, ease: "sine.inOut" }, 0);
+                // Charge glow
+                tl.to(plusCharge1.scale, { x: 1.5, y: 1.5, z: 1.5, duration: 0.8, yoyo: true, repeat: -1, ease: "power2.inOut" }, 0.2);
+                // R groups gently rotate
+                tl.to(g1.rotation, { y: Math.PI * 0.15, duration: 2.5, ease: "sine.inOut", yoyo: true, repeat: -1 }, 0);
+                // Br- slowly drifts further
+                tl.to(br1.position, { x: -5.5, y: -3.2, z: -4.5, duration: 3, ease: "power1.inOut" }, 0);
+                return tl;
+            },
+
+            // ── Timeline 2: Serangan Nukleofil ──
+            () => {
+                const tl = gsap.timeline({ paused: true, onUpdate: function() { onUpdateTS(this, 0.4, 0.6); } });
+                tl.set(nu2Top.position, { x: 0, y: 0, z: 5.5 });
+                tl.set(nu2Bot.position, { x: 0, y: 0, z: -5.5 });
+                tl.set([arrTop, arrBot, bondNuTop, bondNuBot], { visible: false });
+                tl.set([lobeTop2, lobeBot2, plusCharge2], { visible: true });
+
+                // Nu approaches from both sides
+                tl.to(nu2Top.position, { z: 3.5, duration: 1.2, ease: "power2.inOut" }, 0);
+                tl.to(nu2Bot.position, { z: -3.5, duration: 1.2, ease: "power2.inOut" }, 0);
+
+                // Show arrows
+                tl.set([arrTop, arrBot], { visible: true }, 0.8);
+
+                // Nu attack completes, bond forms
+                tl.to(nu2Top.position, { z: 2.1, duration: 0.8, ease: "power2.in" }, 1.2);
+                tl.to(nu2Bot.position, { z: -2.1, duration: 0.8, ease: "power2.in" }, 1.2);
+
+                tl.call(playPopSound, [], 2.0);
+                tl.set([arrTop, arrBot, lobeTop2, lobeBot2, plusCharge2], { visible: false }, 2.0);
+                tl.set([bondNuTop, bondNuBot], { visible: true }, 2.0);
+
+                // Products bounce slightly apart
+                tl.from([nu2Top.position, nu2Bot.position], { z: '+=1.5', duration: 0.5, ease: "back.out(2.5)" }, 2.0);
+
+                return tl;
+            },
+
+            // ── Timeline 3: Pembentukan Produk Rasemat ──
+            () => {
+                const tl = gsap.timeline({ paused: true, onUpdate: function() { onUpdateTS(this, 0.3, 0.7); } });
+                tl.set(prodA.position, { x: 0, y: 0, z: 0 });
+                tl.set(prodB.position, { x: 0, y: 0, z: 0 });
+                tl.set(prodA.rotation, { y: 0 });
+                tl.set(prodB.rotation, { y: 0 });
+
+                // Products split apart
+                tl.to(prodA.position, { x: -3.5, duration: 1.6, ease: "back.out(1.4)" }, 0);
+                tl.to(prodB.position, { x: 3.5, duration: 1.6, ease: "back.out(1.4)" }, 0);
+
+                // Products spin to show 3D structure
+                tl.to(prodA.rotation, { y: Math.PI * 0.4, duration: 3, ease: "sine.inOut", yoyo: true, repeat: -1 }, 1.6);
+                tl.to(prodB.rotation, { y: -Math.PI * 0.4, duration: 3, ease: "sine.inOut", yoyo: true, repeat: -1 }, 1.6);
+
+                // Light pulsing to show both products
+                tl.to(lightA, { intensity: 4, duration: 0.8, yoyo: true, repeat: -1, ease: "sine.inOut" }, 0.5);
+                tl.to(lightB, { intensity: 4, duration: 0.8, yoyo: true, repeat: -1, delay: 0.4, ease: "sine.inOut" }, 0.5);
+
+                // Show quiz
+                tl.call(() => {
+                    setTimeout(() => {
+                        document.getElementById('quiz-modal').classList.remove('hidden');
+                        document.getElementById('quiz-modal').classList.add('flex');
+                    }, 1200);
+                }, [], 2.2);
+
+                return tl;
+            }
+        ];
+
+        // ==========================================
+        // 6a. DIAGRAM 2D (SVG PER LANGKAH)
+        // ==========================================
+        const svgDiagrams = [
+
+/* ══════════════════════════════════════════════════════
+   LANGKAH 0: IONISASI  (R-X → R⁺ + X⁻)
+══════════════════════════════════════════════════════ */
+`<svg viewBox="0 0 340 250" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+<defs>
+  <filter id="s0-glow"><feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <marker id="s0-rxn" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0,0 10,3.5 0,7" fill="#7c3aed"/></marker>
+  <marker id="s0-arr" markerWidth="11" markerHeight="8" refX="10" refY="4" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0,0 11,4 0,8" fill="#38bdf8"/></marker>
+</defs>
+<rect width="340" height="250" fill="#0a0e1a" rx="10"/>
+<text x="170" y="19" text-anchor="middle" font-family="Arial,sans-serif" font-size="11.5" fill="#94a3b8" font-style="italic">Ionisasi — Pemecahan Ikatan Heterolitik (RDS)</text>
+
+<!-- R group kiri -->
+<circle cx="55" cy="92" r="22" fill="#0f2a4a" stroke="#2266bb" stroke-width="2.5"/>
+<text x="55" y="97" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#60a5fa">R₃C</text>
+
+<!-- ikatan C–Br (putus-putus = akan pecah heterolitik) -->
+<line x1="78" y1="92" x2="128" y2="92" stroke="#d1d5db" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="6,4"/>
+
+<!-- Titik elektron pasangan di tengah C-Br -->
+<circle cx="103" cy="84" r="5" fill="#fbbf24" filter="url(#s0-glow)"/>
+<circle cx="103" cy="100" r="5" fill="#fbbf24" filter="url(#s0-glow)"/>
+
+<!-- Atom Br -->
+<circle cx="152" cy="92" r="26" fill="#3b0d00" stroke="#8b2a00" stroke-width="2.5"/>
+<text x="152" y="97" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#f87171">Br</text>
+
+<!-- Kurva panah heterolitik (kedua elektron → Br) -->
+<path d="M 103,84 C 100,55 145,46 156,70" fill="none" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#s0-arr)" filter="url(#s0-glow)"/>
+<path d="M 103,100 C 100,118 140,130 155,114" fill="none" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#s0-arr)" filter="url(#s0-glow)"/>
+<text x="78" y="48" font-family="Arial,sans-serif" font-size="11" fill="#38bdf8" font-style="italic">2e⁻ → Br</text>
+
+<!-- Panah reaksi -->
+<line x1="192" y1="92" x2="215" y2="92" stroke="#7c3aed" stroke-width="2.5" marker-end="url(#s0-rxn)"/>
+
+<!-- PRODUK: R⁺ -->
+<circle cx="244" cy="92" r="22" fill="#0f2a4a" stroke="#2266bb" stroke-width="2.5"/>
+<text x="244" y="97" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#60a5fa">R₃C</text>
+<text x="270" y="76" font-family="Arial,sans-serif" font-size="16" font-weight="bold" fill="#fbbf24" filter="url(#s0-glow)">⁺</text>
+
+<text x="282" y="97" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#475569">+</text>
+
+<!-- PRODUK: Br⁻ -->
+<circle cx="315" cy="92" r="24" fill="#3b0d00" stroke="#8b2a00" stroke-width="2.5"/>
+<text x="315" y="97" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#f87171">Br</text>
+<text x="339" y="76" font-family="Arial,sans-serif" font-size="16" font-weight="bold" fill="#93c5fd" filter="url(#s0-glow)">⁻</text>
+
+<!-- Label RDS -->
+<rect x="78" y="118" width="130" height="22" rx="5" fill="rgba(239,68,68,0.12)" stroke="rgba(239,68,68,0.4)" stroke-width="1"/>
+<text x="143" y="133" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#fca5a5" font-weight="bold">⚡ Tahap Penentu Laju (RDS)</text>
+
+<!-- LEGENDA -->
+<rect x="4" y="148" width="332" height="94" rx="8" fill="#0f172a" stroke="#1e293b" stroke-width="1.5"/>
+<text x="14" y="165" font-family="Arial,sans-serif" font-size="10.5" font-weight="bold" fill="#64748b">KONSEP KUNCI</text>
+<circle cx="22" cy="181" r="4.5" fill="#fbbf24"/>
+<text x="34" y="185" font-family="Arial,sans-serif" font-size="10" fill="#fcd34d">= Pasangan elektron ikatan C–Br</text>
+<path d="M 14,196 Q 22,190 30,196" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>
+<polygon points="30,196 22,190 26,196" fill="#38bdf8"/>
+<text x="38" y="200" font-family="Arial,sans-serif" font-size="10" fill="#93c5fd">= Kedua elektron berpindah ke Br (heterolitik)</text>
+<text x="14" y="218" font-family="Arial,sans-serif" font-size="10" fill="#94a3b8">Orde reaksi: Laju = k[R-X]  (unimolekular, hanya [RX])</text>
+<text x="14" y="233" font-family="Arial,sans-serif" font-size="10" fill="#fbbf24">Karbokation tersier paling stabil → favors SN1</text>
+</svg>`,
+
+/* ══════════════════════════════════════════════════════
+   LANGKAH 1: KARBOKATION (sp² planar, orbital p kosong)
+══════════════════════════════════════════════════════ */
+`<svg viewBox="0 0 340 270" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+<defs>
+  <filter id="s1-glow"><feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <marker id="s1-rxn" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0,0 10,3.5 0,7" fill="#7c3aed"/></marker>
+</defs>
+<rect width="340" height="270" fill="#0a0e1a" rx="10"/>
+<text x="170" y="19" text-anchor="middle" font-family="Arial,sans-serif" font-size="11.5" fill="#94a3b8" font-style="italic">Karbokation Tersier — Intermediet Planar sp²</text>
+
+<!-- Struktur planar: C+ di tengah, 3 R di sekitarnya -->
+<!-- C+ pusat -->
+<circle cx="170" cy="115" r="24" fill="#0a1e30" stroke="#0891b2" stroke-width="2.5" filter="url(#s1-glow)"/>
+<text x="170" y="120" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#7dd3fc">C</text>
+<text x="194" y="98" font-family="Arial,sans-serif" font-size="18" font-weight="bold" fill="#fbbf24" filter="url(#s1-glow)">⁺</text>
+
+<!-- R kiri -->
+<circle cx="86" cy="115" r="20" fill="#0f2a4a" stroke="#2266bb" stroke-width="2"/>
+<text x="86" y="120" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="bold" fill="#60a5fa">R</text>
+<line x1="106" y1="115" x2="146" y2="115" stroke="#888" stroke-width="2.5" stroke-linecap="round"/>
+
+<!-- R kanan-atas -->
+<circle cx="224" cy="60" r="20" fill="#0f2a4a" stroke="#2266bb" stroke-width="2"/>
+<text x="224" y="65" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="bold" fill="#60a5fa">R</text>
+<line x1="209" y1="73" x2="190" y2="95" stroke="#888" stroke-width="2.5" stroke-linecap="round"/>
+
+<!-- R kanan-bawah -->
+<circle cx="224" cy="170" r="20" fill="#0f2a4a" stroke="#2266bb" stroke-width="2"/>
+<text x="224" y="175" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="bold" fill="#60a5fa">R</text>
+<line x1="209" y1="157" x2="190" y2="135" stroke="#888" stroke-width="2.5" stroke-linecap="round"/>
+
+<!-- Label "bidang sp²" -->
+<rect x="60" y="39" width="200" height="18" rx="4" fill="rgba(6,255,216,0.05)" stroke="rgba(6,255,216,0.2)" stroke-width="1"/>
+<text x="160" y="52" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#06ffd8">────── Bidang Hibridisasi sp² ──────</text>
+
+<!-- Orbital p kosong: lobus atas dan bawah (dalam arah Z, digambar tegak) -->
+<ellipse cx="170" cy="34" rx="16" ry="28" fill="rgba(6,255,216,0.12)" stroke="#06ffd8" stroke-width="1.5" stroke-dasharray="4,2" filter="url(#s1-glow)"/>
+<text x="192" y="28" font-family="Arial,sans-serif" font-size="9" fill="#06ffd8">orbital p</text>
+<text x="192" y="38" font-family="Arial,sans-serif" font-size="9" fill="#06ffd8">kosong</text>
+
+<!-- Lobus bawah (berbayang, indikasi ke bawah halaman) -->
+<ellipse cx="170" cy="197" rx="16" ry="28" fill="rgba(6,255,216,0.08)" stroke="#06ffd8" stroke-width="1.5" stroke-dasharray="4,2"/>
+
+<!-- Label kosong orbital p -->
+<text x="148" y="5" font-family="Arial,sans-serif" font-size="9" fill="#94a3b8" font-style="italic">⊕ atas</text>
+<text x="148" y="225" font-family="Arial,sans-serif" font-size="9" fill="#94a3b8" font-style="italic">⊕ bawah</text>
+
+<!-- Br⁻ jauh -->
+<circle cx="308" cy="52" r="20" fill="#1a0a00" stroke="#8b2a00" stroke-width="1.8"/>
+<text x="308" y="57" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#f87171">Br⁻</text>
+<line x1="250" y1="92" x2="288" y2="64" stroke="#555" stroke-width="1" stroke-dasharray="3,4"/>
+<text x="265" y="82" font-family="Arial,sans-serif" font-size="9" fill="#64748b" font-style="italic">jauh</text>
+
+<!-- LEGENDA -->
+<rect x="4" y="230" width="332" height="32" rx="8" fill="#0f172a" stroke="#1e293b" stroke-width="1.5"/>
+<text x="14" y="245" font-family="Arial,sans-serif" font-size="9.5" fill="#94a3b8">Karbokation stabil karena: 3° &gt; 2° &gt; 1°  |  Hiperkonjugasi + Efek Induktif</text>
+<text x="14" y="258" font-family="Arial,sans-serif" font-size="9.5" fill="#fcd34d">Orbital p kosong = elektrofil kuat → siap diserang nukleofil dari KEDUA sisi</text>
+</svg>`,
+
+/* ══════════════════════════════════════════════════════
+   LANGKAH 2: SERANGAN NUKLEOFIL (dari 2 sisi)
+══════════════════════════════════════════════════════ */
+`<svg viewBox="0 0 340 280" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+<defs>
+  <filter id="s2-glow"><feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <marker id="s2-arrO" markerWidth="11" markerHeight="8" refX="10" refY="4" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0,0 11,4 0,8" fill="#f97316"/></marker>
+  <marker id="s2-arrB" markerWidth="11" markerHeight="8" refX="10" refY="4" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0,0 11,4 0,8" fill="#38bdf8"/></marker>
+</defs>
+<rect width="340" height="280" fill="#0a0e1a" rx="10"/>
+<text x="170" y="19" text-anchor="middle" font-family="Arial,sans-serif" font-size="11.5" fill="#94a3b8" font-style="italic">Serangan Nukleofil — dari Kedua Sisi (Racemisasi)</text>
+
+<!-- C+ pusat -->
+<circle cx="170" cy="130" r="24" fill="#0a1e30" stroke="#0891b2" stroke-width="2.5" filter="url(#s2-glow)"/>
+<text x="170" y="135" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#7dd3fc">C</text>
+<text x="194" y="113" font-family="Arial,sans-serif" font-size="17" font-weight="bold" fill="#fbbf24" filter="url(#s2-glow)">⁺</text>
+
+<!-- R groups -->
+<circle cx="86" cy="130" r="18" fill="#0f2a4a" stroke="#2266bb" stroke-width="2"/>
+<text x="86" y="135" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="bold" fill="#60a5fa">R</text>
+<line x1="104" y1="130" x2="146" y2="130" stroke="#666" stroke-width="2" stroke-linecap="round"/>
+<circle cx="224" cy="72" r="18" fill="#0f2a4a" stroke="#2266bb" stroke-width="2"/>
+<text x="224" y="77" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="bold" fill="#60a5fa">R</text>
+<line x1="208" y1="83" x2="190" y2="108" stroke="#666" stroke-width="2" stroke-linecap="round"/>
+<circle cx="224" cy="188" r="18" fill="#0f2a4a" stroke="#2266bb" stroke-width="2"/>
+<text x="224" y="193" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="bold" fill="#60a5fa">R</text>
+<line x1="208" y1="177" x2="190" y2="152" stroke="#666" stroke-width="2" stroke-linecap="round"/>
+
+<!-- Orbital p (target) -->
+<ellipse cx="170" cy="68" rx="13" ry="22" fill="rgba(6,255,216,0.1)" stroke="#06ffd8" stroke-width="1.5" stroke-dasharray="3,2"/>
+<ellipse cx="170" cy="192" rx="13" ry="22" fill="rgba(6,255,216,0.1)" stroke="#06ffd8" stroke-width="1.5" stroke-dasharray="3,2"/>
+
+<!-- Nu atas -->
+<circle cx="170" cy="26" r="20" fill="#3a1500" stroke="#f97316" stroke-width="2.5" filter="url(#s2-glow)"/>
+<text x="170" y="31" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="bold" fill="#fdba74">Nu⁻</text>
+<!-- Panah serangan atas -->
+<path d="M 170,46 L 170,88" stroke="#f97316" stroke-width="2.5" marker-end="url(#s2-arrO)" stroke-linecap="round"/>
+<text x="178" y="70" font-family="Arial,sans-serif" font-size="10" fill="#f97316">❶ atas</text>
+
+<!-- Nu bawah -->
+<circle cx="170" cy="252" r="20" fill="#3a1500" stroke="#38bdf8" stroke-width="2.5" filter="url(#s2-glow)"/>
+<text x="170" y="257" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="bold" fill="#93c5fd">Nu⁻</text>
+<!-- Panah serangan bawah -->
+<path d="M 170,232 L 170,172" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#s2-arrB)" stroke-linecap="round"/>
+<text x="178" y="212" font-family="Arial,sans-serif" font-size="10" fill="#38bdf8">❷ bawah</text>
+
+<!-- Label 50:50 -->
+<rect x="88" y="124" width="66" height="16" rx="4" fill="rgba(249,115,22,0.15)" stroke="rgba(249,115,22,0.4)" stroke-width="1"/>
+<text x="121" y="136" text-anchor="middle" font-family="Arial,sans-serif" font-size="9.5" fill="#fdba74" font-weight="bold">50% retensi</text>
+<rect x="186" y="124" width="66" height="16" rx="4" fill="rgba(56,189,248,0.15)" stroke="rgba(56,189,248,0.4)" stroke-width="1"/>
+<text x="219" y="136" text-anchor="middle" font-family="Arial,sans-serif" font-size="9.5" fill="#93c5fd" font-weight="bold">50% inversi</text>
+</svg>`,
+
+/* ══════════════════════════════════════════════════════
+   LANGKAH 3: PRODUK RASEMAT
+══════════════════════════════════════════════════════ */
+`<svg viewBox="0 0 340 280" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+<defs>
+  <filter id="s3-glow"><feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="340" height="280" fill="#0a0e1a" rx="10"/>
+<text x="170" y="19" text-anchor="middle" font-family="Arial,sans-serif" font-size="11.5" fill="#94a3b8" font-style="italic">Produk — Campuran Rasemat (50:50)</text>
+
+<!-- Label kiri: Produk A (retensi) -->
+<text x="80" y="42" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#fdba74" font-weight="bold">Produk A</text>
+<text x="80" y="54" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#94a3b8">(serangan atas)</text>
+
+<!-- Molekul A: C di pusat, Nu atas -->
+<circle cx="80" cy="110" r="22" fill="#1e1e2e" stroke="#64748b" stroke-width="2"/>
+<text x="80" y="115" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#e2e8f0">C</text>
+<!-- Nu atas -->
+<circle cx="80" cy="70" r="18" fill="#3a1500" stroke="#f97316" stroke-width="2" filter="url(#s3-glow)"/>
+<text x="80" y="75" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="bold" fill="#fdba74">Nu</text>
+<line x1="80" y1="88" x2="80" y2="102" stroke="#f97316" stroke-width="2" stroke-linecap="round"/>
+<!-- 3 R -->
+<circle cx="34" cy="110" r="15" fill="#0f2a4a" stroke="#2266bb" stroke-width="1.8"/>
+<text x="34" y="115" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="bold" fill="#60a5fa">R</text>
+<line x1="49" y1="110" x2="58" y2="110" stroke="#666" stroke-width="1.8"/>
+<circle cx="108" cy="82" r="13" fill="#0f2a4a" stroke="#2266bb" stroke-width="1.5"/>
+<text x="108" y="87" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" font-weight="bold" fill="#60a5fa">R</text>
+<line x1="99" y1="91" x2="94" y2="98" stroke="#666" stroke-width="1.5"/>
+<circle cx="108" cy="138" r="13" fill="#0f2a4a" stroke="#2266bb" stroke-width="1.5"/>
+<text x="108" y="143" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" font-weight="bold" fill="#60a5fa">R</text>
+<line x1="99" y1="129" x2="94" y2="122" stroke="#666" stroke-width="1.5"/>
+
+<!-- Garis pemisah tengah -->
+<line x1="170" y1="40" x2="170" y2="200" stroke="#334155" stroke-width="1.5" stroke-dasharray="6,4"/>
+<text x="170" y="215" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#94a3b8">↔</text>
+<text x="170" y="228" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#64748b">cermin</text>
+
+<!-- Label kanan: Produk B (inversi) -->
+<text x="262" y="42" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#93c5fd" font-weight="bold">Produk B</text>
+<text x="262" y="54" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#94a3b8">(serangan bawah)</text>
+
+<!-- Molekul B: C di pusat, Nu bawah (enantiomer) -->
+<circle cx="262" cy="110" r="22" fill="#1e1e2e" stroke="#64748b" stroke-width="2"/>
+<text x="262" y="115" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#e2e8f0">C</text>
+<!-- Nu bawah -->
+<circle cx="262" cy="152" r="18" fill="#1a2a3a" stroke="#38bdf8" stroke-width="2" filter="url(#s3-glow)"/>
+<text x="262" y="157" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="bold" fill="#93c5fd">Nu</text>
+<line x1="262" y1="132" x2="262" y2="145" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+<!-- 3 R (mirrored) -->
+<circle cx="308" cy="110" r="15" fill="#0f2a4a" stroke="#2266bb" stroke-width="1.8"/>
+<text x="308" y="115" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="bold" fill="#60a5fa">R</text>
+<line x1="293" y1="110" x2="284" y2="110" stroke="#666" stroke-width="1.8"/>
+<circle cx="234" cy="82" r="13" fill="#0f2a4a" stroke="#2266bb" stroke-width="1.5"/>
+<text x="234" y="87" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" font-weight="bold" fill="#60a5fa">R</text>
+<line x1="243" y1="91" x2="248" y2="98" stroke="#666" stroke-width="1.5"/>
+<circle cx="234" cy="138" r="13" fill="#0f2a4a" stroke="#2266bb" stroke-width="1.5"/>
+<text x="234" y="143" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" font-weight="bold" fill="#60a5fa">R</text>
+<line x1="243" y1="129" x2="248" y2="122" stroke="#666" stroke-width="1.5"/>
+
+<!-- Label rasemat -->
+<rect x="30" y="240" width="280" height="32" rx="7" fill="rgba(199,125,255,0.10)" stroke="rgba(199,125,255,0.3)" stroke-width="1.5"/>
+<text x="170" y="253" text-anchor="middle" font-family="Arial,sans-serif" font-size="10.5" fill="#c77dff" font-weight="bold">Campuran Rasemat: 50% (+) + 50% (−)</text>
+<text x="170" y="267" text-anchor="middle" font-family="Arial,sans-serif" font-size="9.5" fill="#94a3b8">Aktivitas optis hilang jika bahan awal optis aktif</text>
+</svg>`
+
+        ]; // end svgDiagrams
+
+        // ==========================================
+        // 6b. FUNGSI UPDATE 2D PANEL
+        // ==========================================
+        function update2DDiagram(step) {
+            const container = document.getElementById('svg-2d-container');
+            const label = document.getElementById('label-2d');
+            const l = locales[currentLang];
+            container.innerHTML = svgDiagrams[step];
+            label.innerText = `Diagram 2D – ${l.steps[step].name}`;
+            const svgEl = container.querySelector('svg');
+            if (svgEl) { svgEl.setAttribute('width', '100%'); svgEl.setAttribute('height', 'auto'); svgEl.style.display = 'block'; }
+        }
+
+        // Toggle 2D panel
+        document.getElementById('btn-toggle-2d').addEventListener('click', () => {
+            document.getElementById('panel-2d').style.display   = 'none';
+            document.getElementById('btn-show-2d').style.display = 'block';
+        });
+        document.getElementById('btn-show-2d').addEventListener('click', () => {
+            document.getElementById('panel-2d').style.display   = 'block';
+            document.getElementById('btn-show-2d').style.display = 'none';
+        });
+
+        // ==========================================
+        // 6c. ENERGY DIAGRAM
+        // ==========================================
+        const eCanvas = document.getElementById('energy-chart');
+        const ctx = eCanvas.getContext('2d');
+
+        function updateEnergyDiagram(step, progress) {
+            const rect = eCanvas.parentElement.getBoundingClientRect();
+            eCanvas.width = rect.width - 32;
+            eCanvas.height = 150;
+            const w = eCanvas.width, h = eCanvas.height;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Axes
+            ctx.strokeStyle = "rgba(6,255,216,0.18)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(10, 10); ctx.lineTo(10, h-10); ctx.lineTo(w-10, h-10);
+            ctx.stroke();
+
+            // Y-axis label
+            ctx.fillStyle = "rgba(100,116,139,0.7)";
+            ctx.font = "9px sans-serif";
+            ctx.save(); ctx.translate(6, h/2); ctx.rotate(-Math.PI/2);
+            ctx.fillText("E", -5, 0); ctx.restore();
+
+            // SN1 energy profiles (2 humps total):
+            // lower canvas y = higher on canvas = HIGHER energy
+            const curves = [
+                { start: 105, peak: 16, end: 58, hasPeak: true, tsLabel: "TS₁ (RDS)" },  // Ionization: big hill
+                { start: 58, peak: 55, end: 58, hasPeak: true, tsLabel: "~Int" },          // Carbocation: near flat
+                { start: 58, peak: 38, end: 100, hasPeak: true, tsLabel: "TS₂" },          // Attack: smaller hill
+                { start: 100, peak: 110, end: 118, hasPeak: false, tsLabel: "" }            // Product: descent
+            ];
+
+            const c = curves[step];
+
+            ctx.strokeStyle = "#06ffd8";
+            ctx.lineWidth = 3; ctx.lineCap = "round";
+            ctx.beginPath(); ctx.moveTo(10, c.start);
+
+            if (step < 3) {
+                ctx.bezierCurveTo(w*0.3, c.start, w*0.4, c.peak, w*0.5, c.peak);
+                ctx.bezierCurveTo(w*0.6, c.peak, w*0.7, c.end, w-10, c.end);
+            } else {
+                ctx.bezierCurveTo(w*0.5, c.start, w*0.5, c.end, w-10, c.end);
+            }
+            ctx.stroke();
+
+            if (step < 3 && c.hasPeak) {
+                ctx.strokeStyle = "rgba(123,47,255,0.5)";
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(w*0.5, c.peak); ctx.lineTo(w*0.5, h-10);
+                ctx.stroke(); ctx.setLineDash([]);
+                ctx.fillStyle = "rgba(199,125,255,0.9)";
+                ctx.font = "9px sans-serif";
+                ctx.fillText(c.tsLabel, w*0.5 + 3, c.peak + 10);
+            }
+
+            // Energy level labels
+            ctx.font = "8px sans-serif";
+            ctx.fillStyle = "rgba(100,116,139,0.6)";
+            const labels = [["Substrat", 105], ["Karbokation", 58], ["Produk", 118]];
+            labels.forEach(([lbl, y]) => {
+                ctx.fillText(lbl, 12, y);
+            });
+
+            // Progress indicator dot
+            const px = 10 + (w - 20) * progress;
+            let py;
+            if (step < 3) {
+                if (progress < 0.5) {
+                    const t = progress * 2;
+                    py = c.start + (c.peak - c.start) * (3*t*t - 2*t*t*t);
+                } else {
+                    const t = (progress - 0.5) * 2;
+                    py = c.peak + (c.end - c.peak) * (3*t*t - 2*t*t*t);
+                }
+            } else {
+                const t = progress;
+                py = c.start + (c.end - c.start) * (3*t*t - 2*t*t*t);
+            }
+            ctx.fillStyle = "#06ffd8";
+            ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI*2); ctx.fill();
+            ctx.shadowColor = "#06ffd8"; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
+        }
+
+        // ==========================================
+        // 7. MANAJEMEN UI
+        // ==========================================
+        function updateUI() {
+            const l = locales[currentLang];
+            document.getElementById('ui-title').innerText = l.title;
+            document.getElementById('ui-step-badge').innerText = `Step ${currentStep + 1}/4: ${l.steps[currentStep].name}`;
+            document.getElementById('ui-desc').innerText = l.steps[currentStep].desc;
+            document.getElementById('ui-ts-label').innerText = l.tsLabel;
+            document.getElementById('ui-speed-label').innerText = `${l.speedLabel}: ${document.getElementById('speed-slider').value}x`;
+            document.getElementById('ui-energy-title').innerText = l.energyTitle;
+            document.getElementById('ui-rxn-coord').innerText = l.rxnCoord;
+            // Quiz
+            document.getElementById('quiz-title').innerText = l.quiz.title;
+            document.getElementById('quiz-q').innerText = l.quiz.q;
+            document.querySelectorAll('.quiz-opt').forEach((btn, idx) => {
+                btn.innerText = l.quiz.opts[idx];
+                btn.className = "w-full text-left px-4 py-3 rounded-xl quiz-opt";
+                btn.style.cssText = "background:rgba(13,21,48,0.85);border:1px solid var(--glass-border);color:var(--text-secondary);transition:all 0.2s;font-size:0.88rem";
+            });
+            document.getElementById('quiz-feedback').classList.add('hidden');
+            document.getElementById('quiz-close').classList.add('hidden');
+            updateEnergyDiagram(currentStep, 0);
+            update2DDiagram(currentStep);
+            requestAnimationFrame(() => repositionPanel2D());
+        }
+
+        function loadStep(stepIndex) {
+            if (currentTimeline) { currentTimeline.pause(); currentTimeline.kill(); }
+            stepGroups.forEach((g, i) => g.visible = (i === stepIndex));
+            currentStep = stepIndex;
+            updateUI();
+            currentTimeline = timelines[stepIndex]();
+            if (isPlaying) {
+                currentTimeline.timeScale(getBaseSpeed());
+                currentTimeline.play();
+                togglePlayUI(true);
+            } else {
+                currentTimeline.progress(0);
+                togglePlayUI(false);
+            }
+        }
+
+        function togglePlayUI(playing) {
+            isPlaying = playing;
+            document.getElementById('icon-play').classList.toggle('hidden', playing);
+            document.getElementById('icon-pause').classList.toggle('hidden', !playing);
+        }
+
+        function repositionPanel2D() {
+            const header = document.querySelector('#main-ui header > div.glass-panel');
+            const panel  = document.getElementById('panel-2d');
+            const btnShow= document.getElementById('btn-show-2d');
+            if (!header || !panel) return;
+            const rect   = header.getBoundingClientRect();
+            const topPx  = rect.bottom + 12;
+            const maxH   = window.innerHeight - topPx - 90;
+            const leftPx = rect.left;
+            const widthPx= Math.min(340, rect.width);
+            panel.style.top = topPx + 'px'; panel.style.left = leftPx + 'px';
+            panel.style.width = widthPx + 'px'; panel.style.maxHeight = maxH + 'px';
+            btnShow.style.top = topPx + 'px'; btnShow.style.left = leftPx + 'px';
+        }
+
+        // ==========================================
+        // 8. EVENT LISTENERS
+        // ==========================================
+        document.getElementById('start-btn').addEventListener('click', () => {
+            initAudio();
+            document.getElementById('start-overlay').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('start-overlay').style.display = 'none';
+                document.getElementById('main-ui').classList.remove('opacity-0');
+                document.getElementById('panel-2d').style.display = 'block';
+                repositionPanel2D();
+                loadStep(0);
+            }, 500);
+        });
+
+        document.getElementById('btn-play').addEventListener('click', () => {
+            if (!currentTimeline) return;
+            initAudio();
+            if (isPlaying) {
+                currentTimeline.pause(); togglePlayUI(false);
+            } else {
+                if (currentTimeline.progress() === 1) currentTimeline.restart();
+                else currentTimeline.play();
+                togglePlayUI(true);
+            }
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            if (currentTimeline) { currentTimeline.pause(); currentTimeline.progress(0); togglePlayUI(false); }
+        });
+
+        document.getElementById('btn-next').addEventListener('click', () => {
+            if (currentStep < 3) loadStep(currentStep + 1);
+        });
+        document.getElementById('btn-prev').addEventListener('click', () => {
+            if (currentStep > 0) loadStep(currentStep - 1);
+        });
+
+        function updateLangToggle() {
+            document.querySelectorAll('.lang-seg').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === currentLang);
+            });
+        }
+        document.querySelectorAll('.lang-seg').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentLang = btn.dataset.lang;
+                updateLangToggle();
+                updateUI();
+            });
+        });
+        updateLangToggle();
+
+        document.getElementById('ts-toggle').addEventListener('change', (e) => { isSlowMoTS = e.target.checked; });
+
+        document.getElementById('speed-slider').addEventListener('input', (e) => {
+            const speed = parseFloat(e.target.value);
+            document.getElementById('ui-speed-label').innerText = `${locales[currentLang].speedLabel}: ${speed}x`;
+            if (currentTimeline) gsap.globalTimeline.timeScale(speed);
+        });
+
+        // Quiz logic
+        document.querySelectorAll('.quiz-opt').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const isCorrect = e.target.getAttribute('data-correct') === 'true';
+                const feedback = document.getElementById('quiz-feedback');
+                document.querySelectorAll('.quiz-opt').forEach(b => {
+                    b.style.background = '';
+                    if (b.getAttribute('data-correct') === 'true') {
+                        b.style.background = 'rgba(6,255,216,0.25)'; b.style.borderColor = 'var(--accent-cyan)';
+                    }
+                });
+                feedback.classList.remove('hidden');
+                if (isCorrect) {
+                    feedback.innerText = locales[currentLang].quiz.correct;
+                    feedback.style.color = 'var(--accent-cyan)';
+                } else {
+                    e.target.style.background = 'rgba(123,47,255,0.3)'; e.target.style.borderColor = 'var(--accent-violet)';
+                    feedback.innerText = locales[currentLang].quiz.wrong;
+                    feedback.style.color = 'var(--accent-violet)';
+                }
+                document.getElementById('quiz-close').classList.remove('hidden');
+            });
+        });
+
+        document.getElementById('quiz-close').addEventListener('click', () => {
+            document.getElementById('quiz-modal').classList.add('hidden');
+            document.getElementById('quiz-modal').classList.remove('flex');
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            if (currentTimeline) updateEnergyDiagram(currentStep, currentTimeline.progress());
+            repositionPanel2D();
+        });
+
+        const headerPanel = document.querySelector('#main-ui header > div.glass-panel');
+        if (headerPanel && window.ResizeObserver) {
+            new ResizeObserver(() => repositionPanel2D()).observe(headerPanel);
+        }
+
+        // ==========================================
+        // 9. RENDER LOOP
+        // ==========================================
+        renderer.setAnimationLoop((time) => {
+            controls.update();
+            const elapsed = time * 0.001 || performance.now() * 0.001;
+            if (stepGroups[currentStep]) {
+                stepGroups[currentStep].position.y = Math.sin(elapsed * 0.8) * 0.08;
+            }
+            renderer.render(scene, camera);
+        });
+
+    </script>
+</body>
+</html>

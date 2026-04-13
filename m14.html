@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="id" id="docLang">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OKOL-WDI — Modul Interaktif Elusidasi Struktur</title>
+    <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0a3d91;
+            --secondary: #1565c0;
+            --accent: #e63946;
+            --gold: #f4a261;
+            --light: #f0f4ff;
+            --dark: #0d1b2a;
+            --success: #2d6a4f;
+            --success-bg: #d8f3dc;
+            --danger: #c1121f;
+            --danger-bg: #ffe0e0;
+            --info: #1a759f;
+            --info-bg: #e0f4ff;
+            --card-bg: #ffffff;
+            --border: #dce3f0;
+            --text-muted: #5a6a7e;
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            background: linear-gradient(160deg, #e8edf8 0%, #f5f0ff 100%);
+            background-attachment: fixed;
+            color: var(--dark);
+            line-height: 1.7;
+            margin: 0;
+            padding: 0;
+        }
+
+        [lang="en"] .lang-id { display: none !important; }
+        [lang="id"] .lang-en { display: none !important; }
+
+        .lang-switch {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 1000;
+            background: white;
+            padding: 5px;
+            border-radius: 40px;
+            box-shadow: 0 4px 20px rgba(10,61,145,0.18);
+            display: flex;
+            gap: 4px;
+        }
+        .lang-btn {
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            font-weight: 700;
+            font-size: 0.8em;
+            border-radius: 30px;
+            padding: 5px 12px;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .lang-btn.active { background: var(--primary); color: white; }
+
+        .container { max-width: 1040px; margin: auto; padding: 20px 16px 60px; }
+
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 24px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 18px 28px;
+            border-radius: var(--radius);
+            box-shadow: 0 2px 12px rgba(10,61,145,0.07);
+            border: 1px solid var(--border);
+        }
+        .logo-container img {
+            max-height: 80px;
+            max-width: 160px;
+            object-fit: contain;
+        }
+
+        .nav-bar {
+            background: white;
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 2px 12px rgba(10,61,145,0.07);
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 4px 8px;
+        }
+        .nav-bar a {
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.88em;
+            padding: 5px 10px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .nav-bar a:hover { background: var(--light); color: var(--accent); }
+
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, #1a56db 100%);
+            color: white;
+            padding: 36px 24px 30px;
+            border-radius: var(--radius);
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 30px rgba(10,61,145,0.25);
+            position: relative;
+            overflow: hidden;
+        }
+        header::before {
+            content: '';
+            position: absolute;
+            top: -40px; right: -40px;
+            width: 220px; height: 220px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 50%;
+        }
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -60px; left: -30px;
+            width: 180px; height: 180px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 50%;
+        }
+        header h1 { margin: 0; font-size: 2em; font-weight: 700; position: relative; z-index: 1; }
+        header h3 { margin: 8px 0 0; font-weight: 300; opacity: 0.88; position: relative; z-index: 1; }
+
+        .card {
+            background: var(--card-bg);
+            padding: 28px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            box-shadow: 0 2px 14px rgba(10,61,145,0.07);
+            border: 1px solid var(--border);
+            scroll-margin-top: 80px;
+        }
+        .card-title {
+            color: var(--primary);
+            border-bottom: 2px solid var(--light);
+            padding-bottom: 10px;
+            margin-top: 0;
+            font-size: 1.15em;
+            font-weight: 700;
+        }
+
+        .grid-2 {
+            display: grid;
+            gap: 20px;
+            margin-top: 0;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .viewer-box {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            background: var(--light);
+            text-align: center;
+        }
+        .viewer-box h4 {
+            margin: 0 0 10px;
+            color: var(--secondary);
+            font-size: 0.95em;
+            font-weight: 700;
+        }
+        .view-container {
+            width: 100%;
+            height: 240px;
+            position: relative;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #e0e8f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        .mol-3d { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+        .mol-2d {
+            display: none;
+            font-size: 1.1em;
+            font-weight: 700;
+            color: var(--dark);
+            font-family: 'IBM Plex Mono', monospace;
+            word-break: break-all;
+            padding: 10px;
+            text-align: center;
+            position: absolute;
+            width: 100%;
+        }
+
+        button {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 7px 13px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.82em;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-weight: 600;
+            margin: 3px;
+            transition: all 0.2s;
+            letter-spacing: 0.01em;
+        }
+        button:hover { background: var(--primary); transform: translateY(-1px); box-shadow: 0 3px 10px rgba(10,61,145,0.2); }
+        button:active { transform: translateY(0); }
+        .btn-warning { background: var(--gold); color: #3d1f00; }
+        .btn-warning:hover { background: #e08c47; }
+        .btn-info { background: var(--info); }
+        .btn-info:hover { background: #0f5680; }
+        .btn-danger-outline {
+            background: transparent;
+            color: var(--accent);
+            border: 2px solid var(--accent);
+        }
+        .btn-danger-outline:hover { background: var(--accent); color: white; }
+        .btn-group { text-align: center; margin-top: 14px; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 11px 14px; text-align: left; }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:nth-child(even) td { background: #f7faff; }
+
+        /* Spektrum display */
+        .spektrum-card {
+            background: #f8faff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+        .spektrum-card h5 {
+            margin: 0 0 10px;
+            color: var(--primary);
+            font-size: 0.95em;
+            font-weight: 700;
+        }
+        .spektrum-bar-container {
+            position: relative;
+            height: 100px;
+            background: white;
+            border: 1px solid #e0e8f5;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        .spektrum-bar {
+            position: absolute;
+            bottom: 0;
+            width: 4px;
+            background: var(--accent);
+            border-radius: 2px 2px 0 0;
+            transition: height 0.5s;
+        }
+        .spektrum-label {
+            font-size: 0.72em;
+            color: var(--text-muted);
+            text-align: center;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        /* Info box */
+        .info-box {
+            background: var(--info-bg);
+            border-left: 4px solid var(--info);
+            padding: 14px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 14px 0;
+            font-size: 0.9em;
+        }
+        .warn-box {
+            background: #fff8e1;
+            border-left: 4px solid var(--gold);
+            padding: 14px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 14px 0;
+            font-size: 0.9em;
+        }
+        .success-box {
+            background: var(--success-bg);
+            border-left: 4px solid var(--success);
+            padding: 14px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 14px 0;
+            font-size: 0.9em;
+        }
+
+        /* Step indicator */
+        .step-list { counter-reset: step-cnt; list-style: none; padding: 0; margin: 16px 0; }
+        .step-list li {
+            counter-increment: step-cnt;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            margin-bottom: 14px;
+        }
+        .step-list li::before {
+            content: counter(step-cnt);
+            background: var(--primary);
+            color: white;
+            min-width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85em;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.78em;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+        }
+        .badge-ir   { background: #fce7f3; color: #9d174d; }
+        .badge-nmr  { background: #dbeafe; color: #1d4ed8; }
+        .badge-ms   { background: #f0fdf4; color: #166534; }
+        .badge-uvvis{ background: #fef9c3; color: #854d0e; }
+
+        /* Accordion */
+        .accordion-btn {
+            width: 100%;
+            text-align: left;
+            background: var(--light);
+            color: var(--primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 0.92em;
+            font-weight: 700;
+            cursor: pointer;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+            transform: none;
+            box-shadow: none;
+        }
+        .accordion-btn:hover { background: #dce6ff; transform: none; box-shadow: none; }
+        .accordion-content {
+            display: none;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 0 0 8px 8px;
+            padding: 16px;
+            font-size: 0.9em;
+            margin-top: -6px;
+            margin-bottom: 8px;
+        }
+        .accordion-content.open { display: block; }
+
+        /* Quiz */
+        .quiz-progress {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--light);
+            border-radius: 10px;
+            padding: 12px 18px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+        .quiz-progress-text { font-weight: 700; color: var(--primary); font-size: 0.9em; }
+        .score-badge {
+            background: var(--primary);
+            color: white;
+            padding: 5px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.88em;
+        }
+
+        .quiz-item {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 22px;
+            margin-bottom: 18px;
+            transition: border 0.2s;
+        }
+        .quiz-item.answered-correct { border-color: var(--success); }
+        .quiz-item.answered-wrong   { border-color: var(--danger); }
+
+        .quiz-q-header {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 14px;
+        }
+        .quiz-number {
+            background: var(--primary);
+            color: white;
+            min-width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85em;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .quiz-q-text { font-weight: 600; font-size: 0.97em; line-height: 1.6; }
+        .quiz-tag {
+            display: inline-block;
+            font-size: 0.72em;
+            font-weight: 700;
+            padding: 2px 9px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .tag-ir    { background: #fce7f3; color: #9d174d; }
+        .tag-nmr   { background: #dbeafe; color: #1d4ed8; }
+        .tag-ms    { background: #f0fdf4; color: #166534; }
+        .tag-uvvis { background: #fef9c3; color: #854d0e; }
+        .tag-konsep{ background: #ede9fe; color: #5b21b6; }
+
+        .quiz-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            width: 100%;
+            text-align: left;
+            background: #fafbff;
+            color: var(--dark);
+            border: 1.5px solid var(--border);
+            margin: 6px 0;
+            padding: 11px 14px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.2s;
+            transform: none;
+            box-shadow: none;
+        }
+        .quiz-option:hover:not(:disabled) {
+            background: var(--light);
+            border-color: var(--secondary);
+            transform: translateX(4px);
+            box-shadow: none;
+        }
+        .quiz-option:disabled { cursor: default; transform: none; }
+        .quiz-option.correct-choice { background: var(--success-bg); border-color: var(--success); color: var(--success); font-weight: 700; }
+        .quiz-option.wrong-choice   { background: var(--danger-bg);  border-color: var(--danger);  color: var(--danger);  font-weight: 700; }
+        .quiz-option .opt-letter {
+            background: var(--primary);
+            color: white;
+            min-width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .quiz-option.correct-choice .opt-letter { background: var(--success); }
+        .quiz-option.wrong-choice   .opt-letter { background: var(--danger); }
+
+        .feedback {
+            font-weight: 700;
+            margin-top: 12px;
+            font-size: 0.9em;
+            display: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+        .feedback.correct { background: var(--success-bg); color: var(--success); display: block; }
+        .feedback.wrong   { background: var(--danger-bg);  color: var(--danger);  display: block; }
+
+        .pembahasan {
+            background: var(--info-bg);
+            border-left: 4px solid var(--info);
+            padding: 14px 16px;
+            margin-top: 10px;
+            display: none;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.88em;
+            line-height: 1.75;
+        }
+        .pembahasan strong { color: var(--primary); }
+
+        .quiz-summary {
+            background: linear-gradient(135deg, var(--primary), #1a56db);
+            color: white;
+            border-radius: var(--radius);
+            padding: 30px;
+            text-align: center;
+            display: none;
+            margin-top: 20px;
+        }
+        .quiz-summary h3 { margin: 0 0 10px; font-size: 1.5em; }
+        .quiz-summary .big-score { font-size: 3em; font-weight: 700; }
+        .quiz-summary p { opacity: 0.88; margin: 8px 0 20px; }
+        .btn-retake { background: white; color: var(--primary); font-weight: 700; padding: 10px 28px; border-radius: 8px; font-size: 1em; }
+        .btn-retake:hover { background: var(--light); }
+
+        /* Canvas SVG spektrum */
+        .spektrum-svg {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: white;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .lang-switch { top: 10px; right: 10px; }
+            header h1 { font-size: 1.4em; }
+            .nav-bar { top: 8px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="lang-switch">
+    <button class="lang-btn active" id="btn-id" onclick="setLanguage('id')">🇮🇩 ID</button>
+    <button class="lang-btn" id="btn-en" onclick="setLanguage('en')">🇬🇧 EN</button>
+</div>
+
+<div class="container">
+
+    <!-- LOGO -->
+    <div class="logo-container">
+        <img src="logo-okol-wdi.jpg"     alt="Logo OKOL-WDI">
+        <img src="logo-unsri.jpg"        alt="Logo UNSRI">
+        <img src="logo-bpsdm-sumsel.jpg" alt="Logo BPSDM SUMSEL">
+        <img src="logo-asn-berakhlak.jpg"alt="Logo ASN BERAKHLAK">
+    </div>
+
+    <!-- NAVBAR -->
+    <nav class="nav-bar">
+        <a href="#materi-pengertian"><span class="lang-id">📖 Pengertian</span><span class="lang-en">📖 Introduction</span></a>
+        <a href="#materi-ir"><span class="lang-id">🌡️ Spektroskopi IR</span><span class="lang-en">🌡️ IR Spectroscopy</span></a>
+        <a href="#materi-nmr"><span class="lang-id">🧲 Spektroskopi NMR</span><span class="lang-en">🧲 NMR Spectroscopy</span></a>
+        <a href="#materi-ms"><span class="lang-id">⚡ Spektrometri Massa</span><span class="lang-en">⚡ Mass Spectrometry</span></a>
+        <a href="#materi-alur"><span class="lang-id">🗺️ Alur Analisis</span><span class="lang-en">🗺️ Analysis Workflow</span></a>
+        <a href="#latihan-soal"><span class="lang-id">📝 Latihan Soal</span><span class="lang-en">📝 Quiz</span></a>
+    </nav>
+
+    <!-- HEADER -->
+    <header>
+        <h1>
+            <span class="lang-id">🔬 OKOL-WDI — Modul Interaktif Elusidasi Struktur</span>
+            <span class="lang-en">🔬 OKOL-WDI — Interactive Module on Structure Elucidation</span>
+        </h1>
+        <h3>
+            <span class="lang-id">Analisis Struktur Senyawa Organik: IR · NMR · MS · UV-Vis</span>
+            <span class="lang-en">Organic Compound Structure Analysis: IR · NMR · MS · UV-Vis</span>
+        </h3>
+    </header>
+
+    <!-- ===== SECTION 1: PENGERTIAN ===== -->
+    <div id="materi-pengertian" class="card">
+        <h2 class="card-title"><span class="lang-id">🧠 Apa itu Elusidasi Struktur?</span><span class="lang-en">🧠 What is Structure Elucidation?</span></h2>
+        <div class="grid-2">
+            <div>
+                <div class="lang-id">
+                    <p><b>Elusidasi struktur</b> adalah proses penentuan susunan atom-atom dalam suatu molekul — termasuk jenis ikatan, gugus fungsi, konektivitas, dan stereokimia — menggunakan berbagai teknik spektroskopi dan spektrometri.</p>
+                    <p>Tujuan utama elusidasi struktur:</p>
+                    <ul>
+                        <li>✅ Mengidentifikasi senyawa baru hasil sintesis atau isolasi alam</li>
+                        <li>✅ Memverifikasi kemurnian dan identitas senyawa</li>
+                        <li>✅ Mendukung penelitian obat, bahan alam, dan material</li>
+                        <li>✅ Analisis forensik dan kontrol kualitas industri</li>
+                    </ul>
+                    <div class="info-box">
+                        💡 <b>Analogi:</b> Seperti membaca "sidik jari" molekul. Setiap senyawa menghasilkan pola spektrum yang unik, yang memungkinkan kimiawan mengidentifikasinya seperti sidik jari manusia.
+                    </div>
+                </div>
+                <div class="lang-en">
+                    <p><b>Structure elucidation</b> is the process of determining the arrangement of atoms in a molecule — including bond types, functional groups, connectivity, and stereochemistry — using various spectroscopic and spectrometric techniques.</p>
+                    <p>Main objectives of structure elucidation:</p>
+                    <ul>
+                        <li>✅ Identify new compounds from synthesis or natural isolation</li>
+                        <li>✅ Verify purity and identity of compounds</li>
+                        <li>✅ Support research in drugs, natural products, and materials</li>
+                        <li>✅ Forensic analysis and industrial quality control</li>
+                    </ul>
+                    <div class="info-box">
+                        💡 <b>Analogy:</b> Like reading a molecular "fingerprint." Each compound produces a unique spectral pattern, allowing chemists to identify it just like a human fingerprint.
+                    </div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th><span class="lang-id">Teknik</span><span class="lang-en">Technique</span></th>
+                            <th><span class="lang-id">Informasi yang Diperoleh</span><span class="lang-en">Information Obtained</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><b>IR</b></td><td><span class="lang-id">Gugus fungsi, jenis ikatan</span><span class="lang-en">Functional groups, bond types</span></td></tr>
+                        <tr><td><b>¹H/¹³C NMR</b></td><td><span class="lang-id">Lingkungan kimia H &amp; C, konektivitas</span><span class="lang-en">Chemical environment of H &amp; C, connectivity</span></td></tr>
+                        <tr><td><b>MS</b></td><td><span class="lang-id">Massa molekul, fragmen struktural</span><span class="lang-en">Molecular mass, structural fragments</span></td></tr>
+                        <tr><td><b>UV-Vis</b></td><td><span class="lang-id">Sistem terkonjugasi, kromofor</span><span class="lang-en">Conjugated systems, chromophores</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Molekul 3D: Etanol sebagai contoh dasar -->
+            <div>
+                <div class="viewer-box">
+                    <h4><span class="lang-id">🧪 Contoh: Etanol (C₂H₅OH)</span><span class="lang-en">🧪 Example: Ethanol (C₂H₅OH)</span></h4>
+                    <div class="view-container">
+                        <div class="mol-3d" id="viewer-ethanol"></div>
+                        <div class="mol-2d" id="text2d-ethanol">CH₃CH₂OH<br><small>Ethanol · MW = 46.07</small></div>
+                    </div>
+                    <div class="btn-group">
+                        <button onclick="resetView('viewer-ethanol')">↺ Reset</button>
+                        <button onclick="toggleLabels('viewer-ethanol')" class="btn-info">🏷 Label</button>
+                        <button onclick="toggle2D3D('viewer-ethanol','text2d-ethanol')" class="btn-warning">2D/3D</button>
+                    </div>
+                    <p style="font-size:0.82em; color:var(--text-muted); margin:8px 0 0; text-align:center;">
+                        <span class="lang-id">Putar dengan klik-tahan · Zoom scroll</span>
+                        <span class="lang-en">Rotate by click-drag · Scroll to zoom</span>
+                    </p>
+                </div>
+
+                <div class="viewer-box" style="margin-top:12px;">
+                    <h4><span class="lang-id">🧪 Contoh: Aseton (C₃H₆O)</span><span class="lang-en">🧪 Example: Acetone (C₃H₆O)</span></h4>
+                    <div class="view-container">
+                        <div class="mol-3d" id="viewer-acetone"></div>
+                        <div class="mol-2d" id="text2d-acetone">CH₃COCH₃<br><small>Acetone · MW = 58.08</small></div>
+                    </div>
+                    <div class="btn-group">
+                        <button onclick="resetView('viewer-acetone')">↺ Reset</button>
+                        <button onclick="toggleLabels('viewer-acetone')" class="btn-info">🏷 Label</button>
+                        <button onclick="toggle2D3D('viewer-acetone','text2d-acetone')" class="btn-warning">2D/3D</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 2: SPEKTROSKOPI IR ===== -->
+    <div id="materi-ir" class="card">
+        <h2 class="card-title"><span class="badge badge-ir">IR</span>&nbsp; <span class="lang-id">Spektroskopi Inframerah (IR)</span><span class="lang-en">Infrared (IR) Spectroscopy</span></h2>
+        <div class="grid-2">
+            <div>
+                <div class="lang-id">
+                    <p>Spektroskopi IR memanfaatkan radiasi inframerah (4000–400 cm⁻¹) untuk mengeksitasi getaran (vibrasi) ikatan dalam molekul. Setiap jenis ikatan menyerap energi pada frekuensi khas.</p>
+
+                    <div class="warn-box">
+                        📌 <b>Daerah Sidik Jari (Fingerprint Region):</b> 1500–600 cm⁻¹ — pola unik tiap senyawa, digunakan untuk konfirmasi identitas.
+                    </div>
+
+                    <p><b>Serapan gugus fungsi utama:</b></p>
+                </div>
+                <div class="lang-en">
+                    <p>IR spectroscopy uses infrared radiation (4000–400 cm⁻¹) to excite bond vibrations in molecules. Each type of bond absorbs energy at a characteristic frequency.</p>
+
+                    <div class="warn-box">
+                        📌 <b>Fingerprint Region:</b> 1500–600 cm⁻¹ — unique pattern for each compound, used for identity confirmation.
+                    </div>
+
+                    <p><b>Key functional group absorptions:</b></p>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th><span class="lang-id">Gugus / Ikatan</span><span class="lang-en">Group / Bond</span></th>
+                            <th>cm⁻¹</th>
+                            <th><span class="lang-id">Keterangan</span><span class="lang-en">Notes</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>O–H (alkohol bebas)</td><td>3200–3550</td><td><span class="lang-id">Lebar &amp; kuat</span><span class="lang-en">Broad &amp; strong</span></td></tr>
+                        <tr><td>N–H (amina/amida)</td><td>3300–3500</td><td><span class="lang-id">Tajam/dobel</span><span class="lang-en">Sharp/double</span></td></tr>
+                        <tr><td>C–H (alkil)</td><td>2850–2960</td><td><span class="lang-id">Sedang</span><span class="lang-en">Medium</span></td></tr>
+                        <tr><td>C=O (keton/aldehid)</td><td>1700–1750</td><td><span class="lang-id">Sangat kuat</span><span class="lang-en">Very strong</span></td></tr>
+                        <tr><td>C=O (ester)</td><td>1735–1750</td><td><span class="lang-id">Kuat</span><span class="lang-en">Strong</span></td></tr>
+                        <tr><td>C=C (alkena/aromat)</td><td>1500–1600</td><td><span class="lang-id">Sedang</span><span class="lang-en">Medium</span></td></tr>
+                        <tr><td>C–O (eter/ester)</td><td>1000–1300</td><td><span class="lang-id">Kuat</span><span class="lang-en">Strong</span></td></tr>
+                        <tr><td>C≡N (nitril)</td><td>2200–2260</td><td><span class="lang-id">Tajam</span><span class="lang-en">Sharp</span></td></tr>
+                    </tbody>
+                </table>
+
+                <div class="success-box" style="margin-top:14px;">
+                    <span class="lang-id">✅ <b>Cara Baca Spektrum IR:</b> Amati pita serapan di atas 3000 cm⁻¹ (O–H, N–H, C–H sp² aromat), lalu zona 1500–1750 cm⁻¹ (C=O, C=C), dan terakhir fingerprint region.</span>
+                    <span class="lang-en">✅ <b>How to Read IR Spectrum:</b> Observe absorption bands above 3000 cm⁻¹ (O–H, N–H, aromatic C–H), then 1500–1750 cm⁻¹ zone (C=O, C=C), and finally the fingerprint region.</span>
+                </div>
+            </div>
+
+            <!-- Visualisasi spektrum IR sederhana -->
+            <div>
+                <div class="viewer-box">
+                    <h4><span class="lang-id">📊 Simulasi Spektrum IR Etanol</span><span class="lang-en">📊 IR Spectrum Simulation — Ethanol</span></h4>
+                    <!-- SVG Spektrum IR Etanol -->
+                    <svg class="spektrum-svg" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="400" height="200" fill="white"/>
+                        <!-- Grid -->
+                        <line x1="40" y1="10" x2="40" y2="170" stroke="#e0e8f5" stroke-width="1"/>
+                        <line x1="40" y1="170" x2="395" y2="170" stroke="#333" stroke-width="1.5"/>
+                        <!-- Baseline transmittance -->
+                        <line x1="40" y1="30" x2="395" y2="30" stroke="#e0e8f5" stroke-width="1" stroke-dasharray="4,4"/>
+                        <!-- X-axis labels (wavenumber) -->
+                        <text x="40"  y="185" font-size="9" fill="#666" text-anchor="middle">4000</text>
+                        <text x="120" y="185" font-size="9" fill="#666" text-anchor="middle">3000</text>
+                        <text x="200" y="185" font-size="9" fill="#666" text-anchor="middle">2000</text>
+                        <text x="280" y="185" font-size="9" fill="#666" text-anchor="middle">1500</text>
+                        <text x="360" y="185" font-size="9" fill="#666" text-anchor="middle">600</text>
+                        <text x="215" y="198" font-size="9" fill="#444" text-anchor="middle">Wavenumber (cm⁻¹)</text>
+                        <!-- Y-axis label -->
+                        <text x="12" y="100" font-size="9" fill="#444" transform="rotate(-90,12,100)" text-anchor="middle">% Transmittance</text>
+                        <!-- Y axis ticks -->
+                        <text x="35" y="32"  font-size="8" fill="#888" text-anchor="end">100</text>
+                        <text x="35" y="102" font-size="8" fill="#888" text-anchor="end">50</text>
+                        <text x="35" y="172" font-size="8" fill="#888" text-anchor="end">0</text>
+                        <!-- Spectrum line for ethanol -->
+                        <!-- O-H broad ~3350 cm-1 (x≈90) -->
+                        <path d="M60,30 L75,30 Q85,28 90,120 Q95,28 105,30 L395,30" fill="none" stroke="#e63946" stroke-width="2"/>
+                        <!-- C-H stretches ~2950 cm-1 (x≈118) -->
+                        <path d="M105,30 L112,30 Q116,22 118,65 Q120,22 125,30 L395,30" fill="none" stroke="#e63946" stroke-width="2"/>
+                        <!-- C-O stretch ~1050 cm-1 (x≈310) -->
+                        <path d="M125,30 L300,30 Q308,28 310,90 Q312,28 320,30 L395,30" fill="none" stroke="#e63946" stroke-width="2"/>
+                        <!-- Fingerprint region noise -->
+                        <path d="M320,30 L330,35 L335,25 L340,40 L345,28 L350,45 L355,32 L360,38 L365,30 L370,42 L375,30 L380,36 L385,30 L390,35 L395,30" fill="none" stroke="#e63946" stroke-width="1.5"/>
+                        <!-- Annotations -->
+                        <text x="90"  y="15" font-size="8" fill="#c1121f" text-anchor="middle">O–H</text>
+                        <text x="118" y="20" font-size="8" fill="#c1121f" text-anchor="middle">C–H</text>
+                        <text x="310" y="20" font-size="8" fill="#c1121f" text-anchor="middle">C–O</text>
+                        <text x="355" y="20" font-size="8" fill="#5a6a7e" text-anchor="middle">Fingerprint</text>
+                    </svg>
+
+                    <div class="viewer-box" style="margin-top:12px;">
+                        <h4><span class="lang-id">📊 Simulasi Spektrum IR Aseton</span><span class="lang-en">📊 IR Spectrum Simulation — Acetone</span></h4>
+                        <svg class="spektrum-svg" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="400" height="200" fill="white"/>
+                            <line x1="40" y1="170" x2="395" y2="170" stroke="#333" stroke-width="1.5"/>
+                            <line x1="40" y1="30" x2="395" y2="30" stroke="#e0e8f5" stroke-width="1" stroke-dasharray="4,4"/>
+                            <text x="40"  y="185" font-size="9" fill="#666" text-anchor="middle">4000</text>
+                            <text x="120" y="185" font-size="9" fill="#666" text-anchor="middle">3000</text>
+                            <text x="200" y="185" font-size="9" fill="#666" text-anchor="middle">2000</text>
+                            <text x="280" y="185" font-size="9" fill="#666" text-anchor="middle">1500</text>
+                            <text x="360" y="185" font-size="9" fill="#666" text-anchor="middle">600</text>
+                            <text x="215" y="198" font-size="9" fill="#444" text-anchor="middle">Wavenumber (cm⁻¹)</text>
+                            <text x="12" y="100" font-size="9" fill="#444" transform="rotate(-90,12,100)" text-anchor="middle">% Transmittance</text>
+                            <text x="35" y="32"  font-size="8" fill="#888" text-anchor="end">100</text>
+                            <text x="35" y="172" font-size="8" fill="#888" text-anchor="end">0</text>
+                            <!-- C-H ~2950 (x=118) -->
+                            <path d="M60,30 L112,30 Q116,22 118,60 Q120,22 130,30" fill="none" stroke="#1565c0" stroke-width="2"/>
+                            <!-- C=O keton ~1715 (x≈258) -->
+                            <path d="M130,30 L250,30 Q256,25 258,25 Q260,20 262,155 Q264,20 266,25 Q268,25 275,30" fill="none" stroke="#1565c0" stroke-width="2"/>
+                            <!-- Fingerprint -->
+                            <path d="M275,30 L285,35 L290,28 L295,38 L300,30 L305,42 L310,32 L315,38 L320,30 L325,40 L330,30 L335,36 L340,30 L345,34 L350,30 L360,30 L370,34 L380,30 L390,36 L395,30" fill="none" stroke="#1565c0" stroke-width="1.5"/>
+                            <!-- No O-H, straight line -->
+                            <path d="M40,30 L112,30" fill="none" stroke="#1565c0" stroke-width="2"/>
+                            <text x="118" y="20" font-size="8" fill="#1565c0" text-anchor="middle">C–H</text>
+                            <text x="262" y="15" font-size="8" fill="#1565c0" text-anchor="middle">C=O (1715)</text>
+                            <text x="330" y="20" font-size="8" fill="#5a6a7e" text-anchor="middle">Fingerprint</text>
+                            <text x="75"  y="22" font-size="8" fill="#2d6a4f" text-anchor="middle">Tidak ada O–H</text>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 3: NMR ===== -->
+    <div id="materi-nmr" class="card">
+        <h2 class="card-title"><span class="badge badge-nmr">NMR</span>&nbsp; <span class="lang-id">Spektroskopi NMR (Nuclear Magnetic Resonance)</span><span class="lang-en">NMR Spectroscopy (Nuclear Magnetic Resonance)</span></h2>
+        <div class="grid-2">
+            <div>
+                <div class="lang-id">
+                    <p>NMR adalah teknik <b>paling informatif</b> dalam elusidasi struktur. Inti atom (¹H, ¹³C) yang aktif-NMR beresonansi dalam medan magnet dan menghasilkan sinyal sesuai lingkungan kimianya.</p>
+
+                    <p><b>Parameter utama NMR:</b></p>
+                    <ol class="step-list">
+                        <li><b>Chemical Shift (δ, ppm)</b> — posisi sinyal; mencerminkan kerapatan elektron di sekitar inti. Nilai besar (downfield) = kurang terlindung (terdeshielding).</li>
+                        <li><b>Multiplisitas (splitting)</b> — pola pecahan sinyal akibat kopling spin-spin dengan proton tetangga (<i>aturan n+1</i>).</li>
+                        <li><b>Integrasi</b> — area di bawah sinyal berbanding lurus dengan jumlah proton ekuivalen.</li>
+                        <li><b>Kopling J (Hz)</b> — jarak antar puncak dalam multiplet; menginformasikan hubungan geometri antar proton.</li>
+                    </ol>
+                </div>
+                <div class="lang-en">
+                    <p>NMR is the <b>most informative</b> technique in structure elucidation. NMR-active nuclei (¹H, ¹³C) resonate in a magnetic field and produce signals corresponding to their chemical environment.</p>
+
+                    <p><b>Key NMR parameters:</b></p>
+                    <ol class="step-list">
+                        <li><b>Chemical Shift (δ, ppm)</b> — signal position; reflects electron density around the nucleus. Higher value (downfield) = less shielded (deshielded).</li>
+                        <li><b>Multiplicity (splitting)</b> — signal splitting pattern due to spin-spin coupling with neighboring protons (<i>n+1 rule</i>).</li>
+                        <li><b>Integration</b> — area under the signal is proportional to the number of equivalent protons.</li>
+                        <li><b>Coupling constant J (Hz)</b> — distance between peaks in a multiplet; informs geometric relationship between protons.</li>
+                    </ol>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th><span class="lang-id">Jenis Proton / Karbon</span><span class="lang-en">Proton / Carbon Type</span></th>
+                            <th>δ ¹H (ppm)</th>
+                            <th>δ ¹³C (ppm)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>TMS (referensi)</td><td>0.0</td><td>0.0</td></tr>
+                        <tr><td>R–CH₃ (alkil)</td><td>0.8–1.0</td><td>10–30</td></tr>
+                        <tr><td>R–CH₂–R</td><td>1.2–1.4</td><td>20–40</td></tr>
+                        <tr><td>R–CH=CH₂ (alkenil)</td><td>4.5–6.5</td><td>100–150</td></tr>
+                        <tr><td>Ar–H (aromatik)</td><td>6.5–8.5</td><td>120–150</td></tr>
+                        <tr><td>R–CHO (aldehid)</td><td>9.4–10.0</td><td>190–205</td></tr>
+                        <tr><td>R–C=O (keton)</td><td>—</td><td>195–220</td></tr>
+                        <tr><td>R–OH (alkohol)</td><td>1.0–5.0</td><td>50–90</td></tr>
+                        <tr><td>Ar–OH (fenol)</td><td>4.0–12</td><td>140–160</td></tr>
+                        <tr><td>R–COOH (asam)</td><td>10–12</td><td>165–185</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div>
+                <!-- Molekul 3D Etil Asetat -->
+                <div class="viewer-box">
+                    <h4><span class="lang-id">🧪 Etil Asetat (CH₃COOC₂H₅)</span><span class="lang-en">🧪 Ethyl Acetate (CH₃COOC₂H₅)</span></h4>
+                    <div class="view-container">
+                        <div class="mol-3d" id="viewer-etac"></div>
+                        <div class="mol-2d" id="text2d-etac">CH₃COOC₂H₅<br><small>Ethyl Acetate · MW = 88.11</small></div>
+                    </div>
+                    <div class="btn-group">
+                        <button onclick="resetView('viewer-etac')">↺ Reset</button>
+                        <button onclick="toggleLabels('viewer-etac')" class="btn-info">🏷 Label</button>
+                        <button onclick="toggle2D3D('viewer-etac','text2d-etac')" class="btn-warning">2D/3D</button>
+                    </div>
+                </div>
+
+                <!-- Simulasi ¹H NMR Etanol -->
+                <div class="viewer-box" style="margin-top:12px;">
+                    <h4><span class="lang-id">📊 Simulasi ¹H NMR Etanol (CH₃CH₂OH)</span><span class="lang-en">📊 ¹H NMR Simulation — Ethanol (CH₃CH₂OH)</span></h4>
+                    <svg class="spektrum-svg" viewBox="0 0 400 180" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="400" height="180" fill="white"/>
+                        <line x1="40" y1="150" x2="390" y2="150" stroke="#333" stroke-width="1.5"/>
+                        <!-- X-axis ppm -->
+                        <text x="390" y="165" font-size="9" fill="#666" text-anchor="middle">0</text>
+                        <text x="330" y="165" font-size="9" fill="#666" text-anchor="middle">1</text>
+                        <text x="270" y="165" font-size="9" fill="#666" text-anchor="middle">2</text>
+                        <text x="210" y="165" font-size="9" fill="#666" text-anchor="middle">3</text>
+                        <text x="150" y="165" font-size="9" fill="#666" text-anchor="middle">4</text>
+                        <text x="90"  y="165" font-size="9" fill="#666" text-anchor="middle">5</text>
+                        <text x="215" y="178" font-size="9" fill="#444" text-anchor="middle">δ (ppm)</text>
+                        <!-- TMS reference -->
+                        <line x1="385" y1="10" x2="385" y2="150" stroke="#ccc" stroke-width="1" stroke-dasharray="3,3"/>
+                        <text x="385" y="9" font-size="7" fill="#999" text-anchor="middle">TMS</text>
+                        <!-- CH3 triplet at ~1.2 ppm (x≈318) -->
+                        <rect x="313" y="60" width="3" height="90" fill="#1565c0" rx="1"/>
+                        <rect x="317" y="40" width="3" height="110" fill="#1565c0" rx="1"/>
+                        <rect x="321" y="60" width="3" height="90" fill="#1565c0" rx="1"/>
+                        <text x="318" y="35" font-size="8" fill="#1565c0" text-anchor="middle">CH₃ (t, 3H)</text>
+                        <text x="318" y="25" font-size="7" fill="#5a6a7e" text-anchor="middle">δ 1.2</text>
+                        <!-- CH2 quartet at ~3.7 ppm (x≈168) -->
+                        <rect x="158" y="80" width="3" height="70" fill="#e63946" rx="1"/>
+                        <rect x="162" y="55" width="3" height="95" fill="#e63946" rx="1"/>
+                        <rect x="166" y="55" width="3" height="95" fill="#e63946" rx="1"/>
+                        <rect x="170" y="80" width="3" height="70" fill="#e63946" rx="1"/>
+                        <text x="165" y="48" font-size="8" fill="#e63946" text-anchor="middle">CH₂ (q, 2H)</text>
+                        <text x="165" y="38" font-size="7" fill="#5a6a7e" text-anchor="middle">δ 3.7</text>
+                        <!-- OH singlet at ~2.6 ppm (x≈234) -->
+                        <rect x="232" y="90" width="3" height="60" fill="#2d6a4f" rx="1"/>
+                        <text x="234" y="84" font-size="8" fill="#2d6a4f" text-anchor="middle">OH (s, 1H)</text>
+                        <text x="234" y="74" font-size="7" fill="#5a6a7e" text-anchor="middle">δ 2.6</text>
+                    </svg>
+                    <p style="font-size:0.8em; color:var(--text-muted); text-align:center; margin:4px 0;">
+                        <span class="lang-id">t = triplet · q = kuartet · s = singlet</span>
+                        <span class="lang-en">t = triplet · q = quartet · s = singlet</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 4: MASS SPECTROMETRY ===== -->
+    <div id="materi-ms" class="card">
+        <h2 class="card-title"><span class="badge badge-ms">MS</span>&nbsp; <span class="lang-id">Spektrometri Massa (MS)</span><span class="lang-en">Mass Spectrometry (MS)</span></h2>
+        <div class="grid-2">
+            <div>
+                <div class="lang-id">
+                    <p>Spektrometri massa mengionisasi molekul, lalu memisahkan ion berdasarkan rasio massa-terhadap-muatan (<b>m/z</b>). Hasilnya berupa spektrum massa yang memberikan informasi tentang massa molekul dan fragmen struktural.</p>
+
+                    <p><b>Puncak-puncak penting dalam spektrum MS:</b></p>
+                    <ul>
+                        <li>🎯 <b>Ion Molekuler (M⁺, m/z = BM)</b>: puncak dengan m/z tertinggi = massa molekul senyawa. Tidak selalu terdeteksi jika fragmenisasi terlalu kuat.</li>
+                        <li>🔍 <b>Puncak Dasar (Base Peak)</b>: puncak paling tinggi/intensif, diatur 100%, fragmen paling stabil.</li>
+                        <li>📐 <b>Puncak M+1 dan M+2</b>: disebabkan isotop alam (¹³C, ³⁵Cl/³⁷Cl, ⁷⁹Br/⁸¹Br) — sangat berguna mendeteksi halogen.</li>
+                        <li>✂️ <b>Fragmentasi</b>: pola pemutusan ikatan khas setiap gugus fungsi (misal pemutusan α untuk keton, McLafferty rearrangement).</li>
+                    </ul>
+
+                    <div class="info-box">
+                        💡 <b>Aturan Nitrogen:</b> Jika BM ganjil → senyawa mengandung jumlah nitrogen ganjil. Jika BM genap → tidak ada N atau jumlah N genap.
+                    </div>
+                </div>
+                <div class="lang-en">
+                    <p>Mass spectrometry ionizes molecules, then separates ions based on their mass-to-charge ratio (<b>m/z</b>). The result is a mass spectrum providing molecular mass and structural fragment information.</p>
+
+                    <p><b>Key peaks in a mass spectrum:</b></p>
+                    <ul>
+                        <li>🎯 <b>Molecular Ion (M⁺, m/z = MW)</b>: the highest m/z peak = molecular mass. Not always detected if fragmentation is too strong.</li>
+                        <li>🔍 <b>Base Peak</b>: the tallest/most intense peak, set to 100%, most stable fragment.</li>
+                        <li>📐 <b>M+1 and M+2 peaks</b>: caused by natural isotopes (¹³C, ³⁵Cl/³⁷Cl, ⁷⁹Br/⁸¹Br) — very useful for detecting halogens.</li>
+                        <li>✂️ <b>Fragmentation</b>: characteristic bond-cleavage patterns for each functional group (e.g., α-cleavage for ketones, McLafferty rearrangement).</li>
+                    </ul>
+
+                    <div class="info-box">
+                        💡 <b>Nitrogen Rule:</b> If MW is odd → compound contains an odd number of nitrogens. If MW is even → no N or even number of N atoms.
+                    </div>
+                </div>
+
+                <!-- Fragmentation table -->
+                <table>
+                    <thead>
+                        <tr>
+                            <th><span class="lang-id">Gugus Fungsi</span><span class="lang-en">Functional Group</span></th>
+                            <th><span class="lang-id">Fragmentasi Khas</span><span class="lang-en">Characteristic Fragmentation</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Alkohol R–OH</td><td>M–18 (–H₂O), M–17 (–OH)</td></tr>
+                        <tr><td>Keton R–CO–R'</td><td><span class="lang-id">Pemutus α, puncak pada RCO⁺ &amp; R'CO⁺</span><span class="lang-en">α-cleavage, peaks at RCO⁺ &amp; R'CO⁺</span></td></tr>
+                        <tr><td>Aldehid R–CHO</td><td>m/z = 29 (CHO⁺), M–1</td></tr>
+                        <tr><td>Ester R–COOR'</td><td>M–OR', McLafferty (γ-H)</td></tr>
+                        <tr><td><span class="lang-id">Alkil klorida</span><span class="lang-en">Alkyl chloride</span></td><td>M &amp; M+2 (rasio 3:1 untuk Cl)</td></tr>
+                        <tr><td><span class="lang-id">Alkil bromida</span><span class="lang-en">Alkyl bromide</span></td><td>M &amp; M+2 (rasio 1:1 untuk Br)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div>
+                <!-- Molekul 3D Butanon -->
+                <div class="viewer-box">
+                    <h4><span class="lang-id">🧪 Butanon (CH₃COC₂H₅) — Keton</span><span class="lang-en">🧪 Butanone (CH₃COC₂H₅) — Ketone</span></h4>
+                    <div class="view-container">
+                        <div class="mol-3d" id="viewer-butanone"></div>
+                        <div class="mol-2d" id="text2d-butanone">CH₃COC₂H₅<br><small>Butanone · MW = 72.11</small></div>
+                    </div>
+                    <div class="btn-group">
+                        <button onclick="resetView('viewer-butanone')">↺ Reset</button>
+                        <button onclick="toggleLabels('viewer-butanone')" class="btn-info">🏷 Label</button>
+                        <button onclick="toggle2D3D('viewer-butanone','text2d-butanone')" class="btn-warning">2D/3D</button>
+                    </div>
+                </div>
+
+                <!-- Simulasi spektrum MS Butanon -->
+                <div class="viewer-box" style="margin-top:12px;">
+                    <h4><span class="lang-id">📊 Simulasi Spektrum MS Butanon (MW=72)</span><span class="lang-en">📊 MS Spectrum Simulation — Butanone (MW=72)</span></h4>
+                    <svg class="spektrum-svg" viewBox="0 0 400 180" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="400" height="180" fill="white"/>
+                        <line x1="40" y1="150" x2="390" y2="150" stroke="#333" stroke-width="1.5"/>
+                        <line x1="40" y1="10"  x2="40"  y2="150" stroke="#333" stroke-width="1.5"/>
+                        <!-- X labels m/z -->
+                        <text x="55"  y="165" font-size="8" fill="#666" text-anchor="middle">15</text>
+                        <text x="100" y="165" font-size="8" fill="#666" text-anchor="middle">29</text>
+                        <text x="145" y="165" font-size="8" fill="#666" text-anchor="middle">43</text>
+                        <text x="195" y="165" font-size="8" fill="#666" text-anchor="middle">57</text>
+                        <text x="340" y="165" font-size="8" fill="#666" text-anchor="middle">72 (M⁺)</text>
+                        <text x="215" y="178" font-size="9" fill="#444" text-anchor="middle">m/z</text>
+                        <!-- Y axis -->
+                        <text x="35" y="15"  font-size="8" fill="#888" text-anchor="end">100%</text>
+                        <text x="35" y="100" font-size="8" fill="#888" text-anchor="end">50%</text>
+                        <text x="12" y="90"  font-size="9" fill="#444" transform="rotate(-90,12,90)" text-anchor="middle">Relative Intensity</text>
+                        <!-- Bars -->
+                        <!-- m/z 15 (CH3+) small -->
+                        <rect x="51" y="125" width="8" height="25" fill="#1a759f" rx="1"/>
+                        <!-- m/z 29 (CHO+ or C2H5+) medium -->
+                        <rect x="96" y="105" width="8" height="45" fill="#1a759f" rx="1"/>
+                        <!-- m/z 43 (CH3CO+) BASE PEAK -->
+                        <rect x="141" y="15" width="8" height="135" fill="#e63946" rx="1"/>
+                        <text x="145" y="12" font-size="8" fill="#e63946" text-anchor="middle">Base Peak</text>
+                        <!-- m/z 57 (C2H5CO+) -->
+                        <rect x="190" y="80" width="8" height="70" fill="#1a759f" rx="1"/>
+                        <!-- m/z 72 (M+) -->
+                        <rect x="336" y="120" width="8" height="30" fill="#2d6a4f" rx="1"/>
+                        <text x="340" y="115" font-size="8" fill="#2d6a4f" text-anchor="middle">M⁺</text>
+                    </svg>
+                    <p style="font-size:0.8em; color:var(--text-muted); text-align:center; margin:4px 0;">
+                        <span class="lang-id">m/z 43 = CH₃CO⁺ (α-cleavage) · m/z 57 = C₂H₅CO⁺</span>
+                        <span class="lang-en">m/z 43 = CH₃CO⁺ (α-cleavage) · m/z 57 = C₂H₅CO⁺</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- UV-Vis & Derajat Ketidakjenuhan -->
+        <div style="margin-top:20px; padding-top:20px; border-top:2px solid var(--light);">
+            <h3 class="card-title" style="font-size:1.05em;"><span class="badge badge-uvvis">UV-Vis</span>&nbsp; <span class="lang-id">Spektroskopi UV-Vis &amp; Derajat Ketidakjenuhan (DBE)</span><span class="lang-en">UV-Vis Spectroscopy &amp; Degree of Unsaturation (DBE)</span></h3>
+            <div class="grid-2">
+                <div>
+                    <div class="lang-id">
+                        <p>UV-Vis mendeteksi transisi elektronik pada sistem terkonjugasi dan kromofor (gugus penyerap cahaya). Dinyatakan sebagai panjang gelombang maksimum λ<sub>max</sub> (nm) dan absorbansi (A).</p>
+                        <ul>
+                            <li>π→π* (alkena terkonjugasi, aromatik): ~200–280 nm</li>
+                            <li>n→π* (karbonil, eter): ~270–330 nm</li>
+                            <li>Dien terkonjugasi (aturan Woodward): ~215–250 nm</li>
+                            <li>Benzena &amp; turunan: ~254–280 nm</li>
+                        </ul>
+                    </div>
+                    <div class="lang-en">
+                        <p>UV-Vis detects electronic transitions in conjugated systems and chromophores (light-absorbing groups). Expressed as maximum wavelength λ<sub>max</sub> (nm) and absorbance (A).</p>
+                        <ul>
+                            <li>π→π* (conjugated alkenes, aromatic): ~200–280 nm</li>
+                            <li>n→π* (carbonyl, ether): ~270–330 nm</li>
+                            <li>Conjugated dienes (Woodward's rule): ~215–250 nm</li>
+                            <li>Benzene &amp; derivatives: ~254–280 nm</li>
+                        </ul>
+                    </div>
+                </div>
+                <div>
+                    <div class="success-box">
+                        <b><span class="lang-id">Rumus Derajat Ketidakjenuhan (DBE / IHD):</span><span class="lang-en">Degree of Unsaturation Formula (DBE / IHD):</span></b><br><br>
+                        <code style="font-size:1.05em; font-family:'IBM Plex Mono',monospace; display:block; text-align:center; padding:8px; background:white; border-radius:6px; margin-top:6px;">
+                            DBE = (2C + 2 + N − H − X) / 2
+                        </code>
+                        <br>
+                        <span class="lang-id">C=C atau C=O: DBE +1 · Cincin: DBE +1 · C≡C: DBE +2 · Benzena: DBE +4</span>
+                        <span class="lang-en">C=C or C=O: DBE +1 · Ring: DBE +1 · C≡C: DBE +2 · Benzene: DBE +4</span>
+                        <br><br>
+                        <span class="lang-id"><b>Contoh:</b> C₆H₅COCH₃ (Asetofenon): DBE = (2×8+2−8)/2 = 5 → benzena (4) + C=O (1) ✅</span>
+                        <span class="lang-en"><b>Example:</b> C₆H₅COCH₃ (Acetophenone): DBE = (2×8+2−8)/2 = 5 → benzene (4) + C=O (1) ✅</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 5: ALUR ANALISIS ===== -->
+    <div id="materi-alur" class="card">
+        <h2 class="card-title"><span class="lang-id">🗺️ Alur Sistematis Elusidasi Struktur</span><span class="lang-en">🗺️ Systematic Structure Elucidation Workflow</span></h2>
+        <div class="grid-2">
+            <div>
+                <div class="lang-id">
+                    <p>Pendekatan sistematis sangat penting agar analisis efisien dan tidak terlewati. Berikut urutan langkah yang disarankan:</p>
+                    <ol class="step-list">
+                        <li><b>Tentukan rumus molekul</b> dari data MS (m/z M⁺) dan analisis elemen (C, H, N, O). Hitung DBE.</li>
+                        <li><b>Periksa spektrum UV-Vis</b>: ada kromofor? Sistem terkonjugasi? Identifikasi kelas senyawa (aromatik, keton, dll).</li>
+                        <li><b>Analisis spektrum IR</b>: identifikasi gugus fungsi utama (C=O, O–H, N–H, C≡C, dll). Catat posisi dan bentuk pita serapan.</li>
+                        <li><b>Analisis spektrum ¹H NMR</b>: hitung jumlah H (integrasi), tentukan lingkungan kimia (δ), identifikasi pola multiplet (kopling).</li>
+                        <li><b>Analisis spektrum ¹³C NMR / DEPT</b>: bedakan CH₃, CH₂, CH, dan C kuarterner. Identifikasi karbon karbonil, aromatik, dll.</li>
+                        <li><b>Gunakan data MS fragmentation</b>: konfirmasi gugus fungsi dan konektivitas dari pola fragmentasi.</li>
+                        <li><b>Rakit struktur parsial</b> berdasarkan semua informasi di atas. Pastikan DBE sesuai.</li>
+                        <li><b>Bandingkan dengan data literatur</b> (database Reaxys, SDBS, PubChem) untuk konfirmasi akhir.</li>
+                    </ol>
+                </div>
+                <div class="lang-en">
+                    <p>A systematic approach is essential to ensure efficient and thorough analysis. Here is the recommended step sequence:</p>
+                    <ol class="step-list">
+                        <li><b>Determine molecular formula</b> from MS data (m/z M⁺) and elemental analysis (C, H, N, O). Calculate DBE.</li>
+                        <li><b>Examine UV-Vis spectrum</b>: any chromophores? Conjugated systems? Identify compound class (aromatic, ketone, etc.).</li>
+                        <li><b>Analyze IR spectrum</b>: identify main functional groups (C=O, O–H, N–H, C≡C, etc.). Note absorption band position and shape.</li>
+                        <li><b>Analyze ¹H NMR spectrum</b>: count H atoms (integration), determine chemical environments (δ), identify multiplet patterns (coupling).</li>
+                        <li><b>Analyze ¹³C NMR / DEPT spectrum</b>: differentiate CH₃, CH₂, CH, and quaternary C. Identify carbonyl carbons, aromatic, etc.</li>
+                        <li><b>Use MS fragmentation data</b>: confirm functional groups and connectivity from fragmentation patterns.</li>
+                        <li><b>Assemble partial structures</b> based on all information. Verify DBE matches.</li>
+                        <li><b>Compare with literature data</b> (Reaxys, SDBS, PubChem databases) for final confirmation.</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div>
+                <!-- Molekul 3D Benzaldehid sebagai studi kasus -->
+                <div class="viewer-box">
+                    <h4><span class="lang-id">🧪 Studi Kasus: Benzaldehid (C₇H₆O)</span><span class="lang-en">🧪 Case Study: Benzaldehyde (C₇H₆O)</span></h4>
+                    <div class="view-container">
+                        <div class="mol-3d" id="viewer-bald"></div>
+                        <div class="mol-2d" id="text2d-bald">C₆H₅CHO<br><small>Benzaldehyde · MW = 106.12 · DBE=5</small></div>
+                    </div>
+                    <div class="btn-group">
+                        <button onclick="resetView('viewer-bald')">↺ Reset</button>
+                        <button onclick="toggleLabels('viewer-bald')" class="btn-info">🏷 Label</button>
+                        <button onclick="toggle2D3D('viewer-bald','text2d-bald')" class="btn-warning">2D/3D</button>
+                        <button onclick="rotateAll(['viewer-bald'])" class="btn-warning">▶ Putar</button>
+                        <button onclick="stopRotate()" class="btn-danger-outline">⏹ Stop</button>
+                    </div>
+                </div>
+
+                <!-- Accordion: interpretasi Benzaldehid -->
+                <div style="margin-top:12px;">
+                    <div class="lang-id">
+                        <p style="font-size:0.88em; font-weight:700; color:var(--primary); margin-bottom:8px;">🔎 Klik tiap spektrum untuk melihat interpretasi benzaldehid:</p>
+                    </div>
+                    <div class="lang-en">
+                        <p style="font-size:0.88em; font-weight:700; color:var(--primary); margin-bottom:8px;">🔎 Click each spectrum to see benzaldehyde interpretation:</p>
+                    </div>
+
+                    <button class="accordion-btn" onclick="toggleAccordion('acc-ms-bald')">
+                        <span><span class="badge badge-ms">MS</span>&nbsp; <span class="lang-id">Massa Molekul &amp; Fragmen</span><span class="lang-en">Molecular Mass &amp; Fragments</span></span>
+                        <span>▼</span>
+                    </button>
+                    <div class="accordion-content" id="acc-ms-bald">
+                        <span class="lang-id">M⁺ = 106 (BM benzaldehid). Puncak dasar m/z = 105 (M–1, hilang H dari aldehid → C₆H₅CO⁺, benzoil kation). Juga m/z = 77 (C₆H₅⁺, fenil kation). DBE = (2×7+2−6)/2 = <b>5</b> → 4 dari cincin benzena + 1 dari C=O ✅</span>
+                        <span class="lang-en">M⁺ = 106 (MW of benzaldehyde). Base peak m/z = 105 (M–1, loss of H from aldehyde → C₆H₅CO⁺, benzoyl cation). Also m/z = 77 (C₆H₅⁺, phenyl cation). DBE = (2×7+2−6)/2 = <b>5</b> → 4 from benzene ring + 1 from C=O ✅</span>
+                    </div>
+
+                    <button class="accordion-btn" onclick="toggleAccordion('acc-ir-bald')">
+                        <span><span class="badge badge-ir">IR</span>&nbsp; <span class="lang-id">Serapan Utama</span><span class="lang-en">Key Absorptions</span></span>
+                        <span>▼</span>
+                    </button>
+                    <div class="accordion-content" id="acc-ir-bald">
+                        <span class="lang-id">• ~3080 cm⁻¹: C–H aromatik (=C–H stretching)<br>• ~2820, ~2720 cm⁻¹: C–H aldehid (Fermi doublet, sangat khas!)<br>• ~1700 cm⁻¹: C=O aldehid aromatik (sedikit lebih rendah dari aldehid alifatik karena resonansi dengan cincin)<br>• ~1590–1480 cm⁻¹: C=C stretching cincin aromatik<br>• ~750, ~690 cm⁻¹: cincin monosubstitusi (C–H out-of-plane)</span>
+                        <span class="lang-en">• ~3080 cm⁻¹: aromatic C–H (=C–H stretching)<br>• ~2820, ~2720 cm⁻¹: aldehyde C–H (Fermi doublet — very characteristic!)<br>• ~1700 cm⁻¹: aromatic aldehyde C=O (slightly lower than aliphatic aldehyde due to resonance with ring)<br>• ~1590–1480 cm⁻¹: aromatic ring C=C stretching<br>• ~750, ~690 cm⁻¹: monosubstituted ring (out-of-plane C–H bending)</span>
+                    </div>
+
+                    <button class="accordion-btn" onclick="toggleAccordion('acc-nmr-bald')">
+                        <span><span class="badge badge-nmr">NMR</span>&nbsp; <span class="lang-id">¹H NMR</span><span class="lang-en">¹H NMR</span></span>
+                        <span>▼</span>
+                    </button>
+                    <div class="accordion-content" id="acc-nmr-bald">
+                        <span class="lang-id">• δ 9.98 (s, 1H): proton aldehid CHO — sangat downfield akibat efek anisotropi C=O dan elektronegatifitas oksigen<br>• δ 7.5–8.1 (m, 5H): proton aromatik cincin benzena monosubstitusi (ortho lebih downfield karena efek induktif CHO)<br>Tidak ada O–H (beda dengan asam karboksilat). Tidak ada CH₂ atau CH₃ alifatik.</span>
+                        <span class="lang-en">• δ 9.98 (s, 1H): aldehyde proton CHO — very downfield due to C=O anisotropy and oxygen electronegativity<br>• δ 7.5–8.1 (m, 5H): aromatic protons of monosubstituted benzene ring (ortho more downfield due to inductive effect of CHO)<br>No O–H (unlike carboxylic acids). No aliphatic CH₂ or CH₃.</span>
+                    </div>
+
+                    <button class="accordion-btn" onclick="toggleAccordion('acc-uvvis-bald')">
+                        <span><span class="badge badge-uvvis">UV-Vis</span>&nbsp; <span class="lang-id">Serapan UV-Vis</span><span class="lang-en">UV-Vis Absorption</span></span>
+                        <span>▼</span>
+                    </button>
+                    <div class="accordion-content" id="acc-uvvis-bald">
+                        <span class="lang-id">• λmax ~250 nm (ε ~15.000): transisi π→π* cincin benzena terkonjugasi dengan C=O<br>• λmax ~328 nm (ε ~100): transisi n→π* ikatan C=O (lemah, dipilihkan elektron bebas O)<br>Absorbansi di ~250 nm jauh lebih kuat karena π→π* diizinkan secara simetri, sedangkan n→π* terlarang simetri (forbidden) sehingga ε-nya jauh lebih kecil.</span>
+                        <span class="lang-en">• λmax ~250 nm (ε ~15,000): π→π* transition of benzene ring conjugated with C=O<br>• λmax ~328 nm (ε ~100): n→π* transition of C=O bond (weak, from oxygen lone pair)<br>Absorption at ~250 nm is much stronger because π→π* is symmetry-allowed, while n→π* is symmetry-forbidden, resulting in a much smaller ε value.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 6: LATIHAN SOAL ===== -->
+    <div id="latihan-soal" class="card">
+        <h2 class="card-title"><span class="lang-id">📝 Latihan Soal — Elusidasi Struktur</span><span class="lang-en">📝 Quiz — Structure Elucidation</span></h2>
+
+        <!-- Progress bar -->
+        <div class="quiz-progress">
+            <div class="quiz-progress-text">
+                <span class="lang-id">Dijawab: <span id="answered-count">0</span> / 8 soal</span>
+                <span class="lang-en">Answered: <span id="answered-count2">0</span> / 8 questions</span>
+            </div>
+            <div class="score-badge">
+                <span class="lang-id">Skor: <span id="score-display">0</span></span>
+                <span class="lang-en">Score: <span id="score-display2">0</span></span>
+            </div>
+        </div>
+
+        <!-- Q1 -->
+        <div class="quiz-item" id="qi-1">
+            <span class="quiz-tag tag-konsep">
+                <span class="lang-id">Konsep Dasar</span><span class="lang-en">Core Concept</span>
+            </span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">1</div>
+                <div class="quiz-q-text lang-id">Elusidasi struktur senyawa organik PALING UTAMA bertujuan untuk…</div>
+                <div class="quiz-q-text lang-en">The PRIMARY purpose of organic compound structure elucidation is to…</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(1,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Mengukur titik didih dan titik leleh senyawa secara akurat.</span>
+                <span class="lang-en">Accurately measure the boiling and melting points of the compound.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(1,'B',true)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Menentukan susunan atom-atom dalam molekul, jenis ikatan, dan gugus fungsi yang ada.</span>
+                <span class="lang-en">Determine the arrangement of atoms in the molecule, bond types, and functional groups present.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(1,'C',false)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Mengukur kelarutan senyawa dalam berbagai pelarut organik.</span>
+                <span class="lang-en">Measure the solubility of the compound in various organic solvents.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(1,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Menghitung persentase komposisi unsur (C, H, N) secara gravimetri.</span>
+                <span class="lang-en">Calculate the elemental composition percentage (C, H, N) gravimetrically.</span>
+            </button>
+            <div class="feedback" id="fb-1"></div>
+            <div class="pembahasan" id="pem-1">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Elusidasi struktur adalah proses penentuan <b>susunan atom-atom dalam molekul</b>, mencakup jenis ikatan, gugus fungsi, konektivitas (urutan sambungan atom), dan stereokimia. Pilihan A &amp; C adalah sifat fisika/kimia yang dapat berguna sebagai data pendukung, tetapi bukan tujuan utama elusidasi struktur. Pilihan D (analisis elemen) hanya memberikan rumus empiris, bukan struktur lengkap. Elusidasi struktur membutuhkan kombinasi teknik spektroskopi (IR, NMR, MS, UV-Vis) untuk mengungkap "peta" lengkap molekul.</span>
+                <span class="lang-en"> Structure elucidation is the process of determining the <b>arrangement of atoms in a molecule</b>, including bond types, functional groups, connectivity (atom connectivity order), and stereochemistry. Options A &amp; C are physical/chemical properties that can serve as supporting data but are not the primary goal. Option D (elemental analysis) only provides the empirical formula, not the complete structure. Structure elucidation requires a combination of spectroscopic techniques (IR, NMR, MS, UV-Vis) to reveal the complete "map" of the molecule.</span>
+            </div>
+        </div>
+
+        <!-- Q2 -->
+        <div class="quiz-item" id="qi-2">
+            <span class="quiz-tag tag-ir">IR</span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">2</div>
+                <div class="quiz-q-text lang-id">Suatu senyawa menunjukkan pita serapan IR lebar dan kuat pada ~3300–3500 cm⁻¹ DAN pita kuat pada ~1710 cm⁻¹. Gugus fungsi yang paling mungkin adalah…</div>
+                <div class="quiz-q-text lang-en">A compound shows a broad, strong IR absorption band at ~3300–3500 cm⁻¹ AND a strong band at ~1710 cm⁻¹. The most likely functional group is…</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(2,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Eter (R–O–R')</span>
+                <span class="lang-en">Ether (R–O–R')</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(2,'B',false)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Keton (R–CO–R')</span>
+                <span class="lang-en">Ketone (R–CO–R')</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(2,'C',true)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Asam Karboksilat (R–COOH)</span>
+                <span class="lang-en">Carboxylic Acid (R–COOH)</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(2,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Alkena (C=C)</span>
+                <span class="lang-en">Alkene (C=C)</span>
+            </button>
+            <div class="feedback" id="fb-2"></div>
+            <div class="pembahasan" id="pem-2">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Kombinasi <b>pita lebar &amp; kuat ~3300–3500 cm⁻¹</b> (O–H stretching; lebar karena ikatan hidrogen intermolekul) dengan <b>pita kuat ~1710 cm⁻¹</b> (C=O stretching) adalah tanda khas <b>asam karboksilat (–COOH)</b>. <br>• Eter: hanya C–O (1000–1300), <i>tidak ada</i> pita O–H &amp; C=O.<br>• Keton: pita C=O ~1700–1750 cm⁻¹ ada, tetapi <i>tidak ada</i> pita O–H.<br>• Alkena: C=C ~1600–1650 cm⁻¹, bukan ~1710 cm⁻¹.</span>
+                <span class="lang-en"> The combination of a <b>broad, strong band ~3300–3500 cm⁻¹</b> (O–H stretching; broad due to intermolecular hydrogen bonding) with a <b>strong band ~1710 cm⁻¹</b> (C=O stretching) is a hallmark of a <b>carboxylic acid (–COOH)</b>.<br>• Ether: only C–O (1000–1300), <i>no</i> O–H or C=O bands.<br>• Ketone: C=O ~1700–1750 cm⁻¹ present, but <i>no</i> O–H band.<br>• Alkene: C=C ~1600–1650 cm⁻¹, not ~1710 cm⁻¹.</span>
+            </div>
+        </div>
+
+        <!-- Q3 -->
+        <div class="quiz-item" id="qi-3">
+            <span class="quiz-tag tag-nmr">NMR</span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">3</div>
+                <div class="quiz-q-text lang-id">Pada spektrum ¹H NMR, sinyal proton <b>aldehid (–CHO)</b> muncul pada chemical shift yang sangat downfield, sekitar…</div>
+                <div class="quiz-q-text lang-en">In ¹H NMR spectra, the <b>aldehyde proton (–CHO)</b> signal appears at a very downfield chemical shift of approximately…</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(3,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">δ 0.8–1.0 ppm (seperti proton alkil –CH₃)</span>
+                <span class="lang-en">δ 0.8–1.0 ppm (like alkyl –CH₃ protons)</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(3,'B',false)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">δ 4.5–6.5 ppm (seperti proton alkenil =CH₂)</span>
+                <span class="lang-en">δ 4.5–6.5 ppm (like alkenyl =CH₂ protons)</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(3,'C',true)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">δ 9.4–10.0 ppm (sangat downfield akibat efek anisotropi C=O)</span>
+                <span class="lang-en">δ 9.4–10.0 ppm (very downfield due to C=O anisotropy effect)</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(3,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">δ 6.5–8.5 ppm (seperti proton aromatik)</span>
+                <span class="lang-en">δ 6.5–8.5 ppm (like aromatic protons)</span>
+            </button>
+            <div class="feedback" id="fb-3"></div>
+            <div class="pembahasan" id="pem-3">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Proton aldehid (–CHO) berada pada posisi sangat downfield <b>δ 9.4–10.0 ppm</b> karena dua efek deshielding yang kuat: (1) <b>Elektronegatifitas oksigen</b> yang menarik kerapatan elektron dari proton; (2) <b>Efek anisotropi</b> ikatan C=O — proton H berada di zona deshielding (ujung) awan π karbonil. Ini membedakannya secara jelas dari proton alkil (δ 0.8–1.5), alkenil (δ 4.5–6.5), dan aromatik (δ 6.5–8.5).</span>
+                <span class="lang-en"> The aldehyde proton (–CHO) appears at a very downfield position of <b>δ 9.4–10.0 ppm</b> due to two strong deshielding effects: (1) <b>Oxygen electronegativity</b> withdrawing electron density from the proton; (2) <b>Anisotropy effect</b> of the C=O bond — the H proton sits in the deshielding zone (tip) of the carbonyl π cloud. This clearly distinguishes it from alkyl (δ 0.8–1.5), alkenyl (δ 4.5–6.5), and aromatic (δ 6.5–8.5) protons.</span>
+            </div>
+        </div>
+
+        <!-- Q4 -->
+        <div class="quiz-item" id="qi-4">
+            <span class="quiz-tag tag-ms">MS</span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">4</div>
+                <div class="quiz-q-text lang-id">Spektrum massa suatu senyawa menunjukkan ion molekuler M⁺ pada m/z = 58, puncak dasar pada m/z = 43, dan puncak pada m/z = 15. Identitas senyawa yang paling mungkin adalah…</div>
+                <div class="quiz-q-text lang-en">The mass spectrum of a compound shows a molecular ion M⁺ at m/z = 58, a base peak at m/z = 43, and a peak at m/z = 15. The most likely identity of the compound is…</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(4,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Propanol (C₃H₇OH, BM = 60)</span>
+                <span class="lang-en">Propanol (C₃H₇OH, MW = 60)</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(4,'B',false)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Butana (C₄H₁₀, BM = 58, tanpa gugus fungsi)</span>
+                <span class="lang-en">Butane (C₄H₁₀, MW = 58, no functional group)</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(4,'C',true)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Aseton (CH₃COCH₃, BM = 58; m/z 43 = CH₃CO⁺; m/z 15 = CH₃⁺)</span>
+                <span class="lang-en">Acetone (CH₃COCH₃, MW = 58; m/z 43 = CH₃CO⁺; m/z 15 = CH₃⁺)</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(4,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Asam Asetat (CH₃COOH, BM = 60)</span>
+                <span class="lang-en">Acetic Acid (CH₃COOH, MW = 60)</span>
+            </button>
+            <div class="feedback" id="fb-4"></div>
+            <div class="pembahasan" id="pem-4">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Kunci analisis:<br>• BM = 58 → C₃H₆O (aseton) atau C₄H₁₀ (butana). Karena ada puncak m/z 43 yang kuat, ini bukan alkana biasa.<br>• m/z = 43 → CH₃CO⁺ (asetil kation, massa = 43) = hasil <b>α-cleavage</b> aseton pada sisi C–CO<br>• m/z = 15 → CH₃⁺ (metil kation, massa = 15)<br>• Aseton: CH₃–|CO|–CH₃ → pemutusan α pada kedua sisi menghasilkan CH₃CO⁺ (43) dan CH₃⁺ (15) ✅<br>Propanol (BM=60) dan Asam Asetat (BM=60) tidak sesuai M⁺=58. Butana (BM=58) tidak memiliki gugus C=O yang menghasilkan puncak khas m/z=43.</span>
+                <span class="lang-en"> Key analysis:<br>• MW = 58 → C₃H₆O (acetone) or C₄H₁₀ (butane). Since there's a strong m/z 43 peak, this is not a simple alkane.<br>• m/z = 43 → CH₃CO⁺ (acetyl cation, mass = 43) = result of <b>α-cleavage</b> of acetone at the C–CO bond<br>• m/z = 15 → CH₃⁺ (methyl cation, mass = 15)<br>• Acetone: CH₃–|CO|–CH₃ → α-cleavage on both sides gives CH₃CO⁺ (43) and CH₃⁺ (15) ✅<br>Propanol (MW=60) and Acetic Acid (MW=60) don't match M⁺=58. Butane (MW=58) lacks the C=O group that produces the characteristic m/z=43 peak.</span>
+            </div>
+        </div>
+
+        <!-- Q5 -->
+        <div class="quiz-item" id="qi-5">
+            <span class="quiz-tag tag-konsep">
+                <span class="lang-id">DBE</span><span class="lang-en">DBE</span>
+            </span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">5</div>
+                <div class="quiz-q-text lang-id">Senyawa dengan rumus molekul C₈H₈O memiliki Derajat Ketidakjenuhan (DBE) = …, dan kemungkinan besar mengandung…</div>
+                <div class="quiz-q-text lang-en">A compound with molecular formula C₈H₈O has a Degree of Unsaturation (DBE) = …, and most likely contains…</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(5,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">DBE = 3; hanya ikatan rangkap dua C=C dan satu C=O</span>
+                <span class="lang-en">DBE = 3; only C=C double bonds and one C=O</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(5,'B',false)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">DBE = 4; cincin siklopentana dan satu C=O</span>
+                <span class="lang-en">DBE = 4; cyclopentane ring and one C=O</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(5,'C',true)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">DBE = 5; cincin benzena (4) dan satu C=O (1) → mengandung gugus karbonil terkonjugasi dengan benzena</span>
+                <span class="lang-en">DBE = 5; benzene ring (4) and one C=O (1) → contains a carbonyl group conjugated with benzene</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(5,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">DBE = 6; dua cincin aromatik</span>
+                <span class="lang-en">DBE = 6; two aromatic rings</span>
+            </button>
+            <div class="feedback" id="fb-5"></div>
+            <div class="pembahasan" id="pem-5">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Menggunakan rumus DBE = (2C + 2 + N − H − X) / 2:<br>DBE = (2×8 + 2 − 8) / 2 = (16 + 2 − 8) / 2 = <b>10/2 = 5</b><br>DBE = 5 = <b>cincin benzena (4) + 1 ikatan rangkap C=O</b>. Senyawa C₈H₈O dengan DBE=5 dan mengandung benzena serta C=O kemungkinan adalah <b>asetofenon (C₆H₅COCH₃)</b> atau <b>benzaldehid dengan substituen</b>. Asetofenon memiliki rumus C₈H₈O → konsisten! Pilihan A (DBE=3) terlalu kecil, B (DBE=4) tidak mengakomodasi benzena, D (DBE=6) terlalu besar untuk C₈H₈O.</span>
+                <span class="lang-en"> Using DBE formula = (2C + 2 + N − H − X) / 2:<br>DBE = (2×8 + 2 − 8) / 2 = (16 + 2 − 8) / 2 = <b>10/2 = 5</b><br>DBE = 5 = <b>benzene ring (4) + 1 C=O double bond</b>. A C₈H₈O compound with DBE=5 containing benzene and C=O is most likely <b>acetophenone (C₆H₅COCH₃)</b>. Acetophenone has formula C₈H₈O → consistent! Option A (DBE=3) too low, B (DBE=4) can't accommodate benzene, D (DBE=6) too high for C₈H₈O.</span>
+            </div>
+        </div>
+
+        <!-- Q6 -->
+        <div class="quiz-item" id="qi-6">
+            <span class="quiz-tag tag-nmr">NMR</span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">6</div>
+                <div class="quiz-q-text lang-id">Menurut aturan n+1 dalam ¹H NMR, sinyal proton –CH₂– (metilena) yang bertetangga dengan –CH₃ (3 proton ekuivalen) akan tampak sebagai…</div>
+                <div class="quiz-q-text lang-en">According to the n+1 rule in ¹H NMR, the –CH₂– (methylene) proton signal adjacent to –CH₃ (3 equivalent protons) will appear as…</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(6,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Singlet (1 puncak)</span>
+                <span class="lang-en">Singlet (1 peak)</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(6,'B',false)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Triplet (3 puncak)</span>
+                <span class="lang-en">Triplet (3 peaks)</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(6,'C',true)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Kuartet (4 puncak) — karena n=3 tetangga, maka n+1=4</span>
+                <span class="lang-en">Quartet (4 peaks) — because n=3 neighbors, so n+1=4</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(6,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Kuintet (5 puncak)</span>
+                <span class="lang-en">Quintet (5 peaks)</span>
+            </button>
+            <div class="feedback" id="fb-6"></div>
+            <div class="pembahasan" id="pem-6">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Aturan <b>n+1</b>: jumlah puncak dalam multiplet = jumlah proton tetangga yang ekuivalen (n) + 1.<br>Proton –CH₂– bertetangga dengan –CH₃ yang memiliki <b>3 proton (n=3)</b>.<br>Maka multiplet = 3+1 = <b>4 puncak (kuartet)</b>.<br>Sebaliknya, –CH₃ bertetangga –CH₂– (n=2) akan menjadi triplet (2+1=3 puncak).<br>Contoh klasik: etanol CH₃CH₂OH → –CH₃ tampak sebagai triplet, –CH₂– sebagai kuartet.</span>
+                <span class="lang-en"> The <b>n+1 rule</b>: number of peaks in a multiplet = number of equivalent neighboring protons (n) + 1.<br>The –CH₂– proton is adjacent to –CH₃ with <b>3 protons (n=3)</b>.<br>So multiplet = 3+1 = <b>4 peaks (quartet)</b>.<br>Conversely, –CH₃ adjacent to –CH₂– (n=2) will be a triplet (2+1=3 peaks).<br>Classic example: ethanol CH₃CH₂OH → –CH₃ appears as triplet, –CH₂– as quartet.</span>
+            </div>
+        </div>
+
+        <!-- Q7 -->
+        <div class="quiz-item" id="qi-7">
+            <span class="quiz-tag tag-ms">MS</span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">7</div>
+                <div class="quiz-q-text lang-id">Spektrum massa suatu senyawa menunjukkan dua puncak ion molekuler pada m/z = 78 dan m/z = 80 dengan intensitas relatif hampir <b>1:1</b>. Hal ini paling kuat mengindikasikan keberadaan unsur…</div>
+                <div class="quiz-q-text lang-en">The mass spectrum of a compound shows two molecular ion peaks at m/z = 78 and m/z = 80 with relative intensity approximately <b>1:1</b>. This most strongly indicates the presence of element…</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(7,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Klor (Cl) — rasio isotop ³⁵Cl:³⁷Cl = 3:1</span>
+                <span class="lang-en">Chlorine (Cl) — isotope ratio ³⁵Cl:³⁷Cl = 3:1</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(7,'B',true)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Brom (Br) — rasio isotop ⁷⁹Br:⁸¹Br ≈ 1:1</span>
+                <span class="lang-en">Bromine (Br) — isotope ratio ⁷⁹Br:⁸¹Br ≈ 1:1</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(7,'C',false)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Nitrogen (N) — BM ganjil</span>
+                <span class="lang-en">Nitrogen (N) — odd molecular weight</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(7,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Oksigen (O) — puncak M+2 kecil dari ¹⁸O</span>
+                <span class="lang-en">Oxygen (O) — small M+2 peak from ¹⁸O</span>
+            </button>
+            <div class="feedback" id="fb-7"></div>
+            <div class="pembahasan" id="pem-7">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Pola <b>M dan M+2 dengan rasio ≈ 1:1</b> adalah tanda khas keberadaan <b>Bromin (Br)</b>. Brom memiliki dua isotop yang kelimpahan alamnya hampir sama: ⁷⁹Br (50.7%) dan ⁸¹Br (49.3%) → rasio mendekati 1:1 ✅<br>Klor juga menghasilkan pola M dan M+2, tetapi dengan rasio <b>3:1</b> (³⁵Cl = 75.8%, ³⁷Cl = 24.2%), bukan 1:1. Nitrogen tidak menghasilkan pola M+2 khas; tanda nitrogen adalah BM ganjil. Oksigen menghasilkan puncak M+2 sangat kecil (¹⁸O hanya ~0.2%) yang hampir tidak terlihat.</span>
+                <span class="lang-en"> The pattern of <b>M and M+2 peaks with a ≈ 1:1 ratio</b> is a hallmark of <b>Bromine (Br)</b>. Bromine has two isotopes with nearly equal natural abundance: ⁷⁹Br (50.7%) and ⁸¹Br (49.3%) → ratio approaches 1:1 ✅<br>Chlorine also produces M and M+2 patterns but with a <b>3:1 ratio</b> (³⁵Cl = 75.8%, ³⁷Cl = 24.2%), not 1:1. Nitrogen does not produce a characteristic M+2 pattern; the nitrogen indicator is an odd molecular weight. Oxygen produces a very small M+2 peak (¹⁸O is only ~0.2%) that is nearly invisible.</span>
+            </div>
+        </div>
+
+        <!-- Q8 -->
+        <div class="quiz-item" id="qi-8">
+            <span class="quiz-tag tag-ir">IR</span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">8</div>
+                <div class="quiz-q-text lang-id">Seorang analis menerima sampel tak dikenal. Spektrum IR menunjukkan: <b>tidak ada pita O–H atau N–H</b>, ada pita lemah C–H ~2950 cm⁻¹, dan pita kuat C=O pada ~1735 cm⁻¹ serta pita C–O–C kuat di ~1200 cm⁻¹. Gugus fungsi yang paling konsisten adalah…</div>
+                <div class="quiz-q-text lang-en">An analyst receives an unknown sample. The IR spectrum shows: <b>no O–H or N–H bands</b>, a weak C–H band ~2950 cm⁻¹, a strong C=O band at ~1735 cm⁻¹, and a strong C–O–C band at ~1200 cm⁻¹. The most consistent functional group is…</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(8,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Alkohol (R–OH)</span>
+                <span class="lang-en">Alcohol (R–OH)</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(8,'B',false)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Asam Karboksilat (R–COOH)</span>
+                <span class="lang-en">Carboxylic Acid (R–COOH)</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(8,'C',false)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Amida primer (R–CO–NH₂)</span>
+                <span class="lang-en">Primary Amide (R–CO–NH₂)</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(8,'D',true)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Ester (R–COO–R') — C=O ~1735 cm⁻¹ kuat + C–O–C ~1200 cm⁻¹, tanpa O–H dan N–H</span>
+                <span class="lang-en">Ester (R–COO–R') — strong C=O ~1735 cm⁻¹ + C–O–C ~1200 cm⁻¹, no O–H or N–H</span>
+            </button>
+            <div class="feedback" id="fb-8"></div>
+            <div class="pembahasan" id="pem-8">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Analisis sistematis spektrum IR:<br>• <b>Tidak ada O–H lebar</b> → bukan alkohol, bukan asam karboksilat<br>• <b>Tidak ada N–H</b> → bukan amida, bukan amina<br>• <b>C=O ~1735 cm⁻¹</b> → lebih tinggi dari keton (~1715) dan aldehid (~1720), khas untuk <b>ester</b><br>• <b>C–O–C ~1200 cm⁻¹ kuat</b> → ikatan C–O ester (dua C–O per molekul)<br>Kesimpulan: data ini sangat konsisten dengan <b>gugus ester (–COO–)</b>. Contoh: etil asetat (CH₃COOC₂H₅) menunjukkan pola identik.</span>
+                <span class="lang-en"> Systematic IR spectrum analysis:<br>• <b>No broad O–H band</b> → not alcohol, not carboxylic acid<br>• <b>No N–H</b> → not amide, not amine<br>• <b>C=O ~1735 cm⁻¹</b> → higher than ketone (~1715) and aldehyde (~1720), characteristic of <b>esters</b><br>• <b>Strong C–O–C ~1200 cm⁻¹</b> → ester C–O bond (two C–O bonds per molecule)<br>Conclusion: this data is highly consistent with an <b>ester functional group (–COO–)</b>. Example: ethyl acetate (CH₃COOC₂H₅) shows an identical pattern.</span>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="quiz-summary" id="quiz-summary">
+            <h3 class="lang-id">🎉 Selesai! Hasil Evaluasi Anda</h3>
+            <h3 class="lang-en">🎉 Finished! Your Evaluation Result</h3>
+            <div class="big-score" id="final-score">0 / 8</div>
+            <p id="summary-message"></p>
+            <button class="btn-retake" onclick="retakeQuiz()">
+                <span class="lang-id">🔁 Ulangi Latihan</span><span class="lang-en">🔁 Retake Quiz</span>
+            </button>
+        </div>
+    </div><!-- end card -->
+
+</div><!-- end container -->
+
+<script>
+    // ===== LANGUAGE SYSTEM =====
+    function setLanguage(lang) {
+        document.getElementById('docLang').setAttribute('lang', lang);
+        document.getElementById('btn-id').classList.toggle('active', lang === 'id');
+        document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+    }
+
+    // ===== MOLECULE DATA (XYZ) =====
+    const molData = {
+        ethanol: `9\nEthanol\nC -1.220  0.144  0.000\nC  0.200 -0.350  0.000\nO  1.101  0.745  0.000\nH -1.843 -0.746  0.000\nH -1.413  0.762  0.878\nH -1.413  0.762 -0.878\nH  0.394 -0.970  0.878\nH  0.394 -0.970 -0.878\nH  1.988  0.338  0.000`,
+
+        acetone: `10\nAcetone\nC  0.000  0.521  0.000\nC -1.267 -0.313  0.000\nC  1.267 -0.313  0.000\nO  0.000  1.735  0.000\nH -1.257 -0.955 -0.878\nH -1.257 -0.955  0.878\nH -2.181  0.278  0.000\nH  1.257 -0.955 -0.878\nH  1.257 -0.955  0.878\nH  2.181  0.278  0.000`,
+
+        etac: `14\nEthyl Acetate\nC -2.093 -0.259  0.000\nC -0.693  0.320  0.000\nO  0.361 -0.523  0.000\nO -0.595  1.520  0.000\nC  1.656  0.046  0.000\nC  2.689 -1.079  0.000\nH -2.834  0.539  0.000\nH -2.241 -0.896  0.878\nH -2.241 -0.896 -0.878\nH  1.753  0.690 -0.878\nH  1.753  0.690  0.878\nH  3.699 -0.671  0.000\nH  2.575 -1.720  0.878\nH  2.575 -1.720 -0.878`,
+
+        butanone: `13\nButanone\nC -1.887  0.302  0.000\nC -0.528 -0.339  0.000\nC  0.628  0.647  0.000\nC  1.987  0.009  0.000\nO -0.413 -1.547  0.000\nH -2.702 -0.420  0.000\nH -1.984  0.942  0.878\nH -1.984  0.942 -0.878\nH  0.484  1.293  0.878\nH  0.484  1.293 -0.878\nH  2.800  0.726  0.000\nH  2.116 -0.625  0.878\nH  2.116 -0.625 -0.878`,
+
+        bald: `14\nBenzaldehyde\nC  0.000  1.400  0.000\nC  1.213  0.700  0.000\nC  1.213 -0.700  0.000\nC  0.000 -1.400  0.000\nC -1.213 -0.700  0.000\nC -1.213  0.700  0.000\nC  0.000  2.900  0.000\nO  1.000  3.500  0.000\nH  2.156  1.244  0.000\nH  2.156 -1.244  0.000\nH  0.000 -2.490  0.000\nH -2.156 -1.244  0.000\nH -2.156  1.244  0.000\nH -1.000  3.440  0.000`
+    };
+
+    let viewers = {};
+    let initialViews = {};
+    let labelsState = {};
+    let spinInterval = null;
+
+    function initViewer(elementId, xyzData) {
+        let el = document.getElementById(elementId);
+        if (!el) return;
+        let viewer = $3Dmol.createViewer(el, { backgroundColor: 'white' });
+        viewer.addModel(xyzData, "xyz");
+        viewer.setStyle({}, {
+            stick:  { radius: 0.15, colorscheme: 'Jmol' },
+            sphere: { scale: 0.35, colorscheme: 'Jmol' }
+        });
+        viewer.zoomTo();
+        viewer.render();
+        setTimeout(() => { initialViews[elementId] = viewer.getView(); }, 100);
+        viewers[elementId] = viewer;
+        labelsState[elementId] = false;
+    }
+
+    window.onload = function() {
+        initViewer('viewer-ethanol',  molData.ethanol);
+        initViewer('viewer-acetone',  molData.acetone);
+        initViewer('viewer-etac',     molData.etac);
+        initViewer('viewer-butanone', molData.butanone);
+        initViewer('viewer-bald',     molData.bald);
+    };
+
+    function resetView(id) {
+        let v = viewers[id];
+        if (!v) return;
+        v.removeAllLabels();
+        labelsState[id] = false;
+        v.setStyle({}, {
+            stick:  { radius: 0.15, colorscheme: 'Jmol' },
+            sphere: { scale: 0.35, colorscheme: 'Jmol' }
+        });
+        if (initialViews[id]) { v.setView(initialViews[id]); } else { v.zoomTo(); }
+        v.render();
+    }
+
+    function toggleLabels(id) {
+        let v = viewers[id];
+        if (!v) return;
+        if (!labelsState[id]) {
+            let atoms = v.getModel().selectedAtoms({});
+            atoms.forEach(function(atom) {
+                v.addLabel(atom.elem, {
+                    position: { x: atom.x, y: atom.y, z: atom.z },
+                    backgroundColor: "rgba(0,0,0,0.75)",
+                    fontColor: "white",
+                    fontSize: 16,
+                    alignment: "center"
+                });
+            });
+            labelsState[id] = true;
+        } else {
+            v.removeAllLabels();
+            labelsState[id] = false;
+        }
+        v.render();
+    }
+
+    function toggle2D3D(viewerId, text2dId) {
+        let vDiv = document.getElementById(viewerId);
+        let tDiv = document.getElementById(text2dId);
+        let showing3d = (vDiv.style.display !== "none");
+        vDiv.style.display = showing3d ? "none" : "block";
+        tDiv.style.display = showing3d ? "flex" : "none";
+        tDiv.style.alignItems = "center";
+        tDiv.style.justifyContent = "center";
+    }
+
+    function rotateAll(ids) {
+        if (spinInterval) { clearInterval(spinInterval); spinInterval = null; }
+        spinInterval = setInterval(() => {
+            ids.forEach(id => {
+                if (viewers[id] && document.getElementById(id) && document.getElementById(id).style.display !== "none") {
+                    viewers[id].rotate(1.5, "y");
+                    viewers[id].render();
+                }
+            });
+        }, 50);
+    }
+
+    function stopRotate() {
+        if (spinInterval) { clearInterval(spinInterval); spinInterval = null; }
+    }
+
+    // ===== ACCORDION =====
+    function toggleAccordion(id) {
+        let el = document.getElementById(id);
+        el.classList.toggle('open');
+    }
+
+    // ===== QUIZ SYSTEM =====
+    let score = 0;
+    let answered = 0;
+    const totalQ = 8;
+    const correctAnswers = { 1:'B', 2:'C', 3:'C', 4:'C', 5:'C', 6:'C', 7:'B', 8:'D' };
+
+    function syncScore() {
+        document.getElementById('answered-count').textContent  = answered;
+        document.getElementById('answered-count2').textContent = answered;
+        document.getElementById('score-display').textContent   = score;
+        document.getElementById('score-display2').textContent  = score;
+    }
+
+    function submitAnswer(qNum, choice, isCorrect) {
+        let item = document.getElementById('qi-' + qNum);
+        if (item.classList.contains('answered-correct') || item.classList.contains('answered-wrong')) return;
+
+        let lang = document.getElementById('docLang').getAttribute('lang');
+        let fb   = document.getElementById('fb-' + qNum);
+        let pem  = document.getElementById('pem-' + qNum);
+
+        item.querySelectorAll('.quiz-option').forEach(btn => {
+            btn.disabled = true;
+            let m = btn.getAttribute('onclick').match(/'([A-D])'/);
+            if (m) {
+                if (m[1] === correctAnswers[qNum]) { btn.classList.add('correct-choice'); }
+                else if (m[1] === choice && !isCorrect) { btn.classList.add('wrong-choice'); }
+            }
+        });
+
+        if (isCorrect) {
+            fb.className = 'feedback correct';
+            fb.innerHTML = lang === 'id' ? "✅ Jawaban Anda Tepat!" : "✅ Correct Answer!";
+            item.classList.add('answered-correct');
+            score++;
+        } else {
+            fb.className = 'feedback wrong';
+            fb.innerHTML = lang === 'id'
+                ? "❌ Jawaban Kurang Tepat. Lihat pembahasan di bawah."
+                : "❌ Incorrect. See the explanation below.";
+            item.classList.add('answered-wrong');
+        }
+
+        pem.style.display = 'block';
+        answered++;
+        syncScore();
+        if (answered === totalQ) showSummary();
+    }
+
+    function showSummary() {
+        let lang = document.getElementById('docLang').getAttribute('lang');
+        let summary = document.getElementById('quiz-summary');
+        document.getElementById('final-score').textContent = score + ' / ' + totalQ;
+
+        let msg = '';
+        if (score === totalQ) {
+            msg = lang === 'id'
+                ? '🏆 Sempurna! Anda menguasai seluruh materi elusidasi struktur dengan sangat baik!'
+                : '🏆 Perfect! You have mastered all structure elucidation topics excellently!';
+        } else if (score >= 6) {
+            msg = lang === 'id'
+                ? '👏 Bagus! Anda memahami sebagian besar materi. Tinjau kembali soal yang salah.'
+                : '👏 Great job! You understand most of the material. Review the incorrect ones.';
+        } else if (score >= 4) {
+            msg = lang === 'id'
+                ? '📖 Cukup. Masih ada beberapa konsep yang perlu dipelajari ulang.'
+                : '📖 Fair. Some concepts still need to be revisited.';
+        } else {
+            msg = lang === 'id'
+                ? '💡 Pelajari kembali materi dari awal dan coba lagi. Semangat!'
+                : '💡 Please review the material from the beginning and try again. Keep going!';
+        }
+        document.getElementById('summary-message').textContent = msg;
+        summary.style.display = 'block';
+        summary.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function retakeQuiz() {
+        score = 0;
+        answered = 0;
+        syncScore();
+        document.getElementById('quiz-summary').style.display = 'none';
+
+        for (let i = 1; i <= totalQ; i++) {
+            let item = document.getElementById('qi-' + i);
+            item.classList.remove('answered-correct', 'answered-wrong');
+            item.querySelectorAll('.quiz-option').forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('correct-choice', 'wrong-choice');
+            });
+            let fb = document.getElementById('fb-' + i);
+            fb.className = 'feedback';
+            fb.innerHTML = '';
+            document.getElementById('pem-' + i).style.display = 'none';
+        }
+        document.getElementById('latihan-soal').scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
+</body>
+</html>

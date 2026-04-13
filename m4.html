@@ -1,0 +1,1761 @@
+<!DOCTYPE html>
+<html lang="id" id="docLang">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OKOL-WDI — Modul Interaktif Mekanisme SN1</title>
+    <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0a3d91;
+            --secondary: #1565c0;
+            --accent: #e63946;
+            --gold: #f4a261;
+            --light: #f0f4ff;
+            --dark: #0d1b2a;
+            --success: #2d6a4f;
+            --success-bg: #d8f3dc;
+            --danger: #c1121f;
+            --danger-bg: #ffe0e0;
+            --info: #1a759f;
+            --info-bg: #e0f4ff;
+            --card-bg: #ffffff;
+            --border: #dce3f0;
+            --text-muted: #5a6a7e;
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            background: linear-gradient(160deg, #e8edf8 0%, #f5f0ff 100%);
+            background-attachment: fixed;
+            color: var(--dark);
+            line-height: 1.7;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Language Toggle */
+        [lang="en"] .lang-id { display: none !important; }
+        [lang="id"] .lang-en { display: none !important; }
+
+        .lang-switch {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 1000;
+            background: white;
+            padding: 5px;
+            border-radius: 40px;
+            box-shadow: 0 4px 20px rgba(10,61,145,0.18);
+            display: flex;
+            gap: 4px;
+        }
+        .lang-btn {
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            font-weight: 700;
+            font-size: 0.8em;
+            border-radius: 30px;
+            padding: 5px 12px;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .lang-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .container { max-width: 1040px; margin: auto; padding: 20px 16px 60px; }
+
+        /* Logo */
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 24px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 18px 28px;
+            border-radius: var(--radius);
+            box-shadow: 0 2px 12px rgba(10,61,145,0.07);
+            border: 1px solid var(--border);
+        }
+        .logo-container img {
+            max-height: 80px;
+            max-width: 160px;
+            object-fit: contain;
+        }
+
+        /* Navbar */
+        .nav-bar {
+            background: white;
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 2px 12px rgba(10,61,145,0.07);
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 4px 8px;
+        }
+        .nav-bar a {
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.88em;
+            padding: 5px 10px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .nav-bar a:hover { background: var(--light); color: var(--accent); }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, #1a56db 100%);
+            color: white;
+            padding: 36px 24px 30px;
+            border-radius: var(--radius);
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 30px rgba(10,61,145,0.25);
+            position: relative;
+            overflow: hidden;
+        }
+        header::before {
+            content: '';
+            position: absolute;
+            top: -40px; right: -40px;
+            width: 220px; height: 220px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 50%;
+        }
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -60px; left: -30px;
+            width: 180px; height: 180px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 50%;
+        }
+        header h1 { margin: 0; font-size: 2em; font-weight: 700; position: relative; z-index: 1; }
+        header h3 { margin: 8px 0 0; font-weight: 300; opacity: 0.88; position: relative; z-index: 1; }
+
+        /* Card */
+        .card {
+            background: var(--card-bg);
+            padding: 28px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            box-shadow: 0 2px 14px rgba(10,61,145,0.07);
+            border: 1px solid var(--border);
+            scroll-margin-top: 80px;
+        }
+        .card-title {
+            color: var(--primary);
+            border-bottom: 2px solid var(--light);
+            padding-bottom: 10px;
+            margin-top: 0;
+            font-size: 1.15em;
+            font-weight: 700;
+        }
+
+        .grid-2 {
+            display: grid;
+            gap: 20px;
+            margin-top: 0;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        /* Viewer */
+        .viewer-box {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            background: var(--light);
+            text-align: center;
+        }
+        .viewer-box h4 {
+            margin: 0 0 10px;
+            color: var(--secondary);
+            font-size: 0.95em;
+            font-weight: 700;
+        }
+        .view-container {
+            width: 100%;
+            height: 240px;
+            position: relative;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #e0e8f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        .mol-3d { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+        .mol-2d {
+            display: none;
+            font-size: 1.1em;
+            font-weight: 700;
+            color: var(--dark);
+            font-family: 'IBM Plex Mono', monospace;
+            word-break: break-all;
+            padding: 10px;
+            text-align: center;
+            position: absolute;
+            width: 100%;
+        }
+
+        /* Buttons */
+        button {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 7px 13px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.82em;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-weight: 600;
+            margin: 3px;
+            transition: all 0.2s;
+            letter-spacing: 0.01em;
+        }
+        button:hover { background: var(--primary); transform: translateY(-1px); box-shadow: 0 3px 10px rgba(10,61,145,0.2); }
+        button:active { transform: translateY(0); }
+        .btn-warning { background: var(--gold); color: #3d1f00; }
+        .btn-warning:hover { background: #e08c47; }
+        .btn-info { background: var(--info); }
+        .btn-info:hover { background: #0f5680; }
+        .btn-danger-outline {
+            background: transparent;
+            color: var(--accent);
+            border: 2px solid var(--accent);
+        }
+        .btn-danger-outline:hover { background: var(--accent); color: white; }
+        .btn-group { text-align: center; margin-top: 14px; }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 11px 14px; text-align: left; }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:nth-child(even) td { background: #f7faff; }
+
+        /* Mechanism Steps */
+        .step-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .step-box {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            background: var(--light);
+            border-radius: 10px;
+            padding: 16px 18px;
+            border-left: 5px solid var(--primary);
+        }
+        .step-box.step-slow { border-left-color: var(--accent); }
+        .step-box.step-fast { border-left-color: var(--success); }
+        .step-num {
+            background: var(--primary);
+            color: white;
+            min-width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.95em;
+            flex-shrink: 0;
+        }
+        .step-num.slow { background: var(--accent); }
+        .step-num.fast { background: var(--success); }
+        .step-content { flex: 1; }
+        .step-content h4 { margin: 0 0 4px; color: var(--primary); font-size: 0.97em; }
+        .step-box.step-slow .step-content h4 { color: var(--accent); }
+        .step-box.step-fast .step-content h4 { color: var(--success); }
+        .step-content p { margin: 0; font-size: 0.9em; }
+
+        /* Energy diagram box */
+        .energy-diagram {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            margin-top: 16px;
+            text-align: center;
+        }
+        .energy-diagram svg { max-width: 100%; }
+
+        /* Info highlight boxes */
+        .highlight-box {
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin: 12px 0;
+            font-size: 0.92em;
+        }
+        .highlight-box.info { background: var(--info-bg); border-left: 4px solid var(--info); }
+        .highlight-box.warning { background: #fff8e1; border-left: 4px solid var(--gold); }
+        .highlight-box.success { background: var(--success-bg); border-left: 4px solid var(--success); }
+        .highlight-box.danger { background: var(--danger-bg); border-left: 4px solid var(--danger); }
+        .highlight-box strong { display: block; margin-bottom: 4px; }
+
+        /* Comparison band */
+        .compare-band {
+            display: flex;
+            gap: 14px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .compare-card {
+            flex: 1;
+            min-width: 200px;
+            background: var(--light);
+            border-radius: 10px;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            font-size: 0.9em;
+        }
+        .compare-card h5 { margin: 0 0 8px; color: var(--primary); font-size: 0.95em; }
+
+        /* ========== QUIZ SECTION ========== */
+        .quiz-progress {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--light);
+            border-radius: 10px;
+            padding: 12px 18px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+        .quiz-progress-text { font-weight: 700; color: var(--primary); font-size: 0.9em; }
+        .score-badge {
+            background: var(--primary);
+            color: white;
+            padding: 5px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.88em;
+        }
+
+        .quiz-item {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 22px;
+            margin-bottom: 18px;
+            transition: border 0.2s;
+        }
+        .quiz-item.answered-correct { border-color: var(--success); }
+        .quiz-item.answered-wrong { border-color: var(--danger); }
+
+        .quiz-q-header {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 14px;
+        }
+        .quiz-number {
+            background: var(--primary);
+            color: white;
+            min-width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85em;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .quiz-q-text { font-weight: 600; font-size: 0.97em; line-height: 1.6; }
+        .quiz-tag {
+            display: inline-block;
+            font-size: 0.72em;
+            font-weight: 700;
+            padding: 2px 9px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .tag-mekanisme { background: #dbeafe; color: #1d4ed8; }
+        .tag-laju { background: #fef9c3; color: #854d0e; }
+        .tag-stereokimia { background: #f0fdf4; color: #166534; }
+        .tag-faktor { background: #fce7f3; color: #9d174d; }
+        .tag-perbandingan { background: #ede9fe; color: #5b21b6; }
+
+        .quiz-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            width: 100%;
+            text-align: left;
+            background: #fafbff;
+            color: var(--dark);
+            border: 1.5px solid var(--border);
+            margin: 6px 0;
+            padding: 11px 14px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.2s;
+            transform: none;
+            box-shadow: none;
+        }
+        .quiz-option:hover:not(:disabled) {
+            background: var(--light);
+            border-color: var(--secondary);
+            transform: translateX(4px);
+            box-shadow: none;
+        }
+        .quiz-option:disabled { cursor: default; transform: none; }
+        .quiz-option.correct-choice { background: var(--success-bg); border-color: var(--success); color: var(--success); font-weight: 700; }
+        .quiz-option.wrong-choice   { background: var(--danger-bg);  border-color: var(--danger);  color: var(--danger);  font-weight: 700; }
+        .quiz-option .opt-letter {
+            background: var(--primary);
+            color: white;
+            min-width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .quiz-option.correct-choice .opt-letter { background: var(--success); }
+        .quiz-option.wrong-choice   .opt-letter { background: var(--danger); }
+
+        .feedback {
+            font-weight: 700;
+            margin-top: 12px;
+            font-size: 0.9em;
+            display: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+        .feedback.correct { background: var(--success-bg); color: var(--success); display: block; }
+        .feedback.wrong   { background: var(--danger-bg);  color: var(--danger);  display: block; }
+
+        .pembahasan {
+            background: var(--info-bg);
+            border-left: 4px solid var(--info);
+            padding: 14px 16px;
+            margin-top: 10px;
+            display: none;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.88em;
+            line-height: 1.75;
+        }
+        .pembahasan strong { color: var(--primary); }
+
+        .quiz-summary {
+            background: linear-gradient(135deg, var(--primary), #1a56db);
+            color: white;
+            border-radius: var(--radius);
+            padding: 30px;
+            text-align: center;
+            display: none;
+            margin-top: 20px;
+        }
+        .quiz-summary h3 { margin: 0 0 10px; font-size: 1.5em; }
+        .quiz-summary .big-score { font-size: 3em; font-weight: 700; }
+        .quiz-summary p { opacity: 0.88; margin: 8px 0 20px; }
+        .btn-retake { background: white; color: var(--primary); font-weight: 700; padding: 10px 28px; border-radius: 8px; font-size: 1em; }
+        .btn-retake:hover { background: var(--light); }
+
+        @media (max-width: 768px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .lang-switch { top: 10px; right: 10px; }
+            header h1 { font-size: 1.4em; }
+            .nav-bar { top: 8px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="lang-switch">
+    <button class="lang-btn active" id="btn-id" onclick="setLanguage('id')">🇮🇩 ID</button>
+    <button class="lang-btn" id="btn-en" onclick="setLanguage('en')">🇬🇧 EN</button>
+</div>
+
+<div class="container">
+
+    <div class="logo-container">
+        <img src="logo-okol-wdi.jpg"    alt="Logo OKOL-WDI">
+        <img src="logo-unsri.jpg"        alt="Logo UNSRI">
+        <img src="logo-bpsdm-sumsel.jpg" alt="Logo BPSDM SUMSEL">
+        <img src="logo-asn-berakhlak.jpg"alt="Logo ASN BERAKHLAK">
+    </div>
+
+    <nav class="nav-bar">
+        <a href="#materi-pengertian"><span class="lang-id">📖 Pengertian SN1</span><span class="lang-en">📖 SN1 Intro</span></a>
+        <a href="#mekanisme-sn1"><span class="lang-id">⚙️ Mekanisme</span><span class="lang-en">⚙️ Mechanism</span></a>
+        <a href="#visualisasi-3d"><span class="lang-id">🔬 Visualisasi 3D</span><span class="lang-en">🔬 3D Visualization</span></a>
+        <a href="#faktor-sn1"><span class="lang-id">📊 Faktor Penentu</span><span class="lang-en">📊 Key Factors</span></a>
+        <a href="#stereokimia"><span class="lang-id">🔄 Stereokimia</span><span class="lang-en">🔄 Stereochemistry</span></a>
+        <a href="#perbandingan"><span class="lang-id">⚖️ SN1 vs SN2</span><span class="lang-en">⚖️ SN1 vs SN2</span></a>
+        <a href="#latihan-soal"><span class="lang-id">📝 Latihan Soal</span><span class="lang-en">📝 Quiz</span></a>
+    </nav>
+
+    <header>
+        <h1>
+            <span class="lang-id">🌐 OKOL-WDI — Modul Interaktif 3D</span>
+            <span class="lang-en">🌐 OKOL-WDI — 3D Interactive Module</span>
+        </h1>
+        <h3>
+            <span class="lang-id">⚗️ Mekanisme Reaksi Substitusi Nukleofilik Unimolekular (SN1)</span>
+            <span class="lang-en">⚗️ Unimolecular Nucleophilic Substitution Reaction Mechanism (SN1)</span>
+        </h3>
+    </header>
+
+    <!-- ===== SECTION 1: PENGERTIAN ===== -->
+    <div id="materi-pengertian" class="card">
+        <h2 class="card-title">
+            <span class="lang-id">🧠 Pengertian Reaksi SN1</span>
+            <span class="lang-en">🧠 Introduction to SN1 Reaction</span>
+        </h2>
+        <div class="grid-2">
+            <div>
+                <div class="lang-id">
+                    <p>Reaksi <b>SN1 (Substitusi Nukleofilik Unimolekular)</b> adalah reaksi substitusi di mana sebuah gugus pergi (leaving group) meninggalkan substrat terlebih dahulu untuk membentuk <b>karbokation (ion karbonium)</b> sebagai zat antara, kemudian baru nukleofil menyerang.</p>
+                    <ul>
+                        <li>✅ Berlangsung dalam <b>dua tahap</b> (stepwise).</li>
+                        <li>✅ Tahap penentu laju hanya melibatkan <b>satu spesies</b> (substrat).</li>
+                        <li>✅ Rumus laju: <b>v = k[RX]</b> — tidak bergantung pada konsentrasi nukleofil.</li>
+                        <li>✅ Menghasilkan produk <b>rasemik</b> (campuran enantiomer) pada karbon kiral.</li>
+                        <li>✅ Disukai oleh substrat tersier &gt; sekunder &gt; primer.</li>
+                    </ul>
+                    <div class="highlight-box info">
+                        <strong>💡 Analogi Sederhana</strong>
+                        Bayangkan penumpang (leaving group) yang keluar dari bus terlebih dahulu, baru kemudian penumpang baru (nukleofil) masuk. Proses keluar dan masuk <b>tidak terjadi bersamaan</b>.
+                    </div>
+                </div>
+                <div class="lang-en">
+                    <p><b>SN1 (Unimolecular Nucleophilic Substitution)</b> is a substitution reaction where a leaving group departs from the substrate first to form a <b>carbocation (carbonium ion)</b> as an intermediate, then a nucleophile attacks.</p>
+                    <ul>
+                        <li>✅ Proceeds in <b>two steps</b> (stepwise).</li>
+                        <li>✅ The rate-determining step involves only <b>one species</b> (the substrate).</li>
+                        <li>✅ Rate law: <b>v = k[RX]</b> — independent of nucleophile concentration.</li>
+                        <li>✅ Produces a <b>racemic mixture</b> (enantiomers) at a chiral center.</li>
+                        <li>✅ Favored by tertiary &gt; secondary &gt; primary substrates.</li>
+                    </ul>
+                    <div class="highlight-box info">
+                        <strong>💡 Simple Analogy</strong>
+                        Imagine a passenger (leaving group) stepping off a bus first, then a new passenger (nucleophile) boards. The exit and entry do <b>not happen simultaneously</b>.
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="lang-id">
+                    <h3 style="margin-top:0; color:var(--primary); font-size:1em;">📌 Persamaan Umum Reaksi SN1</h3>
+                    <div style="background:#f7faff; border-radius:10px; padding:18px; font-family:'IBM Plex Mono',monospace; font-size:0.88em; line-height:2; border:1px solid var(--border);">
+                        <div style="text-align:center; font-size:1em;">
+                            R–X &nbsp;→&nbsp; R⁺ + X⁻ &nbsp;&nbsp;<span style="color:var(--accent); font-weight:700;">(lambat, RDS)</span><br>
+                            R⁺ + Nu:⁻ &nbsp;→&nbsp; R–Nu &nbsp;&nbsp;<span style="color:var(--success); font-weight:700;">(cepat)</span>
+                        </div>
+                        <hr style="margin:12px 0; border:1px solid var(--border);">
+                        <div style="text-align:center;">
+                            <b>Contoh:</b><br>
+                            (CH₃)₃C–Br + H₂O → (CH₃)₃C–OH + HBr<br>
+                            <span style="font-size:0.85em; color:var(--text-muted);">tersier-butil bromida → tersier-butil alkohol</span>
+                        </div>
+                    </div>
+                    <div class="highlight-box warning" style="margin-top:14px;">
+                        <strong>⚡ Istilah Kunci</strong>
+                        <b>Substrat:</b> molekul yang bereaksi (R–X) &nbsp;|&nbsp;
+                        <b>Nukleofil (Nu:):</b> penyerang kaya elektron &nbsp;|&nbsp;
+                        <b>Leaving Group (X):</b> gugus yang pergi &nbsp;|&nbsp;
+                        <b>Karbokation (R⁺):</b> zat antara bermuatan positif
+                    </div>
+                </div>
+                <div class="lang-en">
+                    <h3 style="margin-top:0; color:var(--primary); font-size:1em;">📌 General SN1 Reaction Equation</h3>
+                    <div style="background:#f7faff; border-radius:10px; padding:18px; font-family:'IBM Plex Mono',monospace; font-size:0.88em; line-height:2; border:1px solid var(--border);">
+                        <div style="text-align:center; font-size:1em;">
+                            R–X &nbsp;→&nbsp; R⁺ + X⁻ &nbsp;&nbsp;<span style="color:var(--accent); font-weight:700;">(slow, RDS)</span><br>
+                            R⁺ + Nu:⁻ &nbsp;→&nbsp; R–Nu &nbsp;&nbsp;<span style="color:var(--success); font-weight:700;">(fast)</span>
+                        </div>
+                        <hr style="margin:12px 0; border:1px solid var(--border);">
+                        <div style="text-align:center;">
+                            <b>Example:</b><br>
+                            (CH₃)₃C–Br + H₂O → (CH₃)₃C–OH + HBr<br>
+                            <span style="font-size:0.85em; color:var(--text-muted);">tert-butyl bromide → tert-butyl alcohol</span>
+                        </div>
+                    </div>
+                    <div class="highlight-box warning" style="margin-top:14px;">
+                        <strong>⚡ Key Terms</strong>
+                        <b>Substrate:</b> the reacting molecule (R–X) &nbsp;|&nbsp;
+                        <b>Nucleophile (Nu:):</b> electron-rich attacker &nbsp;|&nbsp;
+                        <b>Leaving Group (X):</b> departing group &nbsp;|&nbsp;
+                        <b>Carbocation (R⁺):</b> positively charged intermediate
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 2: MEKANISME ===== -->
+    <div id="mekanisme-sn1" class="card">
+        <h2 class="card-title">
+            <span class="lang-id">⚙️ Mekanisme Reaksi SN1 — Dua Tahap</span>
+            <span class="lang-en">⚙️ SN1 Reaction Mechanism — Two Steps</span>
+        </h2>
+
+        <div class="grid-2">
+            <div>
+                <div class="step-flow">
+                    <!-- Tahap 1 -->
+                    <div class="step-box step-slow">
+                        <div class="step-num slow">1</div>
+                        <div class="step-content">
+                            <h4>
+                                <span class="lang-id">🔴 Ionisasi (Tahap Penentu Laju / RDS)</span>
+                                <span class="lang-en">🔴 Ionization (Rate-Determining Step / RDS)</span>
+                            </h4>
+                            <p class="lang-id">Ikatan C–X terputus secara <b>heterolitik</b>. Pasangan elektron ikatan seluruhnya diambil oleh gugus pergi (X), membentuk <b>karbokation R⁺</b> dan anion X⁻. Tahap ini lambat karena memerlukan energi aktivasi yang besar untuk memutus ikatan.</p>
+                            <p class="lang-en">The C–X bond breaks <b>heterolytically</b>. The bonding electron pair is taken entirely by the leaving group (X), forming a <b>carbocation R⁺</b> and anion X⁻. This step is slow because it requires a large activation energy to break the bond.</p>
+                            <div class="highlight-box danger" style="margin-top:8px; font-size:0.85em;">
+                                <span class="lang-id">R–X → R⁺ + X⁻ &nbsp;(LAMBAT — menentukan laju keseluruhan)</span>
+                                <span class="lang-en">R–X → R⁺ + X⁻ &nbsp;(SLOW — determines overall rate)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Tahap 2 -->
+                    <div class="step-box step-fast">
+                        <div class="step-num fast">2</div>
+                        <div class="step-content">
+                            <h4>
+                                <span class="lang-id">🟢 Serangan Nukleofil (Tahap Cepat)</span>
+                                <span class="lang-en">🟢 Nucleophilic Attack (Fast Step)</span>
+                            </h4>
+                            <p class="lang-id">Karbokation R⁺ yang terbentuk bersifat planar sp². Nukleofil Nu: dapat menyerang dari <b>kedua sisi</b> bidang datar dengan probabilitas sama, menghasilkan campuran produk <b>inversi dan retensi</b> (rasemisasi).</p>
+                            <p class="lang-en">The formed carbocation R⁺ is planar sp². The nucleophile Nu: can attack from <b>both sides</b> of the planar structure with equal probability, producing a mixture of <b>inversion and retention</b> products (racemization).</p>
+                            <div class="highlight-box success" style="margin-top:8px; font-size:0.85em;">
+                                <span class="lang-id">R⁺ + Nu:⁻ → R–Nu &nbsp;(CEPAT — tidak menentukan laju)</span>
+                                <span class="lang-en">R⁺ + Nu:⁻ → R–Nu &nbsp;(FAST — does not determine rate)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <!-- Diagram Energi -->
+                <div class="energy-diagram">
+                    <h4 style="color:var(--primary); margin-top:0; font-size:0.95em;">
+                        <span class="lang-id">📈 Diagram Energi Reaksi SN1</span>
+                        <span class="lang-en">📈 SN1 Reaction Energy Diagram</span>
+                    </h4>
+                    <svg viewBox="0 0 420 250" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-height:220px;">
+                        <!-- Background -->
+                        <rect width="420" height="250" fill="#f8faff" rx="8"/>
+                        <!-- Axes -->
+                        <line x1="40" y1="220" x2="400" y2="220" stroke="#aaa" stroke-width="1.5"/>
+                        <line x1="40" y1="20"  x2="40"  y2="220" stroke="#aaa" stroke-width="1.5"/>
+                        <!-- Axis labels -->
+                        <text x="210" y="242" text-anchor="middle" font-size="11" fill="#666" font-family="IBM Plex Sans">Koordinat Reaksi / Reaction Coordinate</text>
+                        <text x="14" y="130" text-anchor="middle" font-size="11" fill="#666" font-family="IBM Plex Sans" transform="rotate(-90,14,130)">Energi / Energy</text>
+                        <!-- Energy curve path: start low → TS1 high → intermediate medium → TS2 → product low -->
+                        <!-- R-X start ~190 -->
+                        <!-- TS1 peak ~55 -->
+                        <!-- Carbocation intermediate ~130 -->
+                        <!-- TS2 ~105 -->
+                        <!-- Product ~165 -->
+                        <path d="M55,190 C80,188 95,80 120,55 C145,30 145,120 175,130 C200,138 210,95 235,105 C260,115 280,160 330,165"
+                              fill="none" stroke="#0a3d91" stroke-width="2.5"/>
+                        <!-- Labels for states -->
+                        <circle cx="55"  cy="190" r="4" fill="#0a3d91"/>
+                        <text x="55"  y="210" text-anchor="middle" font-size="10" fill="#0a3d91" font-weight="700">R–X</text>
+                        <!-- TS1 label -->
+                        <circle cx="120" cy="55" r="4" fill="#e63946"/>
+                        <line x1="120" y1="55" x2="120" y2="42" stroke="#e63946" stroke-width="1" stroke-dasharray="3,2"/>
+                        <text x="120" y="38" text-anchor="middle" font-size="10" fill="#e63946" font-weight="700">TS₁</text>
+                        <text x="120" y="26" text-anchor="middle" font-size="9" fill="#e63946">(Ea₁ besar)</text>
+                        <!-- Carbocation intermediate -->
+                        <circle cx="175" cy="130" r="4" fill="#f4a261"/>
+                        <text x="175" y="148" text-anchor="middle" font-size="10" fill="#f4a261" font-weight="700">R⁺ + X⁻</text>
+                        <text x="175" y="158" text-anchor="middle" font-size="9" fill="#f4a261">(karbokation)</text>
+                        <!-- TS2 -->
+                        <circle cx="235" cy="105" r="4" fill="#c1121f"/>
+                        <line x1="235" y1="105" x2="235" y2="90" stroke="#c1121f" stroke-width="1" stroke-dasharray="3,2"/>
+                        <text x="235" y="86" text-anchor="middle" font-size="10" fill="#c1121f" font-weight="700">TS₂</text>
+                        <text x="235" y="76" text-anchor="middle" font-size="9" fill="#c1121f">(Ea₂ kecil)</text>
+                        <!-- Product -->
+                        <circle cx="330" cy="165" r="4" fill="#2d6a4f"/>
+                        <text x="330" y="183" text-anchor="middle" font-size="10" fill="#2d6a4f" font-weight="700">R–Nu</text>
+                        <!-- ΔEa1 arrow -->
+                        <line x1="62" y1="190" x2="62" y2="55" stroke="#e63946" stroke-width="1" stroke-dasharray="4,2"/>
+                        <text x="72" y="125" font-size="9" fill="#e63946">Ea₁ (RDS)</text>
+                    </svg>
+                    <p style="font-size:0.8em; color:var(--text-muted); margin:4px 0 0;">
+                        <span class="lang-id">Dua puncak energi = dua keadaan transisi (TS). Puncak pertama (Ea₁) jauh lebih tinggi → menentukan laju keseluruhan.</span>
+                        <span class="lang-en">Two energy peaks = two transition states (TS). The first peak (Ea₁) is much higher → determines overall rate.</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Intermediate detail -->
+        <div class="highlight-box info" style="margin-top:16px;">
+            <strong class="lang-id">🔍 Detail Karbokation — Zat Antara (Intermediate)</strong>
+            <strong class="lang-en">🔍 Carbocation Details — The Intermediate</strong>
+            <div class="grid-2" style="margin-top:8px;">
+                <div>
+                    <p class="lang-id" style="margin:0; font-size:0.9em;">Karbokation yang terbentuk memiliki geometri <b>trigonal planar</b> dengan hibridisasi <b>sp²</b>. Karbon pusat memiliki orbital p kosong yang tegak lurus bidang molekul. Kestabilan karbokation bergantung pada efek induksi dan hiperkonjugasi dari gugus alkil di sekitarnya:</p>
+                    <p class="lang-en" style="margin:0; font-size:0.9em;">The formed carbocation has a <b>trigonal planar</b> geometry with <b>sp²</b> hybridization. The central carbon has an empty p-orbital perpendicular to the molecular plane. Carbocation stability depends on inductive effects and hyperconjugation from surrounding alkyl groups:</p>
+                    <div style="font-size:0.88em; margin-top:8px;">
+                        <b>Tersier (3°) &gt; Sekunder (2°) &gt; Primer (1°) &gt; Metil</b><br>
+                        (CH₃)₃C⁺ &gt; (CH₃)₂CH⁺ &gt; CH₃CH₂⁺ &gt; CH₃⁺
+                    </div>
+                </div>
+                <div>
+                    <p class="lang-id" style="margin:0; font-size:0.9em;"><b>Mengapa tersier lebih stabil?</b> Semakin banyak gugus alkil yang mengelilingi karbon bermuatan positif, semakin besar efek donasi elektron melalui <b>hiperkonjugasi dan induksi</b>, sehingga muatan positif lebih tersebar (terdistribusi) dan karbokation lebih stabil. Karbokation tersier dapat terbentuk lebih mudah, sehingga SN1 berlangsung lebih cepat.</p>
+                    <p class="lang-en" style="margin:0; font-size:0.9em;"><b>Why is tertiary more stable?</b> More alkyl groups surrounding the positively charged carbon provide greater electron donation through <b>hyperconjugation and induction</b>, allowing the positive charge to be more dispersed, stabilizing the carbocation. Tertiary carbocations form more easily, so SN1 proceeds faster.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 3: VISUALISASI 3D ===== -->
+    <div id="visualisasi-3d" class="card">
+        <h2 class="card-title">
+            <span class="lang-id">🔬 Visualisasi 3D Molekul Relevan SN1</span>
+            <span class="lang-en">🔬 3D Visualization of SN1-Relevant Molecules</span>
+        </h2>
+        <p class="lang-id" style="margin-top:0;">Berikut adalah visualisasi 3D interaktif molekul-molekul yang berperan dalam reaksi SN1. Putar, zoom, dan eksplorasi geometri molekul secara langsung.</p>
+        <p class="lang-en" style="margin-top:0;">Below are interactive 3D visualizations of molecules involved in SN1 reactions. Rotate, zoom, and explore molecular geometries directly.</p>
+
+        <div class="grid-2">
+            <!-- tert-Butil Bromida (Substrat) -->
+            <div class="viewer-box">
+                <h4><span class="lang-id">⚛️ tert-Butil Bromida — Substrat SN1</span><span class="lang-en">⚛️ tert-Butyl Bromide — SN1 Substrate</span></h4>
+                <div class="view-container">
+                    <div class="mol-3d" id="viewer-tbb"></div>
+                    <div class="mol-2d" id="text-tbb">(CH₃)₃C–Br</div>
+                </div>
+                <div class="btn-group">
+                    <button onclick="resetView('viewer-tbb')">🔄 Reset</button>
+                    <button onclick="toggleLabels('viewer-tbb')" class="btn-warning">🏷️ Label</button>
+                    <button onclick="toggle2D3D('viewer-tbb','text-tbb')" class="btn-info">⇄ 2D/3D</button>
+                </div>
+                <p style="font-size:0.8em; color:var(--text-muted); margin-top:8px;">
+                    <span class="lang-id"><b>C tersier.</b> Tiga gugus metil mendestabilisasi lewat sterik, tetapi menstabilkan karbokation yang terbentuk. Leaving group: Br⁻.</span>
+                    <span class="lang-en"><b>Tertiary C.</b> Three methyl groups create steric strain but stabilize the formed carbocation. Leaving group: Br⁻.</span>
+                </p>
+            </div>
+
+            <!-- tert-Butil Karbokation (Intermediate) -->
+            <div class="viewer-box">
+                <h4><span class="lang-id">⚛️ tert-Butil Karbokation — Zat Antara</span><span class="lang-en">⚛️ tert-Butyl Carbocation — Intermediate</span></h4>
+                <div class="view-container">
+                    <div class="mol-3d" id="viewer-tbc"></div>
+                    <div class="mol-2d" id="text-tbc">(CH₃)₃C⁺</div>
+                </div>
+                <div class="btn-group">
+                    <button onclick="resetView('viewer-tbc')">🔄 Reset</button>
+                    <button onclick="toggleLabels('viewer-tbc')" class="btn-warning">🏷️ Label</button>
+                    <button onclick="toggle2D3D('viewer-tbc','text-tbc')" class="btn-info">⇄ 2D/3D</button>
+                </div>
+                <p style="font-size:0.8em; color:var(--text-muted); margin-top:8px;">
+                    <span class="lang-id"><b>Geometri planar sp².</b> Setelah Br⁻ pergi, karbon pusat menjadi planar dengan sudut ~120°. Nukleofil dapat menyerang dari atas atau bawah.</span>
+                    <span class="lang-en"><b>Planar sp² geometry.</b> After Br⁻ leaves, the central carbon becomes planar with ~120° angles. Nucleophile can attack from above or below.</span>
+                </p>
+            </div>
+
+            <!-- tert-Butil Alkohol (Produk) -->
+            <div class="viewer-box">
+                <h4><span class="lang-id">⚛️ tert-Butil Alkohol — Produk SN1</span><span class="lang-en">⚛️ tert-Butyl Alcohol — SN1 Product</span></h4>
+                <div class="view-container">
+                    <div class="mol-3d" id="viewer-tba"></div>
+                    <div class="mol-2d" id="text-tba">(CH₃)₃C–OH</div>
+                </div>
+                <div class="btn-group">
+                    <button onclick="resetView('viewer-tba')">🔄 Reset</button>
+                    <button onclick="toggleLabels('viewer-tba')" class="btn-warning">🏷️ Label</button>
+                    <button onclick="toggle2D3D('viewer-tba','text-tba')" class="btn-info">⇄ 2D/3D</button>
+                </div>
+                <p style="font-size:0.8em; color:var(--text-muted); margin-top:8px;">
+                    <span class="lang-id"><b>Produk solvolisis.</b> Air (H₂O) bertindak sebagai nukleofil menyerang karbokation, menghasilkan tersier alkohol. Kembali ke geometri sp³.</span>
+                    <span class="lang-en"><b>Solvolysis product.</b> Water (H₂O) acts as nucleophile attacking the carbocation, yielding a tertiary alcohol. Returns to sp³ geometry.</span>
+                </p>
+            </div>
+
+            <!-- 2-Kloropropana sebagai substrat sekunder -->
+            <div class="viewer-box">
+                <h4><span class="lang-id">⚛️ 2-Kloropropana — Substrat SN1 Sekunder</span><span class="lang-en">⚛️ 2-Chloropropane — Secondary SN1 Substrate</span></h4>
+                <div class="view-container">
+                    <div class="mol-3d" id="viewer-2cp"></div>
+                    <div class="mol-2d" id="text-2cp">CH₃CHClCH₃</div>
+                </div>
+                <div class="btn-group">
+                    <button onclick="resetView('viewer-2cp')">🔄 Reset</button>
+                    <button onclick="toggleLabels('viewer-2cp')" class="btn-warning">🏷️ Label</button>
+                    <button onclick="toggle2D3D('viewer-2cp','text-2cp')" class="btn-info">⇄ 2D/3D</button>
+                </div>
+                <p style="font-size:0.8em; color:var(--text-muted); margin-top:8px;">
+                    <span class="lang-id"><b>C sekunder.</b> Hanya dua gugus alkil menyanggah karbokation. SN1 dapat terjadi, tetapi lebih lambat dibanding substrat tersier. Bersaing dengan SN2.</span>
+                    <span class="lang-en"><b>Secondary C.</b> Only two alkyl groups support the carbocation. SN1 can occur but slower than tertiary. Competes with SN2.</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="btn-group" style="margin-top:16px;">
+            <button onclick="rotateAll(['viewer-tbb','viewer-tbc','viewer-tba','viewer-2cp'])">▶ Putar Semua / Rotate All</button>
+            <button onclick="stopRotate()" class="btn-danger-outline">■ Stop</button>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 4: FAKTOR PENENTU ===== -->
+    <div id="faktor-sn1" class="card">
+        <h2 class="card-title">
+            <span class="lang-id">📊 Faktor-Faktor yang Mempengaruhi Reaksi SN1</span>
+            <span class="lang-en">📊 Factors Influencing SN1 Reactions</span>
+        </h2>
+
+        <div class="grid-2">
+            <div>
+                <h3 style="color:var(--primary); font-size:1em; margin-top:0;">
+                    <span class="lang-id">1️⃣ Struktur Substrat (Faktor Terpenting)</span>
+                    <span class="lang-en">1️⃣ Substrate Structure (Most Important Factor)</span>
+                </h3>
+                <div class="lang-id">
+                    <p>Kestabilan karbokation yang terbentuk adalah faktor utama. Urutan reaktivitas:</p>
+                    <table>
+                        <tr><th>Tipe Substrat</th><th>Contoh</th><th>Laju SN1</th><th>Keterangan</th></tr>
+                        <tr><td>Tersier (3°)</td><td>(CH₃)₃CBr</td><td style="color:var(--success); font-weight:700;">Sangat Cepat</td><td>3 gugus alkil menstabilkan R⁺</td></tr>
+                        <tr><td>Allil / Benzil</td><td>C₆H₅CH₂Cl</td><td style="color:var(--success);">Cepat</td><td>Resonansi menstabilkan R⁺</td></tr>
+                        <tr><td>Sekunder (2°)</td><td>(CH₃)₂CHBr</td><td style="color:var(--gold); font-weight:700;">Sedang</td><td>2 gugus alkil; bersaing SN2</td></tr>
+                        <tr><td>Primer (1°)</td><td>CH₃CH₂Br</td><td style="color:var(--accent);">Sangat Lambat</td><td>Karbokation tidak stabil</td></tr>
+                        <tr><td>Metil</td><td>CH₃Br</td><td style="color:var(--danger); font-weight:700;">Tidak Terjadi</td><td>Karbokation metil tidak stabil</td></tr>
+                    </table>
+                </div>
+                <div class="lang-en">
+                    <p>The stability of the formed carbocation is the primary factor. Reactivity order:</p>
+                    <table>
+                        <tr><th>Substrate Type</th><th>Example</th><th>SN1 Rate</th><th>Notes</th></tr>
+                        <tr><td>Tertiary (3°)</td><td>(CH₃)₃CBr</td><td style="color:var(--success); font-weight:700;">Very Fast</td><td>3 alkyl groups stabilize R⁺</td></tr>
+                        <tr><td>Allylic / Benzylic</td><td>C₆H₅CH₂Cl</td><td style="color:var(--success);">Fast</td><td>Resonance stabilizes R⁺</td></tr>
+                        <tr><td>Secondary (2°)</td><td>(CH₃)₂CHBr</td><td style="color:var(--gold); font-weight:700;">Moderate</td><td>2 alkyl groups; competes SN2</td></tr>
+                        <tr><td>Primary (1°)</td><td>CH₃CH₂Br</td><td style="color:var(--accent);">Very Slow</td><td>Unstable carbocation</td></tr>
+                        <tr><td>Methyl</td><td>CH₃Br</td><td style="color:var(--danger); font-weight:700;">Does Not Occur</td><td>Methyl carbocation unstable</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div>
+                <h3 style="color:var(--primary); font-size:1em; margin-top:0;">
+                    <span class="lang-id">2️⃣ Pelarut (Solvent)</span>
+                    <span class="lang-en">2️⃣ Solvent</span>
+                </h3>
+                <div class="lang-id">
+                    <p>SN1 sangat dipengaruhi oleh <b>polaritas pelarut</b>. Pelarut polar protik (mengandung gugus O–H atau N–H) sangat mendukung SN1 karena:</p>
+                    <ul style="font-size:0.9em;">
+                        <li>Mampu <b>menstabilkan ion</b> (solvasi karbokation R⁺ dan anion X⁻).</li>
+                        <li>Menurunkan energi aktivasi tahap ionisasi (RDS).</li>
+                    </ul>
+                    <div class="compare-band">
+                        <div class="compare-card">
+                            <h5>✅ Pelarut Polar Protik</h5>
+                            <small>Air (H₂O), Etanol (EtOH), Asam Asetat (AcOH)<br>→ Sangat baik untuk SN1</small>
+                        </div>
+                        <div class="compare-card">
+                            <h5>⚠️ Pelarut Polar Aprotik</h5>
+                            <small>Aseton, DMSO, DMF<br>→ Kurang efektif untuk SN1</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="lang-en">
+                    <p>SN1 is strongly influenced by <b>solvent polarity</b>. Polar protic solvents (containing O–H or N–H groups) greatly favor SN1 because:</p>
+                    <ul style="font-size:0.9em;">
+                        <li>They can <b>stabilize ions</b> (solvate carbocation R⁺ and anion X⁻).</li>
+                        <li>They lower the activation energy of the ionization step (RDS).</li>
+                    </ul>
+                    <div class="compare-band">
+                        <div class="compare-card">
+                            <h5>✅ Polar Protic Solvents</h5>
+                            <small>Water (H₂O), Ethanol (EtOH), Acetic Acid (AcOH)<br>→ Excellent for SN1</small>
+                        </div>
+                        <div class="compare-card">
+                            <h5>⚠️ Polar Aprotic Solvents</h5>
+                            <small>Acetone, DMSO, DMF<br>→ Less effective for SN1</small>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="color:var(--primary); font-size:1em; margin-top:16px;">
+                    <span class="lang-id">3️⃣ Kemampuan Gugus Pergi (Leaving Group)</span>
+                    <span class="lang-en">3️⃣ Leaving Group Ability</span>
+                </h3>
+                <div class="lang-id">
+                    <p style="font-size:0.9em;">Gugus pergi yang baik adalah basa lemah (anion stabil). Urutan:</p>
+                    <p style="font-size:0.9em; font-family:'IBM Plex Mono',monospace;"><b>I⁻ &gt; Br⁻ &gt; Cl⁻ &gt; F⁻</b> (halida)<br>
+                    TsO⁻ &gt; MsO⁻ &gt; I⁻ (non-halida terbaik)</p>
+                </div>
+                <div class="lang-en">
+                    <p style="font-size:0.9em;">Good leaving groups are weak bases (stable anions). Order:</p>
+                    <p style="font-size:0.9em; font-family:'IBM Plex Mono',monospace;"><b>I⁻ &gt; Br⁻ &gt; Cl⁻ &gt; F⁻</b> (halides)<br>
+                    TsO⁻ &gt; MsO⁻ &gt; I⁻ (best non-halide)</p>
+                </div>
+
+                <h3 style="color:var(--primary); font-size:1em; margin-top:12px;">
+                    <span class="lang-id">4️⃣ Konsentrasi Nukleofil — Tidak Berpengaruh!</span>
+                    <span class="lang-en">4️⃣ Nucleophile Concentration — No Effect!</span>
+                </h3>
+                <div class="highlight-box warning">
+                    <span class="lang-id">Karena nukleofil tidak terlibat dalam tahap penentu laju (RDS), mengubah konsentrasi nukleofil <b>tidak mengubah laju reaksi SN1</b>. Rumus laju: <b>v = k[RX]</b> (orde pertama).</span>
+                    <span class="lang-en">Since the nucleophile is not involved in the rate-determining step (RDS), changing its concentration <b>does not affect the SN1 reaction rate</b>. Rate law: <b>v = k[RX]</b> (first order).</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 5: STEREOKIMIA ===== -->
+    <div id="stereokimia" class="card">
+        <h2 class="card-title">
+            <span class="lang-id">🔄 Stereokimia Reaksi SN1 — Rasemisasi</span>
+            <span class="lang-en">🔄 Stereochemistry of SN1 — Racemization</span>
+        </h2>
+        <div class="grid-2">
+            <div>
+                <div class="lang-id">
+                    <p>Stereokimia adalah salah satu ciri khas paling penting dari SN1. Ketika substrat yang bereaksi memiliki <b>karbon kiral (stereocenter)</b>, reaksi SN1 menghasilkan <b>campuran rasemik</b>.</p>
+                    <div class="step-flow">
+                        <div class="step-box" style="border-left-color: var(--accent);">
+                            <div class="step-num" style="background:var(--accent);">1</div>
+                            <div class="step-content">
+                                <h4 style="color:var(--accent);">Substrat Kiral (R atau S)</h4>
+                                <p>Substrat memiliki satu konfigurasi (misalnya R) sebelum reaksi.</p>
+                            </div>
+                        </div>
+                        <div class="step-box" style="border-left-color:var(--gold);">
+                            <div class="step-num" style="background:var(--gold);">2</div>
+                            <div class="step-content">
+                                <h4 style="color: #7a4f00;">Karbokation Planar sp²</h4>
+                                <p>Setelah leaving group pergi, terbentuk karbokation <b>planar sp²</b>. Bidang ini <b>tidak memiliki konfigurasi</b> (achiral intermediate).</p>
+                            </div>
+                        </div>
+                        <div class="step-box" style="border-left-color:var(--success);">
+                            <div class="step-num" style="background:var(--success);">3</div>
+                            <div class="step-content">
+                                <h4 style="color:var(--success);">Serangan dari Dua Sisi</h4>
+                                <p>Nukleofil menyerang dari atas (menghasilkan konfigurasi S) dan dari bawah (menghasilkan konfigurasi R) dengan probabilitas <b>hampir sama (~50:50)</b>.</p>
+                            </div>
+                        </div>
+                        <div class="step-box" style="border-left-color:var(--primary);">
+                            <div class="step-num">4</div>
+                            <div class="step-content">
+                                <h4>Campuran Rasemik (Rasemat)</h4>
+                                <p>Produk akhir adalah <b>campuran ~50% enantiomer R dan ~50% enantiomer S</b>. Campuran ini optis tidak aktif (putar bidang polarisasi = 0).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="lang-en">
+                    <p>Stereochemistry is one of the most important characteristics of SN1. When the reacting substrate has a <b>chiral carbon (stereocenter)</b>, SN1 produces a <b>racemic mixture</b>.</p>
+                    <div class="step-flow">
+                        <div class="step-box" style="border-left-color: var(--accent);">
+                            <div class="step-num" style="background:var(--accent);">1</div>
+                            <div class="step-content">
+                                <h4 style="color:var(--accent);">Chiral Substrate (R or S)</h4>
+                                <p>The substrate has one configuration (e.g., R) before the reaction.</p>
+                            </div>
+                        </div>
+                        <div class="step-box" style="border-left-color:var(--gold);">
+                            <div class="step-num" style="background:var(--gold);">2</div>
+                            <div class="step-content">
+                                <h4 style="color:#7a4f00;">Planar sp² Carbocation</h4>
+                                <p>After the leaving group departs, a <b>planar sp²</b> carbocation forms. This plane <b>has no configuration</b> (achiral intermediate).</p>
+                            </div>
+                        </div>
+                        <div class="step-box" style="border-left-color:var(--success);">
+                            <div class="step-num" style="background:var(--success);">3</div>
+                            <div class="step-content">
+                                <h4 style="color:var(--success);">Attack from Both Sides</h4>
+                                <p>Nucleophile attacks from above (gives S) and below (gives R) with <b>approximately equal probability (~50:50)</b>.</p>
+                            </div>
+                        </div>
+                        <div class="step-box" style="border-left-color:var(--primary);">
+                            <div class="step-num">4</div>
+                            <div class="step-content">
+                                <h4>Racemic Mixture</h4>
+                                <p>The final product is a <b>~50% R enantiomer and ~50% S enantiomer</b> mixture. This mixture is optically inactive (rotation of polarized light = 0).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <!-- SVG Diagram Rasemisasi -->
+                <div class="energy-diagram">
+                    <h4 style="color:var(--primary); margin-top:0; font-size:0.95em;">
+                        <span class="lang-id">🔄 Diagram Rasemisasi SN1</span>
+                        <span class="lang-en">🔄 SN1 Racemization Diagram</span>
+                    </h4>
+                    <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-height:280px;">
+                        <rect width="400" height="300" fill="#f8faff" rx="8"/>
+
+                        <!-- Substrat -->
+                        <rect x="150" y="10" width="100" height="38" rx="8" fill="#0a3d91"/>
+                        <text x="200" y="28" text-anchor="middle" font-size="11" fill="white" font-weight="700" font-family="IBM Plex Sans">R–X (Substrat)</text>
+                        <text x="200" y="42" text-anchor="middle" font-size="10" fill="#cdd9ff" font-family="IBM Plex Sans">Konfigurasi R</text>
+
+                        <!-- Arrow down -->
+                        <line x1="200" y1="48" x2="200" y2="68" stroke="#e63946" stroke-width="2"/>
+                        <polygon points="200,72 195,62 205,62" fill="#e63946"/>
+                        <text x="215" y="64" font-size="10" fill="#e63946" font-family="IBM Plex Sans">–X⁻ (lambat)</text>
+
+                        <!-- Karbokation -->
+                        <rect x="130" y="72" width="140" height="40" rx="8" fill="#f4a261"/>
+                        <text x="200" y="90" text-anchor="middle" font-size="11" fill="white" font-weight="700" font-family="IBM Plex Sans">R⁺ (Karbokation)</text>
+                        <text x="200" y="104" text-anchor="middle" font-size="10" fill="#fff8f0" font-family="IBM Plex Sans">Planar sp² — Achiral</text>
+
+                        <!-- Arrows to two products -->
+                        <line x1="170" y1="112" x2="90" y2="152" stroke="#2d6a4f" stroke-width="2"/>
+                        <polygon points="86,155 88,143 97,150" fill="#2d6a4f"/>
+                        <text x="100" y="140" font-size="9" fill="#2d6a4f" font-family="IBM Plex Sans">Nu dari atas</text>
+
+                        <line x1="230" y1="112" x2="310" y2="152" stroke="#1565c0" stroke-width="2"/>
+                        <polygon points="314,155 305,150 312,143" fill="#1565c0"/>
+                        <text x="255" y="140" font-size="9" fill="#1565c0" font-family="IBM Plex Sans">Nu dari bawah</text>
+
+                        <!-- Produk S -->
+                        <rect x="20" y="155" width="130" height="40" rx="8" fill="#2d6a4f"/>
+                        <text x="85" y="173" text-anchor="middle" font-size="11" fill="white" font-weight="700" font-family="IBM Plex Sans">R–Nu (Produk S)</text>
+                        <text x="85" y="187" text-anchor="middle" font-size="10" fill="#d8f3dc" font-family="IBM Plex Sans">~50% — Inversi</text>
+
+                        <!-- Produk R -->
+                        <rect x="250" y="155" width="130" height="40" rx="8" fill="#1565c0"/>
+                        <text x="315" y="173" text-anchor="middle" font-size="11" fill="white" font-weight="700" font-family="IBM Plex Sans">R–Nu (Produk R)</text>
+                        <text x="315" y="187" text-anchor="middle" font-size="10" fill="#dbeafe" font-family="IBM Plex Sans">~50% — Retensi</text>
+
+                        <!-- Equals / result -->
+                        <text x="200" y="222" text-anchor="middle" font-size="13" fill="#0a3d91" font-weight="700" font-family="IBM Plex Sans">= Campuran Rasemik</text>
+                        <text x="200" y="238" text-anchor="middle" font-size="11" fill="#0a3d91" font-family="IBM Plex Sans">= Racemic Mixture</text>
+                        <rect x="80" y="244" width="240" height="30" rx="8" fill="#0a3d91" opacity="0.1"/>
+                        <text x="200" y="263" text-anchor="middle" font-size="10" fill="#0a3d91" font-family="IBM Plex Sans">50% R-enantiomer + 50% S-enantiomer</text>
+                        <text x="200" y="276" text-anchor="middle" font-size="10" fill="#0a3d91" font-family="IBM Plex Sans">Optis tidak aktif / Optically inactive</text>
+                    </svg>
+                </div>
+
+                <div class="highlight-box warning" style="margin-top:12px;">
+                    <strong class="lang-id">📌 Catatan Penting — Tidak Selalu 50:50</strong>
+                    <strong class="lang-en">📌 Important Note — Not Always 50:50</strong>
+                    <span class="lang-id">Dalam praktiknya, rasio produk tidak selalu tepat 50:50 karena adanya <b>pasangan ion (ion pair)</b> — anion X⁻ yang baru pergi sedikit menghalangi sisi belakang sesaat sebelum menyebar ke larutan. Ini menyebabkan sedikit kelebihan produk inversi. Namun, rasemisasi tetap menjadi ciri khas SN1 secara umum.</span>
+                    <span class="lang-en">In practice, the product ratio is not always exactly 50:50 due to <b>ion pairing</b> — the departing X⁻ briefly blocks the backside before dispersing into solution. This causes a slight excess of inversion product. However, racemization remains the hallmark of SN1 in general.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 6: SN1 vs SN2 ===== -->
+    <div id="perbandingan" class="card">
+        <h2 class="card-title">
+            <span class="lang-id">⚖️ Perbandingan SN1 vs SN2</span>
+            <span class="lang-en">⚖️ Comparison: SN1 vs SN2</span>
+        </h2>
+        <div class="lang-id">
+            <p>Dua mekanisme substitusi nukleofilik sering dibandingkan secara langsung. Memahami perbedaan keduanya sangat penting dalam kimia organik:</p>
+        </div>
+        <div class="lang-en">
+            <p>The two nucleophilic substitution mechanisms are often directly compared. Understanding their differences is essential in organic chemistry:</p>
+        </div>
+        <table>
+            <tr>
+                <th><span class="lang-id">Aspek</span><span class="lang-en">Aspect</span></th>
+                <th>SN1</th>
+                <th>SN2</th>
+            </tr>
+            <tr>
+                <td><span class="lang-id"><b>Tahap Reaksi</b></span><span class="lang-en"><b>Steps</b></span></td>
+                <td><span class="lang-id">Dua tahap (pembentukan karbokation → serangan Nu)</span><span class="lang-en">Two steps (carbocation formation → Nu attack)</span></td>
+                <td><span class="lang-id">Satu tahap (konsertatif / concerted)</span><span class="lang-en">One step (concerted)</span></td>
+            </tr>
+            <tr>
+                <td><span class="lang-id"><b>Rumus Laju</b></span><span class="lang-en"><b>Rate Law</b></span></td>
+                <td>v = k[RX] <span class="lang-id">(orde 1)</span><span class="lang-en">(1st order)</span></td>
+                <td>v = k[RX][Nu] <span class="lang-id">(orde 2)</span><span class="lang-en">(2nd order)</span></td>
+            </tr>
+            <tr>
+                <td><span class="lang-id"><b>Substrat Terbaik</b></span><span class="lang-en"><b>Best Substrate</b></span></td>
+                <td><span class="lang-id">Tersier (3°)</span><span class="lang-en">Tertiary (3°)</span></td>
+                <td><span class="lang-id">Primer (1°) atau metil</span><span class="lang-en">Primary (1°) or methyl</span></td>
+            </tr>
+            <tr>
+                <td><span class="lang-id"><b>Zat Antara</b></span><span class="lang-en"><b>Intermediate</b></span></td>
+                <td><span class="lang-id">Karbokation (planar sp²)</span><span class="lang-en">Carbocation (planar sp²)</span></td>
+                <td><span class="lang-id">Tidak ada (keadaan transisi saja)</span><span class="lang-en">None (transition state only)</span></td>
+            </tr>
+            <tr>
+                <td><span class="lang-id"><b>Stereokimia</b></span><span class="lang-en"><b>Stereochemistry</b></span></td>
+                <td><span class="lang-id">Rasemisasi (~50:50)</span><span class="lang-en">Racemization (~50:50)</span></td>
+                <td><span class="lang-id">Inversi konfigurasi (Walden)</span><span class="lang-en">Inversion of configuration (Walden)</span></td>
+            </tr>
+            <tr>
+                <td><span class="lang-id"><b>Pelarut Terbaik</b></span><span class="lang-en"><b>Best Solvent</b></span></td>
+                <td><span class="lang-id">Polar protik (H₂O, EtOH)</span><span class="lang-en">Polar protic (H₂O, EtOH)</span></td>
+                <td><span class="lang-id">Polar aprotik (DMSO, aseton)</span><span class="lang-en">Polar aprotic (DMSO, acetone)</span></td>
+            </tr>
+            <tr>
+                <td><span class="lang-id"><b>Kekuatan Nukleofil</b></span><span class="lang-en"><b>Nucleophile Strength</b></span></td>
+                <td><span class="lang-id">Tidak terlalu penting</span><span class="lang-en">Not critical</span></td>
+                <td><span class="lang-id">Sangat penting (harus kuat)</span><span class="lang-en">Very important (must be strong)</span></td>
+            </tr>
+            <tr>
+                <td><span class="lang-id"><b>Pengaruh Cabang</b></span><span class="lang-en"><b>Effect of Branching</b></span></td>
+                <td><span class="lang-id">Mempercepat (stabilkan R⁺)</span><span class="lang-en">Accelerates (stabilizes R⁺)</span></td>
+                <td><span class="lang-id">Memperlambat (hambatan sterik)</span><span class="lang-en">Slows (steric hindrance)</span></td>
+            </tr>
+            <tr>
+                <td><span class="lang-id"><b>Reaksi Samping</b></span><span class="lang-en"><b>Side Reactions</b></span></td>
+                <td><span class="lang-id">Eliminasi (E1), penataan ulang (rearrangement)</span><span class="lang-en">Elimination (E1), rearrangement</span></td>
+                <td><span class="lang-id">Eliminasi (E2)</span><span class="lang-en">Elimination (E2)</span></td>
+            </tr>
+        </table>
+
+        <div class="highlight-box success" style="margin-top:16px;">
+            <strong class="lang-id">💡 Penataan Ulang Karbokation — Reaksi Samping Khas SN1</strong>
+            <strong class="lang-en">💡 Carbocation Rearrangement — SN1 Characteristic Side Reaction</strong>
+            <span class="lang-id">Karena SN1 melibatkan pembentukan karbokation, terdapat kemungkinan <b>penataan ulang (rearrangement)</b> jika ada karbokation yang lebih stabil di dekat posisi muatan. Ini bisa berupa <b>pergeseran hidrida (hydride shift)</b> atau <b>pergeseran metil (methyl shift)</b>, menghasilkan produk yang tidak terduga. SN2 tidak mengalami penataan ulang karena tidak ada karbokation.</span>
+            <span class="lang-en">Since SN1 involves carbocation formation, <b>rearrangement</b> may occur if a more stable carbocation exists near the charge position. This can be a <b>hydride shift</b> or <b>methyl shift</b>, yielding unexpected products. SN2 has no rearrangement because no carbocation is formed.</span>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 7: LATIHAN SOAL ===== -->
+    <div id="latihan-soal" class="card">
+        <h2 class="card-title">
+            <span class="lang-id">📝 Latihan Soal — Mekanisme Reaksi SN1</span>
+            <span class="lang-en">📝 Quiz & Practice — SN1 Reaction Mechanism</span>
+        </h2>
+
+        <div class="quiz-progress">
+            <div class="quiz-progress-text">
+                <span class="lang-id">Soal Dijawab: <span id="answered-count">0</span> / 10</span>
+                <span class="lang-en">Answered: <span id="answered-count-en">0</span> / 10</span>
+            </div>
+            <div class="score-badge">
+                <span class="lang-id">Skor: <span id="score-display">0</span></span>
+                <span class="lang-en">Score: <span id="score-display-en">0</span></span>
+            </div>
+        </div>
+
+        <!-- Q1 -->
+        <div class="quiz-item" id="qi-1">
+            <span class="quiz-tag tag-mekanisme"><span class="lang-id">Mekanisme</span><span class="lang-en">Mechanism</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">1</div>
+                <div class="quiz-q-text lang-id">Manakah pernyataan yang paling tepat menggambarkan reaksi SN1?</div>
+                <div class="quiz-q-text lang-en">Which statement best describes an SN1 reaction?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(1,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Nukleofil dan substrat bereaksi serentak dalam satu langkah, menghasilkan inversi konfigurasi.</span>
+                <span class="lang-en">The nucleophile and substrate react simultaneously in one step, giving inversion of configuration.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(1,'B',true)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Gugus pergi meninggalkan substrat terlebih dahulu membentuk karbokation, kemudian nukleofil menyerang dalam langkah kedua yang lebih cepat.</span>
+                <span class="lang-en">The leaving group departs first to form a carbocation, then the nucleophile attacks in a faster second step.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(1,'C',false)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Reaksi berlangsung tanpa melibatkan zat antara apapun.</span>
+                <span class="lang-en">The reaction proceeds without any intermediate.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(1,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Laju reaksi bergantung pada konsentrasi nukleofil dan substrat.</span>
+                <span class="lang-en">The reaction rate depends on both the nucleophile and substrate concentrations.</span>
+            </button>
+            <div class="feedback" id="fb-1"></div>
+            <div class="pembahasan" id="pem-1">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Pilihan B adalah definisi tepat SN1. A mendeskripsikan SN2 (mekanisme konsertatif/concerted). C salah karena SN1 selalu melalui zat antara karbokation. D juga mendeskripsikan SN2. SN1 adalah orde pertama: <b>v = k[RX]</b> — laju hanya bergantung pada konsentrasi substrat, BUKAN nukleofil.</span>
+                <span class="lang-en"> Option B is the correct definition of SN1. A describes SN2 (concerted mechanism). C is wrong because SN1 always goes through a carbocation intermediate. D also describes SN2. SN1 is first order: <b>v = k[RX]</b> — rate depends only on substrate concentration, NOT the nucleophile.</span>
+            </div>
+        </div>
+
+        <!-- Q2 -->
+        <div class="quiz-item" id="qi-2">
+            <span class="quiz-tag tag-laju"><span class="lang-id">Laju Reaksi</span><span class="lang-en">Reaction Rate</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">2</div>
+                <div class="quiz-q-text lang-id">Jika konsentrasi nukleofil (NaOH) dalam reaksi SN1 digandakan, apa yang terjadi pada laju reaksi?</div>
+                <div class="quiz-q-text lang-en">If the nucleophile (NaOH) concentration in an SN1 reaction is doubled, what happens to the reaction rate?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(2,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Laju reaksi ikut meningkat dua kali lipat.</span>
+                <span class="lang-en">The reaction rate also doubles.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(2,'B',false)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Laju reaksi meningkat empat kali lipat.</span>
+                <span class="lang-en">The reaction rate increases four-fold.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(2,'C',true)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Laju reaksi tidak berubah, karena nukleofil tidak terlibat dalam tahap penentu laju (RDS).</span>
+                <span class="lang-en">The reaction rate does not change, because the nucleophile is not involved in the rate-determining step (RDS).</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(2,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Reaksi akan beralih menjadi mekanisme SN2.</span>
+                <span class="lang-en">The reaction will switch to an SN2 mechanism.</span>
+            </button>
+            <div class="feedback" id="fb-2"></div>
+            <div class="pembahasan" id="pem-2">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Rumus laju SN1 adalah <b>v = k[RX]</b>. Nukleofil hanya terlibat di tahap kedua (cepat), bukan pada tahap penentu laju (RDS = ionisasi). Oleh karena itu, mengubah konsentrasi nukleofil sama sekali tidak mempengaruhi laju reaksi keseluruhan. Ini adalah salah satu bukti eksperimental utama yang membedakan SN1 dari SN2.</span>
+                <span class="lang-en"> The SN1 rate law is <b>v = k[RX]</b>. The nucleophile only participates in the second step (fast step), not in the rate-determining step (RDS = ionization). Therefore, changing the nucleophile concentration has no effect on the overall reaction rate. This is one of the key experimental pieces of evidence distinguishing SN1 from SN2.</span>
+            </div>
+        </div>
+
+        <!-- Q3 -->
+        <div class="quiz-item" id="qi-3">
+            <span class="quiz-tag tag-faktor"><span class="lang-id">Faktor Penentu</span><span class="lang-en">Key Factors</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">3</div>
+                <div class="quiz-q-text lang-id">Di antara substrat berikut, manakah yang paling reaktif dalam reaksi SN1?</div>
+                <div class="quiz-q-text lang-en">Among the following substrates, which one is most reactive in an SN1 reaction?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(3,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">CH₃Br (metil bromida)</span>
+                <span class="lang-en">CH₃Br (methyl bromide)</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(3,'B',false)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">CH₃CH₂Br (etil bromida — primer)</span>
+                <span class="lang-en">CH₃CH₂Br (ethyl bromide — primary)</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(3,'C',false)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">(CH₃)₂CHBr (isopropil bromida — sekunder)</span>
+                <span class="lang-en">(CH₃)₂CHBr (isopropyl bromide — secondary)</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(3,'D',true)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">(CH₃)₃CBr (tersier-butil bromida — tersier)</span>
+                <span class="lang-en">(CH₃)₃CBr (tert-butyl bromide — tertiary)</span>
+            </button>
+            <div class="feedback" id="fb-3"></div>
+            <div class="pembahasan" id="pem-3">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Reaktivitas SN1 ditentukan oleh kestabilan karbokation yang terbentuk: <b>tersier (3°) &gt; sekunder (2°) &gt; primer (1°) &gt; metil</b>. (CH₃)₃CBr (tersier) menghasilkan karbokation (CH₃)₃C⁺ yang distabilkan oleh tiga gugus alkil melalui hiperkonjugasi dan induksi. Ini adalah karbokation tersier yang paling stabil di antara pilihan yang ada, sehingga tahap ionisasi (RDS) paling mudah terjadi → laju SN1 paling cepat.</span>
+                <span class="lang-en"> SN1 reactivity is determined by the stability of the carbocation formed: <b>tertiary (3°) &gt; secondary (2°) &gt; primary (1°) &gt; methyl</b>. (CH₃)₃CBr (tertiary) produces carbocation (CH₃)₃C⁺ stabilized by three alkyl groups via hyperconjugation and induction. This is the most stable tertiary carbocation among the options, so the ionization step (RDS) occurs most easily → fastest SN1 rate.</span>
+            </div>
+        </div>
+
+        <!-- Q4 -->
+        <div class="quiz-item" id="qi-4">
+            <span class="quiz-tag tag-stereokimia"><span class="lang-id">Stereokimia</span><span class="lang-en">Stereochemistry</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">4</div>
+                <div class="quiz-q-text lang-id">Suatu substrat dengan konfigurasi murni <b>(R)</b> pada karbon kiral mengalami reaksi SN1. Produk yang diharapkan adalah...</div>
+                <div class="quiz-q-text lang-en">A substrate with pure <b>(R)</b> configuration at the chiral carbon undergoes SN1 reaction. The expected product is...</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(4,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Hanya produk (S) karena inversi konfigurasi sempurna.</span>
+                <span class="lang-en">Only (S) product due to complete inversion of configuration.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(4,'B',false)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Hanya produk (R) karena retensi konfigurasi.</span>
+                <span class="lang-en">Only (R) product due to retention of configuration.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(4,'C',true)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Campuran rasemik ~50% (R) dan ~50% (S), karena karbokation planar sp² diserang dari dua sisi dengan probabilitas hampir sama.</span>
+                <span class="lang-en">A racemic mixture ~50% (R) and ~50% (S), because the planar sp² carbocation is attacked from both sides with approximately equal probability.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(4,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Hanya produk (R) karena reaksi SN1 selalu mempertahankan konfigurasi awal.</span>
+                <span class="lang-en">Only (R) product because SN1 always retains the original configuration.</span>
+            </button>
+            <div class="feedback" id="fb-4"></div>
+            <div class="pembahasan" id="pem-4">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Ciri khas stereokimia SN1 adalah <b>rasemisasi</b>. Karbokation yang terbentuk bersifat <b>planar sp²</b> — tidak memiliki konfigurasi kiral. Nukleofil dapat menyerang dari sisi atas atau bawah bidang planar dengan probabilitas hampir sama, menghasilkan ~50% produk (R) dan ~50% produk (S). Campuran rasemik ini optis tidak aktif. Berbeda dengan SN2 yang menghasilkan inversi sempurna (100% produk dengan konfigurasi berlawanan).</span>
+                <span class="lang-en"> The hallmark stereochemistry of SN1 is <b>racemization</b>. The formed carbocation is <b>planar sp²</b> — it has no chiral configuration. The nucleophile can attack from above or below the planar surface with nearly equal probability, giving ~50% (R) and ~50% (S) products. This racemic mixture is optically inactive. Contrast with SN2 which gives complete inversion (100% opposite configuration).</span>
+            </div>
+        </div>
+
+        <!-- Q5 -->
+        <div class="quiz-item" id="qi-5">
+            <span class="quiz-tag tag-faktor"><span class="lang-id">Faktor Penentu</span><span class="lang-en">Key Factors</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">5</div>
+                <div class="quiz-q-text lang-id">Mengapa pelarut polar protik seperti air (H₂O) sangat mendukung reaksi SN1?</div>
+                <div class="quiz-q-text lang-en">Why do polar protic solvents like water (H₂O) strongly favor SN1 reactions?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(5,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Karena pelarut polar protik meningkatkan kekuatan nukleofil secara drastis.</span>
+                <span class="lang-en">Because polar protic solvents dramatically increase nucleophile strength.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(5,'B',true)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Karena mampu mensolvasi karbokation (R⁺) dan anion (X⁻) yang terbentuk, sehingga menstabilkan ion-ion tersebut dan menurunkan energi aktivasi tahap ionisasi (RDS).</span>
+                <span class="lang-en">Because they can solvate the formed carbocation (R⁺) and anion (X⁻), stabilizing these ions and lowering the activation energy of the ionization step (RDS).</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(5,'C',false)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Karena pelarut polar protik meningkatkan konsentrasi substrat.</span>
+                <span class="lang-en">Because polar protic solvents increase substrate concentration.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(5,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Karena pelarut polar protik mencegah terjadinya reaksi eliminasi.</span>
+                <span class="lang-en">Because polar protic solvents prevent elimination reactions from occurring.</span>
+            </button>
+            <div class="feedback" id="fb-5"></div>
+            <div class="pembahasan" id="pem-5">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Peran utama pelarut dalam SN1 adalah <b>solvasi ion</b>. Ketika tahap ionisasi terjadi (R–X → R⁺ + X⁻), dua ion terbentuk dari satu molekul netral. Pelarut polar protik (yang memiliki gugus O–H atau N–H) dapat membungkus ion-ion ini melalui interaksi elektrostatik dan ikatan hidrogen, sehingga <b>menstabilkan energi produk ionisasi</b> dan secara efektif menurunkan Ea₁ (energi aktivasi RDS). Ini mempercepat tahap paling lambat dalam SN1.</span>
+                <span class="lang-en"> The main role of solvent in SN1 is <b>ion solvation</b>. When ionization occurs (R–X → R⁺ + X⁻), two ions form from one neutral molecule. Polar protic solvents (with O–H or N–H groups) can wrap around these ions via electrostatic interactions and hydrogen bonds, <b>stabilizing the energy of the ionization products</b> and effectively lowering Ea₁ (activation energy of the RDS). This accelerates the slowest step in SN1.</span>
+            </div>
+        </div>
+
+        <!-- Q6 -->
+        <div class="quiz-item" id="qi-6">
+            <span class="quiz-tag tag-mekanisme"><span class="lang-id">Mekanisme</span><span class="lang-en">Mechanism</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">6</div>
+                <div class="quiz-q-text lang-id">Karbokation yang terbentuk dalam SN1 memiliki geometri...</div>
+                <div class="quiz-q-text lang-en">The carbocation formed in SN1 has... geometry</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(6,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Tetrahedral sp³ dengan 4 ikatan kovalen.</span>
+                <span class="lang-en">Tetrahedral sp³ with 4 covalent bonds.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(6,'B',true)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Trigonal planar sp² dengan orbital p kosong tegak lurus bidang molekul.</span>
+                <span class="lang-en">Trigonal planar sp² with an empty p orbital perpendicular to the molecular plane.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(6,'C',false)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Linear sp dengan 2 ikatan.</span>
+                <span class="lang-en">Linear sp with 2 bonds.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(6,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Piramidal trigonal sp³ dengan sepasang elektron bebas.</span>
+                <span class="lang-en">Trigonal pyramidal sp³ with a lone pair of electrons.</span>
+            </button>
+            <div class="feedback" id="fb-6"></div>
+            <div class="pembahasan" id="pem-6">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Karbokation (R⁺) memiliki <b>3 ikatan</b> dan <b>1 orbital p kosong</b>. Tiga ikatan tersebut tersusun dalam bidang datar dengan sudut ~120° → <b>hibridisasi sp², geometri trigonal planar</b>. Orbital p yang kosong tegak lurus terhadap bidang ini adalah yang membuat karbokation sangat reaktif (elektrofil kuat) dan mengapa nukleofil bisa menyerang dari kedua sisi (atas/bawah) menghasilkan rasemisasi. Tetrahedral (sp³) adalah geometri karbon dengan 4 ikatan, seperti pada substrat awal sebelum ionisasi.</span>
+                <span class="lang-en"> A carbocation (R⁺) has <b>3 bonds</b> and <b>1 empty p orbital</b>. The three bonds are arranged in a flat plane with ~120° angles → <b>sp² hybridization, trigonal planar geometry</b>. The empty p orbital perpendicular to this plane is what makes the carbocation highly reactive (strong electrophile) and why nucleophiles can attack from both sides (above/below), leading to racemization. Tetrahedral (sp³) is the geometry of carbon with 4 bonds, like the initial substrate before ionization.</span>
+            </div>
+        </div>
+
+        <!-- Q7 -->
+        <div class="quiz-item" id="qi-7">
+            <span class="quiz-tag tag-perbandingan"><span class="lang-id">SN1 vs SN2</span><span class="lang-en">SN1 vs SN2</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">7</div>
+                <div class="quiz-q-text lang-id">Mengapa substrat <b>primer (1°)</b> lebih suka bereaksi melalui mekanisme SN2 daripada SN1?</div>
+                <div class="quiz-q-text lang-en">Why do <b>primary (1°)</b> substrates prefer the SN2 mechanism over SN1?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(7,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Karena substrat primer tidak memiliki gugus pergi yang baik.</span>
+                <span class="lang-en">Because primary substrates don't have good leaving groups.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(7,'B',false)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Karena substrat primer menghasilkan karbokation yang terlalu stabil untuk bereaksi lebih lanjut.</span>
+                <span class="lang-en">Because primary substrates produce carbocations that are too stable to react further.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(7,'C',true)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Karena karbokation primer (1°) sangat tidak stabil (hanya 1 gugus alkil), sehingga tahap ionisasi SN1 memerlukan energi aktivasi yang sangat tinggi. Di lain pihak, hambatan sterik minimal pada substrat primer memudahkan serangan langsung nukleofil (SN2).</span>
+                <span class="lang-en">Because primary (1°) carbocations are very unstable (only 1 alkyl group), so SN1 ionization requires very high activation energy. Meanwhile, minimal steric hindrance in primary substrates makes direct nucleophilic attack (SN2) easy.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(7,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Karena pelarut polar protik tidak dapat mensolvasi substrat primer.</span>
+                <span class="lang-en">Because polar protic solvents cannot solvate primary substrates.</span>
+            </button>
+            <div class="feedback" id="fb-7"></div>
+            <div class="pembahasan" id="pem-7">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Ini adalah konsep inti persaingan SN1 vs SN2. Karbokation primer (R–CH₂⁺) hanya memiliki satu gugus alkil penstabil, sehingga sangat tidak stabil dan sulit terbentuk. Energi aktivasi ionisasi (Ea₁ RDS) sangat tinggi → SN1 tidak ekonomis. Sebaliknya, karbon primer memiliki hambatan sterik rendah, sehingga nukleofil (terutama yang kuat) dapat dengan mudah mendekati dan menyerang dari belakang melalui mekanisme backside attack SN2. Untuk substrat tersier, situasinya terbalik: karbokation tersier sangat stabil (SN1 mudah) tetapi hambatan sterik besar menghalangi SN2.</span>
+                <span class="lang-en"> This is the core concept of SN1 vs SN2 competition. A primary carbocation (R–CH₂⁺) has only one stabilizing alkyl group, making it highly unstable and difficult to form. The ionization activation energy (Ea₁ RDS) is very high → SN1 is not feasible. In contrast, a primary carbon has low steric hindrance, so nucleophiles (especially strong ones) can easily approach and attack from the back via the SN2 backside attack. For tertiary substrates, the situation reverses: tertiary carbocation is very stable (SN1 easy) but large steric bulk blocks SN2.</span>
+            </div>
+        </div>
+
+        <!-- Q8 -->
+        <div class="quiz-item" id="qi-8">
+            <span class="quiz-tag tag-mekanisme"><span class="lang-id">Mekanisme</span><span class="lang-en">Mechanism</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">8</div>
+                <div class="quiz-q-text lang-id">Dalam diagram energi reaksi SN1, terdapat <b>dua puncak energi</b>. Apa yang diwakili oleh masing-masing puncak tersebut?</div>
+                <div class="quiz-q-text lang-en">In the SN1 reaction energy diagram, there are <b>two energy peaks</b>. What does each peak represent?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(8,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Keduanya mewakili karbokation yang terbentuk dalam dua posisi berbeda.</span>
+                <span class="lang-en">Both represent carbocations formed in two different positions.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(8,'B',true)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Puncak pertama (lebih tinggi) = keadaan transisi ionisasi C–X (RDS); puncak kedua (lebih rendah) = keadaan transisi serangan nukleofil pada karbokation.</span>
+                <span class="lang-en">First peak (higher) = transition state for C–X ionization (RDS); second peak (lower) = transition state for nucleophilic attack on carbocation.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(8,'C',false)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Puncak pertama = energi produk; puncak kedua = energi reaktan.</span>
+                <span class="lang-en">First peak = product energy; second peak = reactant energy.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(8,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Keduanya mewakili dua produk yang mungkin: enantiomer R dan enantiomer S.</span>
+                <span class="lang-en">Both represent two possible products: R enantiomer and S enantiomer.</span>
+            </button>
+            <div class="feedback" id="fb-8"></div>
+            <div class="pembahasan" id="pem-8">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Diagram energi SN1 memiliki <b>dua puncak (keadaan transisi / TS)</b> dan <b>satu lembah (karbokation sebagai zat antara)</b>. <b>TS₁</b> (puncak pertama, lebih tinggi) = keadaan transisi saat ikatan C–X mulai putus → ini adalah RDS karena Ea₁ besar. <b>TS₂</b> (puncak kedua, lebih rendah) = keadaan transisi saat nukleofil mulai membentuk ikatan dengan karbokation → ini bukan RDS karena Ea₂ kecil. Lembah di antara dua puncak adalah posisi karbokation R⁺ + X⁻ (zat antara yang nyata / real intermediate).</span>
+                <span class="lang-en"> The SN1 energy diagram has <b>two peaks (transition states / TS)</b> and <b>one valley (carbocation as intermediate)</b>. <b>TS₁</b> (first peak, higher) = transition state when C–X bond begins breaking → this is the RDS because Ea₁ is large. <b>TS₂</b> (second peak, lower) = transition state when nucleophile starts bonding to carbocation → not the RDS because Ea₂ is small. The valley between the two peaks is where the carbocation R⁺ + X⁻ intermediate sits (a real, isolable intermediate).</span>
+            </div>
+        </div>
+
+        <!-- Q9 -->
+        <div class="quiz-item" id="qi-9">
+            <span class="quiz-tag tag-faktor"><span class="lang-id">Faktor Penentu</span><span class="lang-en">Key Factors</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">9</div>
+                <div class="quiz-q-text lang-id">Urutan kemampuan gugus pergi (leaving group) yang benar dari yang terbaik ke terburuk dalam reaksi SN1 adalah...</div>
+                <div class="quiz-q-text lang-en">The correct order of leaving group ability from best to worst in SN1 reactions is...</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(9,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">F⁻ &gt; Cl⁻ &gt; Br⁻ &gt; I⁻</span>
+                <span class="lang-en">F⁻ &gt; Cl⁻ &gt; Br⁻ &gt; I⁻</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(9,'B',true)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">I⁻ &gt; Br⁻ &gt; Cl⁻ &gt; F⁻</span>
+                <span class="lang-en">I⁻ &gt; Br⁻ &gt; Cl⁻ &gt; F⁻</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(9,'C',false)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Cl⁻ &gt; Br⁻ &gt; I⁻ &gt; F⁻</span>
+                <span class="lang-en">Cl⁻ &gt; Br⁻ &gt; I⁻ &gt; F⁻</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(9,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">OH⁻ &gt; F⁻ &gt; Cl⁻ &gt; Br⁻</span>
+                <span class="lang-en">OH⁻ &gt; F⁻ &gt; Cl⁻ &gt; Br⁻</span>
+            </button>
+            <div class="feedback" id="fb-9"></div>
+            <div class="pembahasan" id="pem-9">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Kemampuan gugus pergi bergantung pada seberapa stabil anion yang terbentuk setelah pergi. Gugus pergi yang baik adalah <b>basa konjugat lemah</b> — artinya gugus pergi yang baik berasal dari asam kuat. Dalam halida: <b>HI adalah asam terkuat, sehingga I⁻ adalah basa paling lemah → leaving group terbaik</b>. Urutan asam kuat: HI &gt; HBr &gt; HCl &gt;&gt; HF. Oleh karena itu leaving group: <b>I⁻ &gt; Br⁻ &gt; Cl⁻ &gt; F⁻</b>. F⁻ adalah basa yang relatif kuat → leaving group sangat buruk (alkil fluorida hampir tidak pernah bereaksi SN1/SN2).</span>
+                <span class="lang-en"> Leaving group ability depends on how stable the departing anion is. A good leaving group is a <b>weak conjugate base</b> — meaning good leaving groups come from strong acids. Among halides: <b>HI is the strongest acid, so I⁻ is the weakest base → best leaving group</b>. Acid strength order: HI &gt; HBr &gt; HCl &gt;&gt; HF. Therefore leaving group ability: <b>I⁻ &gt; Br⁻ &gt; Cl⁻ &gt; F⁻</b>. F⁻ is a relatively strong base → very poor leaving group (alkyl fluorides almost never undergo SN1/SN2).</span>
+            </div>
+        </div>
+
+        <!-- Q10 -->
+        <div class="quiz-item" id="qi-10">
+            <span class="quiz-tag tag-perbandingan"><span class="lang-id">SN1 vs SN2</span><span class="lang-en">SN1 vs SN2</span></span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">10</div>
+                <div class="quiz-q-text lang-id">Seorang kimiawan mereaksikan <b>(R)-2-bromobutana</b> dengan NaOH berair (aqueous). Ia mengamati terbentuknya <b>campuran rasemik</b> sebagai produk utama. Mekanisme apakah yang paling mungkin mendominasi?</div>
+                <div class="quiz-q-text lang-en">A chemist reacts <b>(R)-2-bromobutane</b> with aqueous NaOH. A <b>racemic mixture</b> is observed as the main product. Which mechanism most likely dominates?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(10,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">SN2, karena menghasilkan inversi konfigurasi sempurna.</span>
+                <span class="lang-en">SN2, because it gives complete inversion of configuration.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(10,'B',true)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">SN1, karena substrat sekunder dalam pelarut polar protik (air) cenderung bereaksi melalui karbokation, menghasilkan campuran rasemik ~50:50.</span>
+                <span class="lang-en">SN1, because a secondary substrate in polar protic solvent (water) tends to react via carbocation, yielding a ~50:50 racemic mixture.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(10,'C',false)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Eliminasi E2, menghasilkan alkena sebagai produk utama.</span>
+                <span class="lang-en">Elimination E2, giving an alkene as the main product.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(10,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Tidak ada reaksi yang terjadi karena substrat sekunder tidak reaktif.</span>
+                <span class="lang-en">No reaction occurs because secondary substrates are not reactive.</span>
+            </button>
+            <div class="feedback" id="fb-10"></div>
+            <div class="pembahasan" id="pem-10">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> Analisis kasus ini: <br>• <b>Substrat:</b> (R)-2-bromobutana = <b>sekunder (2°)</b> — dapat berlangsung SN1 atau SN2.<br>• <b>Pelarut:</b> Air (polar protik) — mendukung <b>SN1</b> (solvasi ion) dan <i>kurang</i> mendukung SN2 (air mensolvasi nukleofil OH⁻ sehingga melemahkannya).<br>• <b>Bukti produk:</b> Campuran rasemik → hanya bisa dihasilkan oleh SN1 (melalui karbokation planar). Jika SN2 mendominasi, produk utama adalah <b>100% (S)-2-butanol</b> (inversi sempurna).<br>Kesimpulan: <b>SN1 mendominasi</b> pada kondisi ini.</span>
+                <span class="lang-en"> Analysis of this case:<br>• <b>Substrate:</b> (R)-2-bromobutane = <b>secondary (2°)</b> — can undergo SN1 or SN2.<br>• <b>Solvent:</b> Water (polar protic) — favors <b>SN1</b> (ion solvation) and <i>disfavors</i> SN2 (water solvates nucleophile OH⁻, weakening it).<br>• <b>Product evidence:</b> Racemic mixture → can only be produced by SN1 (via planar carbocation). If SN2 dominated, the main product would be <b>100% (S)-2-butanol</b> (complete inversion).<br>Conclusion: <b>SN1 dominates</b> under these conditions.</span>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="quiz-summary" id="quiz-summary">
+            <h3 class="lang-id">🎉 Selesai! Hasil Evaluasi Anda</h3>
+            <h3 class="lang-en">🎉 Finished! Your Evaluation Result</h3>
+            <div class="big-score" id="final-score">0 / 10</div>
+            <p id="summary-message"></p>
+            <button class="btn-retake" onclick="retakeQuiz()">
+                <span class="lang-id">🔁 Ulangi Latihan</span><span class="lang-en">🔁 Retake Quiz</span>
+            </button>
+        </div>
+
+    </div><!-- end card -->
+
+</div><!-- end container -->
+
+<script>
+    // ===== LANGUAGE SYSTEM =====
+    function setLanguage(lang) {
+        document.getElementById('docLang').setAttribute('lang', lang);
+        document.getElementById('btn-id').classList.toggle('active', lang === 'id');
+        document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+    }
+
+    // ===== MOLECULE DATA (XYZ) =====
+    const molData = {
+        // tert-Butyl Bromide: (CH3)3CBr
+        tBuBr: `5\ntert-Butyl Bromide\nC  0.00  0.00  0.00\nC  1.53  0.00  0.00\nC -0.51  1.45  0.00\nC -0.51 -0.75  1.30\nBr-0.51 -0.75 -1.70`,
+
+        // tert-Butyl Cation: (CH3)3C+ planar sp2
+        tBuCation: `4\ntert-Butyl Cation\nC  0.00  0.00  0.00\nC  1.53  0.00  0.00\nC -0.77  1.33  0.00\nC -0.77 -1.33  0.00`,
+
+        // tert-Butyl Alcohol: (CH3)3COH
+        tBuOH: `6\ntert-Butyl Alcohol\nC  0.00  0.00  0.00\nC  1.53  0.00  0.00\nC -0.51  1.45  0.00\nC -0.51 -0.75  1.30\nO -0.51 -0.75 -1.50\nH -1.47 -0.90 -1.60`,
+
+        // 2-Chloropropane: CH3CHClCH3
+        iprCl: `4\n2-Chloropropane\nC -1.25  0.00  0.00\nC  0.00  0.70  0.00\nC  1.25  0.00  0.00\nCl 0.00 -1.15  1.10`
+    };
+
+    let viewers = {};
+    let initialViews = {};
+    let labelsState = {};
+    let spinInterval = null;
+
+    // ===== INIT VIEWERS =====
+    function initViewer(elementId, xyzData) {
+        let el = document.getElementById(elementId);
+        let viewer = $3Dmol.createViewer(el, { backgroundColor: 'white' });
+        viewer.addModel(xyzData, "xyz");
+        viewer.setStyle({}, {
+            stick:  { radius: 0.15, colorscheme: 'Jmol' },
+            sphere: { scale: 0.35, colorscheme: 'Jmol' }
+        });
+        viewer.zoomTo();
+        viewer.render();
+        setTimeout(() => { initialViews[elementId] = viewer.getView(); }, 100);
+        viewers[elementId] = viewer;
+        labelsState[elementId] = false;
+    }
+
+    window.onload = function() {
+        initViewer('viewer-tbb',  molData.tBuBr);
+        initViewer('viewer-tbc',  molData.tBuCation);
+        initViewer('viewer-tba',  molData.tBuOH);
+        initViewer('viewer-2cp',  molData.iprCl);
+    };
+
+    // ===== RESET VIEW =====
+    function resetView(id) {
+        let v = viewers[id];
+        v.removeAllLabels();
+        labelsState[id] = false;
+        v.setStyle({}, {
+            stick:  { radius: 0.15, colorscheme: 'Jmol' },
+            sphere: { scale: 0.35, colorscheme: 'Jmol' }
+        });
+        if (initialViews[id]) {
+            v.setView(initialViews[id]);
+        } else {
+            v.zoomTo();
+        }
+        v.render();
+    }
+
+    // ===== TOGGLE LABELS =====
+    function toggleLabels(id) {
+        let v = viewers[id];
+        if (!labelsState[id]) {
+            let atoms = v.getModel().selectedAtoms({});
+            atoms.forEach(function(atom) {
+                v.addLabel(atom.elem, {
+                    position: { x: atom.x, y: atom.y, z: atom.z },
+                    backgroundColor: "rgba(0,0,0,0.75)",
+                    fontColor: "white",
+                    fontSize: 16,
+                    alignment: "center"
+                });
+            });
+            labelsState[id] = true;
+        } else {
+            v.removeAllLabels();
+            labelsState[id] = false;
+        }
+        v.render();
+    }
+
+    // ===== TOGGLE 2D / 3D =====
+    function toggle2D3D(viewerId, text2dId) {
+        let vDiv = document.getElementById(viewerId);
+        let tDiv = document.getElementById(text2dId);
+        let showing3d = (vDiv.style.display !== "none");
+        vDiv.style.display = showing3d ? "none" : "block";
+        tDiv.style.display = showing3d ? "flex" : "none";
+        tDiv.style.alignItems = "center";
+        tDiv.style.justifyContent = "center";
+    }
+
+    // ===== ROTATE ALL =====
+    function rotateAll(ids) {
+        if (spinInterval) { clearInterval(spinInterval); spinInterval = null; }
+        spinInterval = setInterval(() => {
+            ids.forEach(id => {
+                if (document.getElementById(id) && document.getElementById(id).style.display !== "none") {
+                    viewers[id].rotate(1.5, "y");
+                    viewers[id].render();
+                }
+            });
+        }, 50);
+    }
+
+    function stopRotate() {
+        if (spinInterval) { clearInterval(spinInterval); spinInterval = null; }
+    }
+
+    // ===== QUIZ SYSTEM =====
+    let score = 0;
+    let answered = 0;
+    const totalQ = 10;
+    const correctAnswers = { 1:'B', 2:'C', 3:'D', 4:'C', 5:'B', 6:'B', 7:'C', 8:'B', 9:'B', 10:'B' };
+
+    function submitAnswer(qNum, choice, isCorrect) {
+        let item = document.getElementById('qi-' + qNum);
+        if (item.classList.contains('answered-correct') || item.classList.contains('answered-wrong')) return;
+
+        let lang = document.getElementById('docLang').getAttribute('lang');
+        let fb   = document.getElementById('fb-' + qNum);
+        let pem  = document.getElementById('pem-' + qNum);
+
+        item.querySelectorAll('.quiz-option').forEach(btn => {
+            btn.disabled = true;
+            let btnChoice = btn.getAttribute('onclick').match(/'([A-D])'/)[1];
+            if (btnChoice === correctAnswers[qNum]) {
+                btn.classList.add('correct-choice');
+            } else if (btnChoice === choice && !isCorrect) {
+                btn.classList.add('wrong-choice');
+            }
+        });
+
+        if (isCorrect) {
+            fb.className = 'feedback correct';
+            fb.innerHTML = lang === 'id' ? "✅ Jawaban Anda Tepat!" : "✅ Correct Answer!";
+            item.classList.add('answered-correct');
+            score++;
+        } else {
+            fb.className = 'feedback wrong';
+            fb.innerHTML = lang === 'id'
+                ? "❌ Jawaban Kurang Tepat. Lihat pembahasan di bawah."
+                : "❌ Incorrect. See the explanation below.";
+            item.classList.add('answered-wrong');
+        }
+
+        pem.style.display = 'block';
+        answered++;
+        document.getElementById('answered-count').textContent = answered;
+        document.getElementById('answered-count-en').textContent = answered;
+        document.getElementById('score-display').textContent = score;
+        document.getElementById('score-display-en').textContent = score;
+
+        if (answered === totalQ) showSummary();
+    }
+
+    function showSummary() {
+        let lang = document.getElementById('docLang').getAttribute('lang');
+        let summary = document.getElementById('quiz-summary');
+        document.getElementById('final-score').textContent = score + ' / ' + totalQ;
+
+        let msg = '';
+        if (score === totalQ) {
+            msg = lang === 'id'
+                ? '🏆 Sempurna! Anda menguasai seluruh materi mekanisme SN1 dengan sangat baik!'
+                : '🏆 Perfect! You have fully mastered the SN1 reaction mechanism!';
+        } else if (score >= 8) {
+            msg = lang === 'id'
+                ? '👏 Bagus Sekali! Anda memahami sebagian besar konsep SN1. Tinjau kembali soal yang salah.'
+                : '👏 Excellent! You understand most SN1 concepts. Review the incorrect ones.';
+        } else if (score >= 6) {
+            msg = lang === 'id'
+                ? '📖 Cukup Baik. Beberapa konsep perlu dipelajari lebih mendalam.'
+                : '📖 Good. Some concepts need deeper study.';
+        } else if (score >= 4) {
+            msg = lang === 'id'
+                ? '📚 Perlu Belajar Lebih Giat. Fokus pada mekanisme dua tahap dan stereokimia SN1.'
+                : '📚 Needs more study. Focus on the two-step mechanism and SN1 stereochemistry.';
+        } else {
+            msg = lang === 'id'
+                ? '💡 Pelajari kembali materi dari awal dan coba lagi. Semangat!'
+                : '💡 Please review the material from the beginning and try again. Keep going!';
+        }
+        document.getElementById('summary-message').textContent = msg;
+        summary.style.display = 'block';
+        summary.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function retakeQuiz() {
+        score = 0;
+        answered = 0;
+        document.getElementById('answered-count').textContent = 0;
+        document.getElementById('answered-count-en').textContent = 0;
+        document.getElementById('score-display').textContent = 0;
+        document.getElementById('score-display-en').textContent = 0;
+        document.getElementById('quiz-summary').style.display = 'none';
+
+        for (let i = 1; i <= totalQ; i++) {
+            let item = document.getElementById('qi-' + i);
+            item.classList.remove('answered-correct', 'answered-wrong');
+            item.querySelectorAll('.quiz-option').forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('correct-choice', 'wrong-choice');
+            });
+            let fb = document.getElementById('fb-' + i);
+            fb.className = 'feedback';
+            fb.innerHTML = '';
+            document.getElementById('pem-' + i).style.display = 'none';
+        }
+        document.getElementById('latihan-soal').scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
+</body>
+</html>

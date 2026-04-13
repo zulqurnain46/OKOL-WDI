@@ -1,0 +1,1813 @@
+<!DOCTYPE html>
+<html lang="id" id="docLang">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OKOL-WDI — Modul Interaktif 3D Stereoselektivitas & Stereospesifik</title>
+    <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0a3d91;
+            --secondary: #1565c0;
+            --accent: #e63946;
+            --gold: #f4a261;
+            --light: #f0f4ff;
+            --dark: #0d1b2a;
+            --success: #2d6a4f;
+            --success-bg: #d8f3dc;
+            --danger: #c1121f;
+            --danger-bg: #ffe0e0;
+            --info: #1a759f;
+            --info-bg: #e0f4ff;
+            --card-bg: #ffffff;
+            --border: #dce3f0;
+            --text-muted: #5a6a7e;
+            --radius: 12px;
+            --purple: #6d28d9;
+            --purple-bg: #f5f3ff;
+            --teal: #0e7490;
+            --teal-bg: #ecfeff;
+            --orange: #c2410c;
+            --orange-bg: #fff7ed;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            background: linear-gradient(160deg, #e8edf8 0%, #f5f0ff 100%);
+            background-attachment: fixed;
+            color: var(--dark);
+            line-height: 1.7;
+            margin: 0;
+            padding: 0;
+        }
+
+        [lang="en"] .lang-id { display: none !important; }
+        [lang="id"] .lang-en { display: none !important; }
+
+        .lang-switch {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 1000;
+            background: white;
+            padding: 5px;
+            border-radius: 40px;
+            box-shadow: 0 4px 20px rgba(10,61,145,0.18);
+            display: flex;
+            gap: 4px;
+        }
+        .lang-btn {
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            font-weight: 700;
+            font-size: 0.8em;
+            border-radius: 30px;
+            padding: 5px 12px;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .lang-btn.active { background: var(--primary); color: white; }
+
+        .container { max-width: 1040px; margin: auto; padding: 20px 16px 60px; }
+
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 24px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 18px 28px;
+            border-radius: var(--radius);
+            box-shadow: 0 2px 12px rgba(10,61,145,0.07);
+            border: 1px solid var(--border);
+        }
+        .logo-container img {
+            max-height: 80px;
+            max-width: 160px;
+            object-fit: contain;
+        }
+
+        .nav-bar {
+            background: white;
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 2px 12px rgba(10,61,145,0.07);
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 4px 8px;
+        }
+        .nav-bar a {
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.88em;
+            padding: 5px 10px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .nav-bar a:hover { background: var(--light); color: var(--accent); }
+
+        header {
+            background: linear-gradient(135deg, #0a3d91 0%, #6d28d9 100%);
+            color: white;
+            padding: 36px 24px 30px;
+            border-radius: var(--radius);
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 30px rgba(109,40,217,0.25);
+            position: relative;
+            overflow: hidden;
+        }
+        header::before {
+            content: '';
+            position: absolute;
+            top: -40px; right: -40px;
+            width: 220px; height: 220px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 50%;
+        }
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -60px; left: -30px;
+            width: 180px; height: 180px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 50%;
+        }
+        header h1 { margin: 0; font-size: 2em; font-weight: 700; position: relative; z-index: 1; }
+        header h3 { margin: 8px 0 0; font-weight: 300; opacity: 0.88; position: relative; z-index: 1; }
+
+        .card {
+            background: var(--card-bg);
+            padding: 28px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            box-shadow: 0 2px 14px rgba(10,61,145,0.07);
+            border: 1px solid var(--border);
+            scroll-margin-top: 80px;
+        }
+        .card-title {
+            color: var(--primary);
+            border-bottom: 2px solid var(--light);
+            padding-bottom: 10px;
+            margin-top: 0;
+            font-size: 1.15em;
+            font-weight: 700;
+        }
+
+        .grid-2 {
+            display: grid;
+            gap: 20px;
+            margin-top: 20px;
+            grid-template-columns: 1fr 1fr;
+        }
+        .grid-3 {
+            display: grid;
+            gap: 16px;
+            margin-top: 16px;
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .viewer-box {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            background: var(--light);
+            text-align: center;
+        }
+        .viewer-box h4 {
+            margin: 0 0 10px;
+            color: var(--secondary);
+            font-size: 0.95em;
+            font-weight: 700;
+        }
+        .view-container {
+            width: 100%;
+            height: 240px;
+            position: relative;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #e0e8f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        .view-container.tall { height: 290px; }
+        .mol-3d { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+        .mol-2d {
+            display: none;
+            font-size: 1.1em;
+            font-weight: 700;
+            color: var(--dark);
+            font-family: 'IBM Plex Mono', monospace;
+            word-break: break-all;
+            padding: 14px;
+            text-align: center;
+            position: absolute;
+            width: 100%;
+            line-height: 1.8;
+        }
+
+        button {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 7px 13px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.82em;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-weight: 600;
+            margin: 3px;
+            transition: all 0.2s;
+            letter-spacing: 0.01em;
+        }
+        button:hover { background: var(--primary); transform: translateY(-1px); box-shadow: 0 3px 10px rgba(10,61,145,0.2); }
+        button:active { transform: translateY(0); }
+        .btn-warning { background: var(--gold); color: #3d1f00; }
+        .btn-warning:hover { background: #e08c47; }
+        .btn-info { background: var(--info); }
+        .btn-info:hover { background: #0f5680; }
+        .btn-purple { background: var(--purple); }
+        .btn-purple:hover { background: #5b21b6; }
+        .btn-teal { background: var(--teal); }
+        .btn-teal:hover { background: #0c6075; }
+        .btn-danger-outline {
+            background: transparent;
+            color: var(--accent);
+            border: 2px solid var(--accent);
+        }
+        .btn-danger-outline:hover { background: var(--accent); color: white; }
+        .btn-group { text-align: center; margin-top: 14px; }
+
+        /* Reaction Arrow SVG */
+        .reaction-scheme {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            margin: 16px 0;
+            text-align: center;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+        .reaction-svg { width: 100%; max-width: 700px; }
+
+        /* Info boxes */
+        .info-box {
+            border-radius: 8px;
+            padding: 14px 18px;
+            margin: 14px 0;
+            font-size: 0.9em;
+            border-left: 4px solid;
+        }
+        .info-purple { background: var(--purple-bg); border-color: var(--purple); color: #3b0764; }
+        .info-teal   { background: var(--teal-bg);   border-color: var(--teal);   color: #164e63; }
+        .info-orange { background: var(--orange-bg); border-color: var(--orange); color: #7c2d12; }
+        .info-success{ background: var(--success-bg);border-color: var(--success);color: #1a3a2a; }
+        .info-danger { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
+        .info-box strong { display: block; margin-bottom: 4px; font-size: 1em; }
+
+        /* Comparison badge */
+        .vs-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 16px 0;
+            flex-wrap: wrap;
+        }
+        .badge-pill {
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.85em;
+        }
+        .badge-blue   { background: #dbeafe; color: #1e3a8a; }
+        .badge-violet { background: #ede9fe; color: #4c1d95; }
+        .badge-vs     { background: var(--dark); color: white; border-radius: 50%; width: 32px; height: 32px; display:flex; align-items:center; justify-content:center; font-weight:800; flex-shrink:0; }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 11px 14px; text-align: left; }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:nth-child(even) td { background: #f7faff; }
+
+        /* Product ratio bar */
+        .ratio-bar-container { margin: 16px 0; }
+        .ratio-label { display: flex; justify-content: space-between; font-size: 0.82em; font-weight: 700; margin-bottom: 4px; color: var(--text-muted); }
+        .ratio-bar { height: 22px; border-radius: 6px; background: #e5e7eb; overflow: hidden; display: flex; }
+        .ratio-fill-r { height: 100%; background: linear-gradient(90deg, #2d6a4f, #52b788); border-radius: 6px 0 0 6px; display: flex; align-items: center; padding-left: 8px; font-size: 0.78em; font-weight: 700; color: white; }
+        .ratio-fill-s { height: 100%; background: linear-gradient(90deg, #c1121f, #e63946); border-radius: 0 6px 6px 0; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 0.78em; font-weight: 700; color: white; }
+
+        /* QUIZ */
+        .quiz-progress {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--light);
+            border-radius: 10px;
+            padding: 12px 18px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+        .quiz-progress-text { font-weight: 700; color: var(--primary); font-size: 0.9em; }
+        .score-badge {
+            background: var(--primary);
+            color: white;
+            padding: 5px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.88em;
+        }
+        .quiz-item {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 22px;
+            margin-bottom: 18px;
+            transition: border 0.2s;
+        }
+        .quiz-item.answered-correct { border-color: var(--success); }
+        .quiz-item.answered-wrong   { border-color: var(--danger); }
+        .quiz-q-header { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; }
+        .quiz-number {
+            background: var(--primary);
+            color: white;
+            min-width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85em;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .quiz-q-text { font-weight: 600; font-size: 0.97em; line-height: 1.6; }
+        .quiz-tag {
+            display: inline-block;
+            font-size: 0.72em;
+            font-weight: 700;
+            padding: 2px 9px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .tag-selektif { background: #ede9fe; color: #4c1d95; }
+        .tag-spesifik  { background: #ecfeff;  color: #164e63; }
+        .tag-reaksi    { background: #fff7ed;  color: #7c2d12; }
+        .tag-konsep    { background: #fce7f3;  color: #9d174d; }
+        .tag-mekanisme { background: #f0fdf4;  color: #166534; }
+
+        .quiz-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            width: 100%;
+            text-align: left;
+            background: #fafbff;
+            color: var(--dark);
+            border: 1.5px solid var(--border);
+            margin: 6px 0;
+            padding: 11px 14px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.2s;
+            transform: none;
+            box-shadow: none;
+        }
+        .quiz-option:hover:not(:disabled) {
+            background: var(--light);
+            border-color: var(--secondary);
+            transform: translateX(4px);
+        }
+        .quiz-option:disabled { cursor: default; transform: none; }
+        .quiz-option.correct-choice { background: var(--success-bg); border-color: var(--success); color: var(--success); font-weight: 700; }
+        .quiz-option.wrong-choice   { background: var(--danger-bg);  border-color: var(--danger);  color: var(--danger);  font-weight: 700; }
+        .quiz-option .opt-letter {
+            background: var(--primary);
+            color: white;
+            min-width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .quiz-option.correct-choice .opt-letter { background: var(--success); }
+        .quiz-option.wrong-choice   .opt-letter { background: var(--danger); }
+
+        .feedback {
+            font-weight: 700;
+            margin-top: 12px;
+            font-size: 0.9em;
+            display: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+        .feedback.correct { background: var(--success-bg); color: var(--success); display: block; }
+        .feedback.wrong   { background: var(--danger-bg);  color: var(--danger);  display: block; }
+
+        .pembahasan {
+            background: var(--info-bg);
+            border-left: 4px solid var(--info);
+            padding: 14px 16px;
+            margin-top: 10px;
+            display: none;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.88em;
+            line-height: 1.75;
+        }
+        .pembahasan strong { color: var(--primary); }
+
+        .quiz-summary {
+            background: linear-gradient(135deg, #0a3d91, #6d28d9);
+            color: white;
+            border-radius: var(--radius);
+            padding: 30px;
+            text-align: center;
+            display: none;
+            margin-top: 20px;
+        }
+        .quiz-summary h3 { margin: 0 0 10px; font-size: 1.5em; }
+        .quiz-summary .big-score { font-size: 3em; font-weight: 700; }
+        .quiz-summary p { opacity: 0.88; margin: 8px 0 20px; }
+        .btn-retake { background: white; color: var(--primary); font-weight: 700; padding: 10px 28px; border-radius: 8px; font-size: 1em; }
+        .btn-retake:hover { background: var(--light); }
+
+        /* Stereo 3D annotation */
+        .stereo-annotation {
+            background: white;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-top: 10px;
+            font-size: 0.82em;
+            border: 1px solid var(--border);
+            text-align: left;
+            line-height: 1.6;
+        }
+        .stereo-annotation .annot-r { color: #2d6a4f; font-weight: 700; }
+        .stereo-annotation .annot-s { color: #c1121f; font-weight: 700; }
+
+        /* Wedge-dash 2D SVG inline */
+        .svg-2d-panel {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+        }
+        .svg-2d-panel h4 { color: var(--secondary); margin: 0 0 10px; font-size: 0.95em; }
+
+        /* Highlight concept box */
+        .concept-highlight {
+            background: linear-gradient(135deg, #ede9fe 0%, #dbeafe 100%);
+            border-radius: 10px;
+            padding: 18px 22px;
+            margin: 18px 0;
+            border-left: 5px solid var(--purple);
+        }
+        .concept-highlight p { margin: 6px 0; font-size: 0.93em; }
+        .concept-highlight strong { color: var(--purple); }
+
+        @media (max-width: 768px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            .lang-switch { top: 10px; right: 10px; }
+            header h1 { font-size: 1.4em; }
+            .nav-bar { top: 8px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="lang-switch">
+    <button class="lang-btn active" id="btn-id" onclick="setLanguage('id')">🇮🇩 ID</button>
+    <button class="lang-btn" id="btn-en" onclick="setLanguage('en')">🇬🇧 EN</button>
+</div>
+
+<div class="container">
+
+    <div class="logo-container">
+        <img src="logo-okol-wdi.jpg"     alt="Logo OKOL-WDI">
+        <img src="logo-unsri.jpg"         alt="Logo UNSRI">
+        <img src="logo-bpsdm-sumsel.jpg"  alt="Logo BPSDM SUMSEL">
+        <img src="logo-asn-berakhlak.jpg" alt="Logo ASN BERAKHLAK">
+    </div>
+
+    <nav class="nav-bar">
+        <a href="#konsep-dasar"><span class="lang-id">📖 Konsep Dasar</span><span class="lang-en">📖 Core Concepts</span></a>
+        <a href="#stereospesifik"><span class="lang-id">🔬 Stereospesifik</span><span class="lang-en">🔬 Stereospecific</span></a>
+        <a href="#stereoselektif"><span class="lang-id">⚗️ Stereoselektif</span><span class="lang-en">⚗️ Stereoselective</span></a>
+        <a href="#reaksi-3d"><span class="lang-id">🌐 Visualisasi 3D</span><span class="lang-en">🌐 3D Visualization</span></a>
+        <a href="#latihan-soal"><span class="lang-id">📝 Latihan Soal</span><span class="lang-en">📝 Quiz</span></a>
+    </nav>
+
+    <header>
+        <h1>
+            <span class="lang-id">🌐 OKOL-WDI — Modul Interaktif 3D</span>
+            <span class="lang-en">🌐 OKOL-WDI — 3D Interactive Module</span>
+        </h1>
+        <h3>
+            <span class="lang-id">🔷 Stereoselektivitas &amp; Stereospesifisitas dalam Reaksi Organik</span>
+            <span class="lang-en">🔷 Stereoselectivity &amp; Stereospecificity in Organic Reactions</span>
+        </h3>
+    </header>
+
+    <!-- ===== SECTION 1: KONSEP DASAR ===== -->
+    <div id="konsep-dasar" class="card">
+        <h2 class="card-title">
+            <span class="lang-id">🧠 Konsep Dasar: Stereokimia Reaksi</span>
+            <span class="lang-en">🧠 Core Concepts: Reaction Stereochemistry</span>
+        </h2>
+
+        <div class="concept-highlight">
+            <strong class="lang-id">Mengapa Stereokimia Reaksi Penting?</strong>
+            <strong class="lang-en">Why Does Reaction Stereochemistry Matter?</strong>
+            <p class="lang-id">Banyak molekul biologis aktif (obat, hormon, enzim) memiliki <b>stereokimia spesifik</b>. Enantiomer suatu senyawa dapat memiliki efek biologis yang sangat berbeda — bahkan berlawanan. Memahami bagaimana reaksi mengontrol susunan 3D produk adalah inti dari sintesis organik modern.</p>
+            <p class="lang-en">Many biologically active molecules (drugs, hormones, enzymes) have <b>specific stereochemistry</b>. Enantiomers of a compound can have very different — even opposite — biological effects. Understanding how reactions control the 3D arrangement of products is the heart of modern organic synthesis.</p>
+        </div>
+
+        <div class="grid-2">
+            <div>
+                <h3 class="lang-id" style="color:var(--purple);font-size:1em;margin-bottom:8px">🔵 Stereospesifik</h3>
+                <h3 class="lang-en" style="color:var(--purple);font-size:1em;margin-bottom:8px">🔵 Stereospecific</h3>
+                <div class="info-box info-purple">
+                    <strong class="lang-id">Definisi:</strong>
+                    <strong class="lang-en">Definition:</strong>
+                    <span class="lang-id">Reaksi di mana <b>stereoisomer reaktan yang berbeda menghasilkan stereoisomer produk yang berbeda</b>. Mekanisme reaksi <i>menentukan</i> hubungan stereokimia antara reaktan dan produk secara mutlak.</span>
+                    <span class="lang-en">A reaction in which <b>different stereoisomers of the reactant yield different stereoisomers of the product</b>. The reaction mechanism <i>dictates</i> the stereochemical relationship between reactant and product absolutely.</span>
+                </div>
+                <p style="font-size:0.88em" class="lang-id">📌 <b>Contoh:</b> Adisi brom (Br₂) terhadap sikloheksena — adisi anti yang wajib menghasilkan trans-diaksi.</p>
+                <p style="font-size:0.88em" class="lang-en">📌 <b>Example:</b> Bromine addition to cyclohexene — mandatory anti addition giving trans-diaxial product.</p>
+            </div>
+            <div>
+                <h3 class="lang-id" style="color:var(--teal);font-size:1em;margin-bottom:8px">🟢 Stereoselektif</h3>
+                <h3 class="lang-en" style="color:var(--teal);font-size:1em;margin-bottom:8px">🟢 Stereoselective</h3>
+                <div class="info-box info-teal">
+                    <strong class="lang-id">Definisi:</strong>
+                    <strong class="lang-en">Definition:</strong>
+                    <span class="lang-id">Reaksi di mana <b>satu stereoisomer produk terbentuk lebih dominan</b> dibandingkan yang lain, meskipun keduanya secara teori dapat terbentuk. Reaksi tidak <i>harus</i> hanya menghasilkan satu stereoisomer — ada preferensi.</span>
+                    <span class="lang-en">A reaction in which <b>one stereoisomeric product forms predominantly</b> over others, even though both are theoretically possible. The reaction doesn't <i>have to</i> yield only one stereoisomer — there is a preference.</span>
+                </div>
+                <p style="font-size:0.88em" class="lang-id">📌 <b>Contoh:</b> Reduksi keton dengan NaBH₄ pada substrat kiral — serangan dari satu muka lebih disukai (aturan Cram).</p>
+                <p style="font-size:0.88em" class="lang-en">📌 <b>Example:</b> Ketone reduction with NaBH₄ on a chiral substrate — attack from one face is preferred (Cram's rule).</p>
+            </div>
+        </div>
+
+        <div class="vs-badge" style="margin-top:20px">
+            <span class="badge-pill badge-blue lang-id">Stereospesifik = HARUS satu jenis produk stereo</span>
+            <span class="badge-pill badge-blue lang-en">Stereospecific = MUST give one stereo product</span>
+            <span class="badge-vs">VS</span>
+            <span class="badge-pill badge-violet lang-id">Stereoselektif = LEBIH SUKA satu jenis produk stereo</span>
+            <span class="badge-pill badge-violet lang-en">Stereoselective = PREFERS one stereo product</span>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th class="lang-id">Aspek</th><th class="lang-en">Aspect</th>
+                    <th class="lang-id">Stereospesifik</th><th class="lang-en">Stereospecific</th>
+                    <th class="lang-id">Stereoselektif</th><th class="lang-en">Stereoselective</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="lang-id">Hubungan reaktan–produk</td><td class="lang-en">Reactant–product relationship</td>
+                    <td class="lang-id">Wajib / Terpaksa</td><td class="lang-en">Mandatory / Forced</td>
+                    <td class="lang-id">Preferensial</td><td class="lang-en">Preferential</td>
+                </tr>
+                <tr>
+                    <td class="lang-id">Stereoisomer reaktan berbeda →</td><td class="lang-en">Different reactant stereoisomers →</td>
+                    <td class="lang-id">Produk stereo berbeda</td><td class="lang-en">Different stereo products</td>
+                    <td class="lang-id">Mungkin produk sama atau berbeda</td><td class="lang-en">May give same or different products</td>
+                </tr>
+                <tr>
+                    <td class="lang-id">Kontrol oleh</td><td class="lang-en">Controlled by</td>
+                    <td class="lang-id">Mekanisme reaksi (orbital, transisi)</td><td class="lang-en">Reaction mechanism (orbital, transition state)</td>
+                    <td class="lang-id">Faktor sterik, elektronik, atau katalis</td><td class="lang-en">Steric, electronic, or catalytic factors</td>
+                </tr>
+                <tr>
+                    <td class="lang-id">Contoh</td><td class="lang-en">Example</td>
+                    <td class="lang-id">Adisi anti-brom, SN2, Adisi sin-OsO₄</td><td class="lang-en">Anti-bromine addition, SN2, syn-OsO₄ addition</td>
+                    <td class="lang-id">Reduksi Cram, hidroborasi, aldol Evans</td><td class="lang-en">Cram reduction, hydroboration, Evans aldol</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ===== SECTION 2: STEREOSPESIFIK ===== -->
+    <div id="stereospesifik" class="card">
+        <h2 class="card-title">
+            <span class="lang-id">🔬 Reaksi Stereospesifik: Adisi Brom pada Alkena</span>
+            <span class="lang-en">🔬 Stereospecific Reactions: Bromine Addition to Alkenes</span>
+        </h2>
+
+        <div class="lang-id">
+            <p>Adisi Br₂ pada alkena adalah contoh klasik reaksi <b>stereospesifik</b>. Mekanismenya melalui <b>ion bromonium</b> sebagai intermediat siklik, yang memaksa serangan nukleofil dari sisi yang berlawanan (<b>adisi anti</b>).</p>
+        </div>
+        <div class="lang-en">
+            <p>Bromine addition to alkenes is the classic example of a <b>stereospecific</b> reaction. The mechanism proceeds through a cyclic <b>bromonium ion</b> intermediate, forcing nucleophilic attack from the opposite side (<b>anti addition</b>).</p>
+        </div>
+
+        <!-- Reaction Scheme 2D: Mekanisme Bromonium -->
+        <div class="reaction-scheme">
+            <svg class="reaction-svg" viewBox="0 0 720 120" xmlns="http://www.w3.org/2000/svg" style="font-family:'IBM Plex Mono',monospace;">
+                <!-- Reactant: cis-2-butene -->
+                <text x="10" y="45" font-size="13" fill="#0a3d91" font-weight="bold">cis-2-Butena</text>
+                <text x="10" y="65" font-size="12" fill="#333">H₃C    CH₃</text>
+                <text x="10" y="82" font-size="12" fill="#333">    C=C</text>
+                <text x="10" y="99" font-size="12" fill="#333">H      H</text>
+                <!-- Arrow 1 -->
+                <line x1="115" y1="75" x2="175" y2="75" stroke="#e63946" stroke-width="2"/>
+                <polygon points="175,70 185,75 175,80" fill="#e63946"/>
+                <text x="120" y="65" font-size="10" fill="#e63946">+ Br₂</text>
+                <!-- Bromonium intermediate -->
+                <text x="190" y="45" font-size="13" fill="#6d28d9" font-weight="bold">Ion Bromonium</text>
+                <text x="190" y="65" font-size="12" fill="#6d28d9">   Br⁺</text>
+                <text x="190" y="82" font-size="12" fill="#6d28d9">  /   \</text>
+                <text x="190" y="99" font-size="12" fill="#6d28d9">C — C</text>
+                <!-- Arrow 2 -->
+                <line x1="310" y1="75" x2="370" y2="75" stroke="#e63946" stroke-width="2"/>
+                <polygon points="370,70 380,75 370,80" fill="#e63946"/>
+                <text x="315" y="65" font-size="10" fill="#e63946">Br⁻ (anti)</text>
+                <!-- Product -->
+                <text x="385" y="45" font-size="13" fill="#2d6a4f" font-weight="bold">Produk Anti</text>
+                <text x="385" y="65" font-size="12" fill="#2d6a4f">meso-2,3-dibromo</text>
+                <text x="385" y="82" font-size="12" fill="#2d6a4f">butana</text>
+                <text x="385" y="99" font-size="11" fill="#2d6a4f">(dari cis-2-butena)</text>
+            </svg>
+        </div>
+
+        <div class="grid-2">
+            <!-- CIS-2-BUTENE viewer -->
+            <div class="viewer-box">
+                <h4 class="lang-id">🔵 cis-2-Butena → Produk meso</h4>
+                <h4 class="lang-en">🔵 cis-2-Butene → meso Product</h4>
+                <div class="view-container">
+                    <div class="mol-3d" id="viewer-cis2but"></div>
+                    <div class="mol-2d" id="text2d-cis2but">
+                        <div style="font-size:0.75em;color:#6d28d9;margin-bottom:6px">2D Struktur:</div>
+                        H₃C—CH=CH—CH₃<br>
+                        <span style="font-size:0.7em;color:#2d6a4f">(cis: H pada sisi sama)</span><br><br>
+                        <span style="font-size:0.7em;color:#888">+ Br₂ → meso-2,3-dibromobutana</span><br>
+                        <span style="font-size:0.65em;color:#888">Br pada C2 dan C3 trans satu sama lain</span>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button onclick="resetView('viewer-cis2but')">🔄 Reset</button>
+                    <button class="btn-warning" onclick="toggleLabels('viewer-cis2but')">🏷️ Label</button>
+                    <button class="btn-info" onclick="toggle2D3D('viewer-cis2but','text2d-cis2but')">⇌ 2D/3D</button>
+                </div>
+                <div class="stereo-annotation">
+                    <span class="lang-id">
+                        <span class="annot-r">C2 (R)</span> + <span class="annot-s">C3 (S)</span> → <b>meso</b> (achiral, memiliki bidang simetri internal). Produk <b>tidak</b> optis aktif.
+                    </span>
+                    <span class="lang-en">
+                        <span class="annot-r">C2 (R)</span> + <span class="annot-s">C3 (S)</span> → <b>meso</b> (achiral, has internal symmetry plane). Product is <b>not</b> optically active.
+                    </span>
+                </div>
+            </div>
+
+            <!-- TRANS-2-BUTENE viewer -->
+            <div class="viewer-box">
+                <h4 class="lang-id">🔴 trans-2-Butena → Produk (±) Rasemat</h4>
+                <h4 class="lang-en">🔴 trans-2-Butene → (±) Racemic Product</h4>
+                <div class="view-container">
+                    <div class="mol-3d" id="viewer-trans2but"></div>
+                    <div class="mol-2d" id="text2d-trans2but">
+                        <div style="font-size:0.75em;color:#6d28d9;margin-bottom:6px">2D Struktur:</div>
+                        H₃C—CH=CH—CH₃<br>
+                        <span style="font-size:0.7em;color:#c1121f">(trans: H pada sisi berlawanan)</span><br><br>
+                        <span style="font-size:0.7em;color:#c1121f">+ Br₂ → (±)-2,3-dibromobutana</span><br>
+                        <span style="font-size:0.65em;color:#888">Campuran rasemat (R,R) + (S,S) 1:1</span>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button onclick="resetView('viewer-trans2but')">🔄 Reset</button>
+                    <button class="btn-warning" onclick="toggleLabels('viewer-trans2but')">🏷️ Label</button>
+                    <button class="btn-info" onclick="toggle2D3D('viewer-trans2but','text2d-trans2but')">⇌ 2D/3D</button>
+                </div>
+                <div class="stereo-annotation">
+                    <span class="lang-id">
+                        <span class="annot-r">(R,R)</span> + <span class="annot-s">(S,S)</span> → <b>campuran rasemat</b>. Produk <b>optis tidak aktif</b> (efek kompensasi), tetapi terdiri atas dua enantiomer kiral.
+                    </span>
+                    <span class="lang-en">
+                        <span class="annot-r">(R,R)</span> + <span class="annot-s">(S,S)</span> → <b>racemic mixture</b>. Product is <b>optically inactive</b> (cancellation effect), but contains two chiral enantiomers.
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-purple" onclick="rotateAll(['viewer-cis2but','viewer-trans2but'])">▶ Putar Semua</button>
+            <button class="btn-danger-outline" onclick="stopRotate()">⏹ Stop</button>
+        </div>
+
+        <div class="info-box info-orange" style="margin-top:20px">
+            <strong class="lang-id">⚙️ Mekanisme Ion Bromonium — Kunci Stereospesifisitas:</strong>
+            <strong class="lang-en">⚙️ Bromonium Ion Mechanism — Key to Stereospecificity:</strong>
+            <span class="lang-id">Br₂ mendekati ikatan π dari satu sisi → terbentuk ion bromonium siklik (jembatan Br⁺ menutup kedua karbon) → Br⁻ dari larutan hanya bisa menyerang dari sisi <i>berlawanan</i> (terhalang halangan sterik ion bromonium) → hasilnya <b>selalu adisi anti</b>. Inilah mengapa reaksinya <b>stereospesifik</b>: geometri alkena (cis vs trans) wajib menghasilkan produk yang berbeda.</span>
+            <span class="lang-en">Br₂ approaches the π bond from one face → cyclic bromonium ion forms (Br⁺ bridge locks both carbons) → Br⁻ from solution can only attack from the <i>opposite</i> side (blocked by bromonium steric bulk) → result is always <b>anti addition</b>. This is why the reaction is <b>stereospecific</b>: alkene geometry (cis vs trans) must give different products.</span>
+        </div>
+
+        <!-- 2D Panel: Wedge-Dash Drawings -->
+        <div class="grid-2" style="margin-top:20px">
+            <div class="svg-2d-panel">
+                <h4 class="lang-id">📐 2D Fischer / Cunei-Garis: meso-2,3-dibromobutana</h4>
+                <h4 class="lang-en">📐 2D Fischer / Wedge-Dash: meso-2,3-dibromobutane</h4>
+                <svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:240px">
+                    <!-- Central C-C bond -->
+                    <line x1="130" y1="60" x2="130" y2="140" stroke="#333" stroke-width="2.5"/>
+                    <!-- CH3 top -->
+                    <line x1="130" y1="60" x2="130" y2="20" stroke="#333" stroke-width="2.5"/>
+                    <text x="118" y="16" font-size="12" font-family="IBM Plex Mono" fill="#333">CH₃</text>
+                    <!-- CH3 bottom -->
+                    <line x1="130" y1="140" x2="130" y2="180" stroke="#333" stroke-width="2.5"/>
+                    <text x="118" y="193" font-size="12" font-family="IBM Plex Mono" fill="#333">CH₃</text>
+                    <!-- Br on C2 (wedge, front) - left -->
+                    <polygon points="130,70 80,55 130,60" fill="#c1121f" opacity="0.85"/>
+                    <text x="48" y="58" font-size="12" font-family="IBM Plex Mono" fill="#c1121f" font-weight="bold">Br</text>
+                    <!-- H on C2 (dash, back) - right -->
+                    <line x1="130" y1="70" x2="185" y2="55" stroke="#333" stroke-width="1.5" stroke-dasharray="5,3"/>
+                    <text x="188" y="58" font-size="12" font-family="IBM Plex Mono" fill="#555">H</text>
+                    <!-- H on C3 (wedge, front) - left -->
+                    <polygon points="130,130 80,145 130,140" fill="#555" opacity="0.7"/>
+                    <text x="57" y="148" font-size="12" font-family="IBM Plex Mono" fill="#555">H</text>
+                    <!-- Br on C3 (dash, back) - right -->
+                    <line x1="130" y1="130" x2="185" y2="145" stroke="#c1121f" stroke-width="1.5" stroke-dasharray="5,3"/>
+                    <text x="188" y="148" font-size="12" font-family="IBM Plex Mono" fill="#c1121f" font-weight="bold">Br</text>
+                    <!-- C2, C3 labels -->
+                    <text x="136" y="72" font-size="10" fill="#6d28d9">C2(R)</text>
+                    <text x="136" y="132" font-size="10" fill="#2d6a4f">C3(S)</text>
+                    <!-- plane of symmetry indicator -->
+                    <line x1="40" y1="100" x2="220" y2="100" stroke="#e63946" stroke-width="1.5" stroke-dasharray="8,4"/>
+                    <text x="45" y="97" font-size="9" fill="#e63946">bidang simetri</text>
+                </svg>
+                <p style="font-size:0.78em;color:var(--text-muted);margin-top:6px" class="lang-id">Br₂ dan H berada pada sisi berlawanan di tiap karbon → <b>meso</b></p>
+                <p style="font-size:0.78em;color:var(--text-muted);margin-top:6px" class="lang-en">Br₂ and H on opposite sides at each carbon → <b>meso</b></p>
+            </div>
+            <div class="svg-2d-panel">
+                <h4 class="lang-id">📐 2D Cunei-Garis: (R,R)-2,3-dibromobutana</h4>
+                <h4 class="lang-en">📐 2D Wedge-Dash: (R,R)-2,3-dibromobutane</h4>
+                <svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:240px">
+                    <line x1="130" y1="60" x2="130" y2="140" stroke="#333" stroke-width="2.5"/>
+                    <line x1="130" y1="60" x2="130" y2="20" stroke="#333" stroke-width="2.5"/>
+                    <text x="118" y="16" font-size="12" font-family="IBM Plex Mono" fill="#333">CH₃</text>
+                    <line x1="130" y1="140" x2="130" y2="180" stroke="#333" stroke-width="2.5"/>
+                    <text x="118" y="193" font-size="12" font-family="IBM Plex Mono" fill="#333">CH₃</text>
+                    <!-- Br on C2 wedge left -->
+                    <polygon points="130,70 78,58 130,60" fill="#c1121f" opacity="0.85"/>
+                    <text x="46" y="61" font-size="12" font-family="IBM Plex Mono" fill="#c1121f" font-weight="bold">Br</text>
+                    <!-- H on C2 dash right -->
+                    <line x1="130" y1="70" x2="185" y2="58" stroke="#555" stroke-width="1.5" stroke-dasharray="5,3"/>
+                    <text x="188" y="61" font-size="12" font-family="IBM Plex Mono" fill="#555">H</text>
+                    <!-- Br on C3 wedge LEFT also (same side as C2) -->
+                    <polygon points="130,130 78,142 130,140" fill="#c1121f" opacity="0.85"/>
+                    <text x="46" y="145" font-size="12" font-family="IBM Plex Mono" fill="#c1121f" font-weight="bold">Br</text>
+                    <!-- H on C3 dash right -->
+                    <line x1="130" y1="130" x2="185" y2="142" stroke="#555" stroke-width="1.5" stroke-dasharray="5,3"/>
+                    <text x="188" y="145" font-size="12" font-family="IBM Plex Mono" fill="#555">H</text>
+                    <!-- C2, C3 labels -->
+                    <text x="136" y="72" font-size="10" fill="#c1121f">C2(R)</text>
+                    <text x="136" y="132" font-size="10" fill="#c1121f">C3(R)</text>
+                    <!-- NO plane of symmetry -->
+                    <text x="50" y="100" font-size="9" fill="#6d28d9">✗ tidak ada bidang simetri</text>
+                    <text x="50" y="112" font-size="9" fill="#6d28d9">→ chiral, optis aktif</text>
+                </svg>
+                <p style="font-size:0.78em;color:var(--text-muted);margin-top:6px" class="lang-id">Kedua Br pada sisi yang sama → <b>(R,R) = kiral, optis aktif</b></p>
+                <p style="font-size:0.78em;color:var(--text-muted);margin-top:6px" class="lang-en">Both Br on the same side → <b>(R,R) = chiral, optically active</b></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 3: STEREOSELEKTIF ===== -->
+    <div id="stereoselektif" class="card">
+        <h2 class="card-title">
+            <span class="lang-id">⚗️ Reaksi Stereoselektif: Reduksi Keton Kiral (Aturan Cram)</span>
+            <span class="lang-en">⚗️ Stereoselective Reactions: Chiral Ketone Reduction (Cram's Rule)</span>
+        </h2>
+
+        <div class="lang-id">
+            <p>Reduksi nukleofil keton kiral (contoh: 2-fenilsikloheksanon atau keton asimetris) dengan reagensia hidrida seperti NaBH₄ atau LiAlH₄ adalah contoh reaksi <b>stereoselektif</b>. Produk utama (mayor) dapat diprediksi menggunakan <b>Model Cram</b> atau <b>Model Felkin-Anh</b>.</p>
+        </div>
+        <div class="lang-en">
+            <p>Nucleophilic reduction of a chiral ketone (e.g., 2-phenylcyclohexanone or asymmetric ketones) with hydride reagents like NaBH₄ or LiAlH₄ is an example of a <b>stereoselective</b> reaction. The major product can be predicted using <b>Cram's Model</b> or the <b>Felkin-Anh Model</b>.</p>
+        </div>
+
+        <div class="info-box info-teal">
+            <strong class="lang-id">🧭 Aturan Cram (Model Sederhana):</strong>
+            <strong class="lang-en">🧭 Cram's Rule (Simple Model):</strong>
+            <span class="lang-id">Pada konformasi zig-zag (periplanar) karbonil, rantai C=O tegak lurus bidang. Substituen karbon α dikelompokkan: <b>L</b> (besar), <b>M</b> (sedang), <b>S</b> (kecil). Serangan nukleofil lebih disukai dari <b>sisi S</b> (sisi kecil/lebih terbuka) → produk mayor = Cram.</span>
+            <span class="lang-en">In the staggered (periplanar) carbonyl conformation, the C=O chain is perpendicular. The α-carbon substituents are grouped: <b>L</b> (large), <b>M</b> (medium), <b>S</b> (small). Nucleophilic attack is preferred from the <b>S face</b> (small/open side) → major product = Cram product.</span>
+        </div>
+
+        <div class="grid-2" style="margin-top:16px">
+            <div class="viewer-box">
+                <h4 class="lang-id">⬆️ Produk Mayor (Cram) — Serangan dari Muka Kecil</h4>
+                <h4 class="lang-en">⬆️ Major Product (Cram) — Attack from Small Face</h4>
+                <div class="view-container tall">
+                    <div class="mol-3d" id="viewer-cram-major"></div>
+                    <div class="mol-2d" id="text2d-cram-major">
+                        <div style="font-size:0.75em;color:#2d6a4f;font-weight:700;margin-bottom:8px">Model Cram — Produk Mayor</div>
+                        <div style="font-size:0.85em;font-family:'IBM Plex Mono'">
+                            Nu⁻ menyerang dari sisi S:<br><br>
+                              L   M<br>
+                            ‖ C—α—C ‖<br>
+                              O   S<br>
+                            ↑ Nu (dari bawah/sisi S)<br><br>
+                        </div>
+                        <div style="font-size:0.72em;color:#2d6a4f">→ OH ekuatorial (lebih stabil)</div>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button onclick="resetView('viewer-cram-major')">🔄 Reset</button>
+                    <button class="btn-warning" onclick="toggleLabels('viewer-cram-major')">🏷️ Label</button>
+                    <button class="btn-info" onclick="toggle2D3D('viewer-cram-major','text2d-cram-major')">⇌ 2D/3D</button>
+                </div>
+                <div class="stereo-annotation">
+                    <span class="lang-id"><span class="annot-r">Produk (R)</span> — <b>mayor</b>. OH berada di posisi ekuatorial pada sistem siklik, atau pada posisi anti terhadap gugus besar.</span>
+                    <span class="lang-en"><span class="annot-r">Product (R)</span> — <b>major</b>. OH in equatorial position in cyclic systems, or anti to the large group.</span>
+                </div>
+            </div>
+
+            <div class="viewer-box">
+                <h4 class="lang-id">⬇️ Produk Minor (anti-Cram) — Serangan dari Muka Besar</h4>
+                <h4 class="lang-en">⬇️ Minor Product (anti-Cram) — Attack from Large Face</h4>
+                <div class="view-container tall">
+                    <div class="mol-3d" id="viewer-cram-minor"></div>
+                    <div class="mol-2d" id="text2d-cram-minor">
+                        <div style="font-size:0.75em;color:#c1121f;font-weight:700;margin-bottom:8px">Model Cram — Produk Minor</div>
+                        <div style="font-size:0.85em;font-family:'IBM Plex Mono'">
+                            Nu⁻ menyerang dari sisi L:<br><br>
+                              L   M<br>
+                            ‖ C—α—C ‖<br>
+                              O   S<br>
+                            ↓ Nu (dari atas/sisi L)<br><br>
+                        </div>
+                        <div style="font-size:0.72em;color:#c1121f">→ OH aksial (kurang stabil, minor)</div>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button onclick="resetView('viewer-cram-minor')">🔄 Reset</button>
+                    <button class="btn-warning" onclick="toggleLabels('viewer-cram-minor')">🏷️ Label</button>
+                    <button class="btn-info" onclick="toggle2D3D('viewer-cram-minor','text2d-cram-minor')">⇌ 2D/3D</button>
+                </div>
+                <div class="stereo-annotation">
+                    <span class="lang-id"><span class="annot-s">Produk (S)</span> — <b>minor</b>. Serangan dari sisi L (besar) terhalang hambatan sterik, sehingga sedikit terbentuk.</span>
+                    <span class="lang-en"><span class="annot-s">Product (S)</span> — <b>minor</b>. Attack from L (large) face is hindered by steric repulsion, so it forms in smaller amounts.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-purple" onclick="rotateAll(['viewer-cram-major','viewer-cram-minor'])">▶ Putar Semua</button>
+            <button class="btn-danger-outline" onclick="stopRotate()">⏹ Stop</button>
+        </div>
+
+        <!-- Ratio Bar -->
+        <div class="ratio-bar-container" style="margin-top:20px">
+            <div class="lang-id">
+                <div class="ratio-label">
+                    <span>Produk Mayor (Cram / R) — NaBH₄</span>
+                    <span>Produk Minor (anti-Cram / S)</span>
+                </div>
+                <div class="ratio-bar">
+                    <div class="ratio-fill-r" style="width:75%">75%</div>
+                    <div class="ratio-fill-s" style="width:25%">25%</div>
+                </div>
+                <div class="ratio-label" style="margin-top:6px">
+                    <span>Produk Mayor — L-Selectride (besar)</span>
+                    <span>Produk Minor</span>
+                </div>
+                <div class="ratio-bar">
+                    <div class="ratio-fill-r" style="width:92%">92%</div>
+                    <div class="ratio-fill-s" style="width:8%">8%</div>
+                </div>
+            </div>
+            <div class="lang-en">
+                <div class="ratio-label">
+                    <span>Major Product (Cram / R) — NaBH₄</span>
+                    <span>Minor Product (anti-Cram / S)</span>
+                </div>
+                <div class="ratio-bar">
+                    <div class="ratio-fill-r" style="width:75%">75%</div>
+                    <div class="ratio-fill-s" style="width:25%">25%</div>
+                </div>
+                <div class="ratio-label" style="margin-top:6px">
+                    <span>Major Product — L-Selectride (bulky)</span>
+                    <span>Minor Product</span>
+                </div>
+                <div class="ratio-bar">
+                    <div class="ratio-fill-r" style="width:92%">92%</div>
+                    <div class="ratio-fill-s" style="width:8%">8%</div>
+                </div>
+            </div>
+            <p style="font-size:0.8em;color:var(--text-muted);margin-top:8px" class="lang-id">Semakin besar reagensia hidrida, semakin kuat stereoselektivitasnya (rasio mayor:minor makin tinggi).</p>
+            <p style="font-size:0.8em;color:var(--text-muted);margin-top:8px" class="lang-en">The bulkier the hydride reagent, the stronger the stereoselectivity (higher major:minor ratio).</p>
+        </div>
+
+        <!-- 2D Panel: Felkin-Anh -->
+        <div class="svg-2d-panel" style="margin-top:20px">
+            <h4 class="lang-id">📐 Diagram 2D: Model Felkin-Anh — Proyeksi Newman</h4>
+            <h4 class="lang-en">📐 2D Diagram: Felkin-Anh Model — Newman Projection</h4>
+            <svg viewBox="0 0 580 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:580px;font-family:'IBM Plex Mono',monospace;">
+                <!-- Left: Felkin-Anh favored -->
+                <text x="10" y="18" font-size="11" fill="#2d6a4f" font-weight="bold">Konformasi Felkin-Anh (Disukai)</text>
+                <!-- Newman projection circle -->
+                <circle cx="100" cy="105" r="45" fill="none" stroke="#333" stroke-width="2"/>
+                <!-- Front carbon bonds -->
+                <line x1="100" y1="105" x2="100" y2="58" stroke="#2d6a4f" stroke-width="2.5"/>
+                <text x="88" y="52" font-size="11" fill="#2d6a4f" font-weight="bold">O</text>
+                <line x1="100" y1="105" x2="60" y2="135" stroke="#2d6a4f" stroke-width="2.5"/>
+                <text x="38" y="148" font-size="11" fill="#2d6a4f">M</text>
+                <line x1="100" y1="105" x2="140" y2="135" stroke="#2d6a4f" stroke-width="2.5"/>
+                <text x="144" y="148" font-size="11" fill="#2d6a4f">S</text>
+                <!-- Back carbon bonds -->
+                <line x1="100" y1="105" x2="60" y2="78" stroke="#888" stroke-width="1.5" stroke-dasharray="4,3"/>
+                <text x="40" y="74" font-size="11" fill="#555">L</text>
+                <line x1="100" y1="105" x2="140" y2="78" stroke="#888" stroke-width="1.5" stroke-dasharray="4,3"/>
+                <text x="143" y="74" font-size="11" fill="#555">M₂</text>
+                <line x1="100" y1="105" x2="100" y2="152" stroke="#888" stroke-width="1.5" stroke-dasharray="4,3"/>
+                <text x="90" y="168" font-size="11" fill="#555">R</text>
+                <!-- Attack arrow from S face -->
+                <line x1="165" y1="130" x2="145" y2="130" stroke="#e63946" stroke-width="2"/>
+                <polygon points="145,125 135,130 145,135" fill="#e63946"/>
+                <text x="167" y="134" font-size="10" fill="#e63946">Nu⁻ (sisi S)</text>
+                <text x="65" y="190" font-size="10" fill="#2d6a4f">→ Produk Mayor</text>
+
+                <!-- Divider -->
+                <line x1="280" y1="20" x2="280" y2="185" stroke="#dce3f0" stroke-width="1.5" stroke-dasharray="6,4"/>
+
+                <!-- Right: anti-Felkin -->
+                <text x="295" y="18" font-size="11" fill="#c1121f" font-weight="bold">Konformasi anti-Felkin (Tidak Disukai)</text>
+                <circle cx="420" cy="105" r="45" fill="none" stroke="#333" stroke-width="2"/>
+                <line x1="420" y1="105" x2="420" y2="58" stroke="#c1121f" stroke-width="2.5"/>
+                <text x="408" y="52" font-size="11" fill="#c1121f" font-weight="bold">O</text>
+                <line x1="420" y1="105" x2="380" y2="135" stroke="#c1121f" stroke-width="2.5"/>
+                <text x="358" y="148" font-size="11" fill="#c1121f">M</text>
+                <line x1="420" y1="105" x2="460" y2="135" stroke="#c1121f" stroke-width="2.5"/>
+                <text x="464" y="148" font-size="11" fill="#c1121f">L</text>
+                <!-- Back bonds -->
+                <line x1="420" y1="105" x2="380" y2="78" stroke="#888" stroke-width="1.5" stroke-dasharray="4,3"/>
+                <text x="358" y="74" font-size="11" fill="#555">S</text>
+                <line x1="420" y1="105" x2="460" y2="78" stroke="#888" stroke-width="1.5" stroke-dasharray="4,3"/>
+                <text x="463" y="74" font-size="11" fill="#555">M₂</text>
+                <line x1="420" y1="105" x2="420" y2="152" stroke="#888" stroke-width="1.5" stroke-dasharray="4,3"/>
+                <text x="410" y="168" font-size="11" fill="#555">R</text>
+                <!-- Attack arrow blocked -->
+                <line x1="490" y1="130" x2="470" y2="130" stroke="#888" stroke-width="2" stroke-dasharray="4,3"/>
+                <text x="492" y="134" font-size="10" fill="#888">Nu⁻ (sisi L)</text>
+                <text x="370" y="190" font-size="10" fill="#c1121f">→ Produk Minor (terhalang L)</text>
+            </svg>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 4: VISUALISASI 3D REAKSI ===== -->
+    <div id="reaksi-3d" class="card">
+        <h2 class="card-title">
+            <span class="lang-id">🌐 Visualisasi 3D: Molekul Kiral &amp; Reaksi</span>
+            <span class="lang-en">🌐 3D Visualization: Chiral Molecules &amp; Reactions</span>
+        </h2>
+
+        <div class="lang-id"><p>Eksplorasi model 3D senyawa kiral yang relevan dalam reaksi stereospesifik dan stereoselektif. Perhatikan perbedaan geometri ruang antara enantiomer (R) dan (S).</p></div>
+        <div class="lang-en"><p>Explore 3D models of chiral compounds relevant to stereospecific and stereoselective reactions. Notice the spatial geometry differences between (R) and (S) enantiomers.</p></div>
+
+        <!-- ROW 1: Enantiomers R vs S -->
+        <div class="grid-2" style="margin-top:16px">
+            <div class="viewer-box">
+                <h4 class="lang-id">🔵 (R)-2-Bromobutana — Enantiomer R</h4>
+                <h4 class="lang-en">🔵 (R)-2-Bromobutane — R Enantiomer</h4>
+                <div class="view-container">
+                    <div class="mol-3d" id="viewer-R-2brombut"></div>
+                    <div class="mol-2d" id="text2d-R-2brombut">
+                        <div style="font-size:0.75em;color:#2d6a4f;font-weight:700">2D Proyeksi (R)-2-Bromobutana:</div><br>
+                        <svg viewBox="0 0 200 160" style="width:180px" xmlns="http://www.w3.org/2000/svg">
+                            <text x="85" y="20" font-size="12" font-family="IBM Plex Mono" fill="#333">H</text>
+                            <line x1="95" y1="25" x2="95" y2="55" stroke="#333" stroke-width="2"/>
+                            <circle cx="95" cy="70" r="14" fill="#dbeafe" stroke="#2d6a4f" stroke-width="2"/>
+                            <text x="86" y="75" font-size="11" font-family="IBM Plex Mono" fill="#2d6a4f" font-weight="bold">C*</text>
+                            <!-- CH3 left wedge -->
+                            <polygon points="95,70 35,90 95,78" fill="#0a3d91" opacity="0.8"/>
+                            <text x="10" y="94" font-size="11" font-family="IBM Plex Mono" fill="#0a3d91">CH₃</text>
+                            <!-- C2H5 right line -->
+                            <line x1="95" y1="70" x2="158" y2="90" stroke="#333" stroke-width="2"/>
+                            <text x="160" y="94" font-size="11" font-family="IBM Plex Mono" fill="#333">C₂H₅</text>
+                            <!-- Br dash below -->
+                            <line x1="95" y1="84" x2="95" y2="130" stroke="#c1121f" stroke-width="2" stroke-dasharray="5,3"/>
+                            <text x="82" y="145" font-size="12" font-family="IBM Plex Mono" fill="#c1121f" font-weight="bold">Br</text>
+                            <text x="60" y="158" font-size="9" font-family="IBM Plex Mono" fill="#2d6a4f">(R) → searah jarum jam</text>
+                        </svg>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button onclick="resetView('viewer-R-2brombut')">🔄 Reset</button>
+                    <button class="btn-warning" onclick="toggleLabels('viewer-R-2brombut')">🏷️ Label</button>
+                    <button class="btn-info" onclick="toggle2D3D('viewer-R-2brombut','text2d-R-2brombut')">⇌ 2D/3D</button>
+                </div>
+                <div class="stereo-annotation">
+                    <span class="lang-id"><span class="annot-r">(R)-konfigurasi:</span> urutan prioritas CIP dari substituen berputar <b>searah jarum jam</b> ketika gugus prioritas terendah mengarah ke belakang (menjauh pengamat).</span>
+                    <span class="lang-en"><span class="annot-r">(R)-configuration:</span> CIP priority order of substituents rotates <b>clockwise</b> when the lowest-priority group points away from the observer.</span>
+                </div>
+            </div>
+
+            <div class="viewer-box">
+                <h4 class="lang-id">🔴 (S)-2-Bromobutana — Enantiomer S</h4>
+                <h4 class="lang-en">🔴 (S)-2-Bromobutane — S Enantiomer</h4>
+                <div class="view-container">
+                    <div class="mol-3d" id="viewer-S-2brombut"></div>
+                    <div class="mol-2d" id="text2d-S-2brombut">
+                        <div style="font-size:0.75em;color:#c1121f;font-weight:700">2D Proyeksi (S)-2-Bromobutana:</div><br>
+                        <svg viewBox="0 0 200 160" style="width:180px" xmlns="http://www.w3.org/2000/svg">
+                            <text x="85" y="20" font-size="12" font-family="IBM Plex Mono" fill="#333">H</text>
+                            <line x1="95" y1="25" x2="95" y2="55" stroke="#333" stroke-width="2"/>
+                            <circle cx="95" cy="70" r="14" fill="#fee2e2" stroke="#c1121f" stroke-width="2"/>
+                            <text x="86" y="75" font-size="11" font-family="IBM Plex Mono" fill="#c1121f" font-weight="bold">C*</text>
+                            <!-- C2H5 left wedge -->
+                            <polygon points="95,70 35,90 95,78" fill="#0a3d91" opacity="0.8"/>
+                            <text x="10" y="94" font-size="11" font-family="IBM Plex Mono" fill="#0a3d91">C₂H₅</text>
+                            <!-- CH3 right line -->
+                            <line x1="95" y1="70" x2="158" y2="90" stroke="#333" stroke-width="2"/>
+                            <text x="160" y="94" font-size="11" font-family="IBM Plex Mono" fill="#333">CH₃</text>
+                            <!-- Br dash below -->
+                            <line x1="95" y1="84" x2="95" y2="130" stroke="#c1121f" stroke-width="2" stroke-dasharray="5,3"/>
+                            <text x="82" y="145" font-size="12" font-family="IBM Plex Mono" fill="#c1121f" font-weight="bold">Br</text>
+                            <text x="55" y="158" font-size="9" font-family="IBM Plex Mono" fill="#c1121f">(S) → berlawanan jarum jam</text>
+                        </svg>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button onclick="resetView('viewer-S-2brombut')">🔄 Reset</button>
+                    <button class="btn-warning" onclick="toggleLabels('viewer-S-2brombut')">🏷️ Label</button>
+                    <button class="btn-info" onclick="toggle2D3D('viewer-S-2brombut','text2d-S-2brombut')">⇌ 2D/3D</button>
+                </div>
+                <div class="stereo-annotation">
+                    <span class="lang-id"><span class="annot-s">(S)-konfigurasi:</span> urutan prioritas CIP berputar <b>berlawanan jarum jam</b>. Ini adalah bayangan cermin (R) yang tidak superimposabel — enantiomer sejati.</span>
+                    <span class="lang-en"><span class="annot-s">(S)-configuration:</span> CIP priority order rotates <b>counterclockwise</b>. This is the non-superimposable mirror image of (R) — a true enantiomer.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-purple" onclick="rotateAll(['viewer-R-2brombut','viewer-S-2brombut'])">▶ Putar Semua</button>
+            <button class="btn-danger-outline" onclick="stopRotate()">⏹ Stop</button>
+        </div>
+
+        <!-- ROW 2: SN2 vs SN1 -->
+        <h3 style="color:var(--primary);margin-top:28px;font-size:1em">
+            <span class="lang-id">🔄 Reaksi SN2 (Stereospesifik: Inversi Walden) vs SN1 (Stereoselektif: Rasemat)</span>
+            <span class="lang-en">🔄 SN2 Reaction (Stereospecific: Walden Inversion) vs SN1 (Stereoselective: Racemization)</span>
+        </h3>
+
+        <div class="grid-2">
+            <div class="viewer-box">
+                <h4 class="lang-id">⚡ SN2 — Inversi Konfigurasi (Stereospesifik)</h4>
+                <h4 class="lang-en">⚡ SN2 — Configuration Inversion (Stereospecific)</h4>
+                <div class="view-container">
+                    <div class="mol-3d" id="viewer-sn2-prod"></div>
+                    <div class="mol-2d" id="text2d-sn2">
+                        <div style="font-size:0.75em;color:#6d28d9;font-weight:700;margin-bottom:6px">SN2 Inversi Walden:</div>
+                        <svg viewBox="0 0 260 120" style="width:240px" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Nu approach -->
+                            <text x="5" y="55" font-size="12" font-family="IBM Plex Mono" fill="#6d28d9" font-weight="bold">Nu⁻</text>
+                            <line x1="38" y1="50" x2="80" y2="60" stroke="#6d28d9" stroke-width="2"/>
+                            <polygon points="80,55 90,60 80,65" fill="#6d28d9"/>
+                            <!-- Central C -->
+                            <circle cx="110" cy="60" r="18" fill="#dbeafe" stroke="#0a3d91" stroke-width="2"/>
+                            <text x="101" y="65" font-size="12" font-family="IBM Plex Mono" fill="#0a3d91" font-weight="bold">C*</text>
+                            <!-- LG leaving -->
+                            <line x1="128" y1="60" x2="175" y2="60" stroke="#c1121f" stroke-width="2"/>
+                            <polygon points="175,55 185,60 175,65" fill="#c1121f"/>
+                            <text x="188" y="64" font-size="12" font-family="IBM Plex Mono" fill="#c1121f">LG</text>
+                            <!-- substituents flip -->
+                            <line x1="110" y1="42" x2="110" y2="10" stroke="#333" stroke-width="1.5" stroke-dasharray="4,3"/>
+                            <text x="100" y="8" font-size="10" font-family="IBM Plex Mono" fill="#555">R₁</text>
+                            <line x1="98" y1="68" x2="65" y2="92" stroke="#333" stroke-width="1.5" stroke-dasharray="4,3"/>
+                            <text x="52" y="105" font-size="10" font-family="IBM Plex Mono" fill="#555">R₂</text>
+                            <line x1="122" y1="68" x2="155" y2="92" stroke="#333" stroke-width="1.5" stroke-dasharray="4,3"/>
+                            <text x="157" y="105" font-size="10" font-family="IBM Plex Mono" fill="#555">R₃</text>
+                            <!-- Umbrella flip arrows -->
+                            <path d="M 90 40 Q 80 60 90 80" fill="none" stroke="#e63946" stroke-width="1.5" stroke-dasharray="3,2"/>
+                            <path d="M 130 40 Q 140 60 130 80" fill="none" stroke="#e63946" stroke-width="1.5" stroke-dasharray="3,2"/>
+                            <text x="60" y="115" font-size="9" font-family="IBM Plex Mono" fill="#e63946">← payung terbalik (inversi)</text>
+                        </svg>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button onclick="resetView('viewer-sn2-prod')">🔄 Reset</button>
+                    <button class="btn-warning" onclick="toggleLabels('viewer-sn2-prod')">🏷️ Label</button>
+                    <button class="btn-info" onclick="toggle2D3D('viewer-sn2-prod','text2d-sn2')">⇌ 2D/3D</button>
+                </div>
+                <div class="stereo-annotation">
+                    <span class="lang-id"><b>STEREOSPESIFIK:</b> (R)-substrat → <span class="annot-s">(S)-produk</span> wajib. Tidak ada pilihan lain. Serangan Nu belakang memaksa inversi geometri karbon pusat secara mutlak (seperti payung terbalik tertiup angin).</span>
+                    <span class="lang-en"><b>STEREOSPECIFIC:</b> (R)-substrate → <span class="annot-s">(S)-product</span> mandatory. No alternatives. Back-face Nu attack forces absolute inversion of central carbon geometry (like an umbrella blown inside out).</span>
+                </div>
+            </div>
+
+            <div class="viewer-box">
+                <h4 class="lang-id">💧 SN1 — Karbokation → Campuran Rasemat (Stereoselektif)</h4>
+                <h4 class="lang-en">💧 SN1 — Carbocation → Racemic Mixture (Stereoselective)</h4>
+                <div class="view-container">
+                    <div class="mol-3d" id="viewer-sn1-prod"></div>
+                    <div class="mol-2d" id="text2d-sn1">
+                        <div style="font-size:0.75em;color:#c2410c;font-weight:700;margin-bottom:6px">SN1 — Karbokation sp² (planar):</div>
+                        <svg viewBox="0 0 260 130" style="width:240px" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Carbocation flat -->
+                            <circle cx="130" cy="65" r="20" fill="#fff7ed" stroke="#c2410c" stroke-width="2"/>
+                            <text x="116" y="70" font-size="12" font-family="IBM Plex Mono" fill="#c2410c" font-weight="bold">C⁺</text>
+                            <!-- 3 substituents in plane -->
+                            <line x1="130" y1="45" x2="130" y2="10" stroke="#333" stroke-width="2"/>
+                            <text x="118" y="8" font-size="11" font-family="IBM Plex Mono" fill="#333">R₁</text>
+                            <line x1="113" y1="72" x2="72" y2="95" stroke="#333" stroke-width="2"/>
+                            <text x="55" y="105" font-size="11" font-family="IBM Plex Mono" fill="#333">R₂</text>
+                            <line x1="147" y1="72" x2="188" y2="95" stroke="#333" stroke-width="2"/>
+                            <text x="192" y="105" font-size="11" font-family="IBM Plex Mono" fill="#333">R₃</text>
+                            <!-- Nu attack from top -->
+                            <line x1="180" y1="20" x2="148" y2="48" stroke="#2d6a4f" stroke-width="2"/>
+                            <polygon points="148,48 143,38 153,38" fill="#2d6a4f"/>
+                            <text x="182" y="18" font-size="9" font-family="IBM Plex Mono" fill="#2d6a4f">Nu (atas)</text>
+                            <!-- Nu attack from bottom -->
+                            <line x1="180" y1="110" x2="148" y2="82" stroke="#c1121f" stroke-width="2"/>
+                            <polygon points="148,82 143,92 153,92" fill="#c1121f"/>
+                            <text x="182" y="122" font-size="9" font-family="IBM Plex Mono" fill="#c1121f">Nu (bawah)</text>
+                            <!-- Ratio -->
+                            <text x="10" y="65" font-size="9" font-family="IBM Plex Mono" fill="#e63946">~50:50</text>
+                            <text x="10" y="78" font-size="9" font-family="IBM Plex Mono" fill="#888">R vs S</text>
+                        </svg>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button onclick="resetView('viewer-sn1-prod')">🔄 Reset</button>
+                    <button class="btn-warning" onclick="toggleLabels('viewer-sn1-prod')">🏷️ Label</button>
+                    <button class="btn-info" onclick="toggle2D3D('viewer-sn1-prod','text2d-sn1')">⇌ 2D/3D</button>
+                </div>
+                <div class="stereo-annotation">
+                    <span class="lang-id"><b>STEREOSELEKTIF (lemah):</b> Karbokation sp² <i>planar</i> → Nu bisa menyerang dari kedua sisi → campuran rasemat ~50:50. Jika ada efek sterik dari gugus terdekat, salah satu produk sedikit lebih dominan.</span>
+                    <span class="lang-en"><b>STEREOSELECTIVE (weak):</b> sp² <i>planar</i> carbocation → Nu can attack from either face → ~50:50 racemic mixture. If nearby groups cause steric effects, one product may slightly predominate.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-teal" onclick="rotateAll(['viewer-R-2brombut','viewer-S-2brombut','viewer-sn2-prod','viewer-sn1-prod'])">▶ Putar Semua</button>
+            <button class="btn-danger-outline" onclick="stopRotate()">⏹ Stop</button>
+        </div>
+
+        <!-- Summary table reactions -->
+        <table style="margin-top:20px">
+            <thead>
+                <tr>
+                    <th class="lang-id">Reaksi</th><th class="lang-en">Reaction</th>
+                    <th class="lang-id">Jenis Stereo</th><th class="lang-en">Stereo Type</th>
+                    <th class="lang-id">Produk Stereo</th><th class="lang-en">Stereo Product</th>
+                    <th class="lang-id">Mekanisme Kontrol</th><th class="lang-en">Control Mechanism</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Adisi Br₂ cis-alkena</td>
+                    <td class="lang-id" style="color:var(--purple);font-weight:700">Stereospesifik</td>
+                    <td class="lang-en" style="color:var(--purple);font-weight:700">Stereospecific</td>
+                    <td class="lang-id">meso (dari cis)</td><td class="lang-en">meso (from cis)</td>
+                    <td class="lang-id">Ion bromonium → anti wajib</td><td class="lang-en">Bromonium ion → mandatory anti</td>
+                </tr>
+                <tr>
+                    <td>Adisi Br₂ trans-alkena</td>
+                    <td class="lang-id" style="color:var(--purple);font-weight:700">Stereospesifik</td>
+                    <td class="lang-en" style="color:var(--purple);font-weight:700">Stereospecific</td>
+                    <td class="lang-id">Rasemat (R,R)+(S,S)</td><td class="lang-en">Racemic (R,R)+(S,S)</td>
+                    <td class="lang-id">Ion bromonium → anti wajib</td><td class="lang-en">Bromonium ion → mandatory anti</td>
+                </tr>
+                <tr>
+                    <td>SN2</td>
+                    <td class="lang-id" style="color:var(--purple);font-weight:700">Stereospesifik</td>
+                    <td class="lang-en" style="color:var(--purple);font-weight:700">Stereospecific</td>
+                    <td class="lang-id">Inversi konfigurasi</td><td class="lang-en">Configuration inversion</td>
+                    <td class="lang-id">Serangan belakang orbital</td><td class="lang-en">Back-face orbital attack</td>
+                </tr>
+                <tr>
+                    <td>SN1</td>
+                    <td class="lang-id" style="color:var(--teal);font-weight:700">Stereoselektif*</td>
+                    <td class="lang-en" style="color:var(--teal);font-weight:700">Stereoselective*</td>
+                    <td class="lang-id">~Rasemat (±)</td><td class="lang-en">~Racemic (±)</td>
+                    <td class="lang-id">Karbokation planar</td><td class="lang-en">Planar carbocation</td>
+                </tr>
+                <tr>
+                    <td>Reduksi Cram (NaBH₄)</td>
+                    <td class="lang-id" style="color:var(--teal);font-weight:700">Stereoselektif</td>
+                    <td class="lang-en" style="color:var(--teal);font-weight:700">Stereoselective</td>
+                    <td class="lang-id">Mayor ~75% Cram</td><td class="lang-en">Major ~75% Cram</td>
+                    <td class="lang-id">Hambatan sterik muka S/L</td><td class="lang-en">Steric hindrance S/L face</td>
+                </tr>
+                <tr>
+                    <td>Adisi OsO₄</td>
+                    <td class="lang-id" style="color:var(--purple);font-weight:700">Stereospesifik</td>
+                    <td class="lang-en" style="color:var(--purple);font-weight:700">Stereospecific</td>
+                    <td class="lang-id">sin-diol wajib</td><td class="lang-en">Mandatory syn-diol</td>
+                    <td class="lang-id">Ester osmat siklik</td><td class="lang-en">Cyclic osmate ester</td>
+                </tr>
+                <tr>
+                    <td class="lang-id">Aldol Evans (oksazolidinon)</td>
+                    <td class="lang-en">Evans Aldol (oxazolidinone)</td>
+                    <td class="lang-id" style="color:var(--teal);font-weight:700">Stereoselektif</td>
+                    <td class="lang-en" style="color:var(--teal);font-weight:700">Stereoselective</td>
+                    <td class="lang-id">Mayor >95% anti/sin sesuai kuadran</td><td class="lang-en">Major >95% anti/syn per quadrant</td>
+                    <td class="lang-id">Oksazolidinon kiral mengontrol muka serangan</td><td class="lang-en">Chiral oxazolidinone controls attack face</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ===== SECTION 5: LATIHAN SOAL ===== -->
+    <div id="latihan-soal" class="card">
+        <h2 class="card-title">
+            <span class="lang-id">📝 Latihan Soal — Stereoselektivitas &amp; Stereospesifisitas</span>
+            <span class="lang-en">📝 Practice Quiz — Stereoselectivity &amp; Stereospecificity</span>
+        </h2>
+
+        <div class="quiz-progress">
+            <span class="quiz-progress-text lang-id">Dijawab: <span id="answered-count">0</span> / 8</span>
+            <span class="quiz-progress-text lang-en">Answered: <span id="answered-count-en">0</span> / 8</span>
+            <span class="score-badge lang-id">Skor: <span id="score-display">0</span></span>
+            <span class="score-badge lang-en">Score: <span id="score-display-en">0</span></span>
+        </div>
+
+        <!-- Q1 -->
+        <div class="quiz-item" id="qi-1">
+            <span class="quiz-tag tag-konsep">
+                <span class="lang-id">Konsep Dasar</span><span class="lang-en">Core Concept</span>
+            </span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">1</div>
+                <div class="quiz-q-text lang-id">Perbedaan utama antara reaksi <b>stereospesifik</b> dan <b>stereoselektif</b> adalah...</div>
+                <div class="quiz-q-text lang-en">The key difference between a <b>stereospecific</b> and a <b>stereoselective</b> reaction is...</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(1,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Stereospesifik hanya terjadi pada senyawa siklik, stereoselektif hanya pada senyawa asiklik.</span>
+                <span class="lang-en">Stereospecific only occurs in cyclic compounds, stereoselective only in acyclic ones.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(1,'B',true)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Stereospesifik: mekanisme reaksi memaksa terbentuknya satu stereoisomer produk tertentu dari setiap stereoisomer reaktan. Stereoselektif: satu produk stereo lebih dominan, tetapi produk lain juga bisa terbentuk.</span>
+                <span class="lang-en">Stereospecific: the reaction mechanism forces formation of a specific product stereoisomer from each reactant stereoisomer. Stereoselective: one stereo product predominates, but others can still form.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(1,'C',false)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Stereospesifik menggunakan katalis, stereoselektif tidak memerlukan katalis.</span>
+                <span class="lang-en">Stereospecific uses a catalyst, stereoselective does not require a catalyst.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(1,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Keduanya identik — hanya berbeda nama dalam literatur berbeda.</span>
+                <span class="lang-en">They are identical — just different names used in different literature.</span>
+            </button>
+            <div class="feedback" id="fb-1"></div>
+            <div class="pembahasan" id="pem-1">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> <b>B benar ✅.</b> Pada reaksi <b>stereospesifik</b>, mekanisme reaksi (misalnya intermediat ion bromonium, atau serangan belakang SN2) secara mutlak menentukan stereokimia produk. Dua stereoisomer reaktan yang berbeda <i>harus</i> menghasilkan stereoisomer produk yang berbeda. Pada reaksi <b>stereoselektif</b>, hambatan sterik atau elektronik dari lingkungan molekul menyebabkan salah satu produk stereo terbentuk lebih banyak — tetapi reaksi tidak "dipaksa" menghasilkan hanya satu produk. Kedua konsep ini berbeda fundamental, meski kadang tumpang tindih.</span>
+                <span class="lang-en"> <b>B is correct ✅.</b> In <b>stereospecific</b> reactions, the mechanism (e.g., bromonium intermediate, or SN2 backside attack) absolutely determines product stereochemistry. Two different reactant stereoisomers <i>must</i> give different product stereoisomers. In <b>stereoselective</b> reactions, steric or electronic factors cause one stereo product to form in excess — but the reaction isn't "forced" to give only one product. These two concepts are fundamentally distinct, though they can overlap.</span>
+            </div>
+        </div>
+
+        <!-- Q2 -->
+        <div class="quiz-item" id="qi-2">
+            <span class="quiz-tag tag-spesifik">
+                <span class="lang-id">Stereospesifik</span><span class="lang-en">Stereospecific</span>
+            </span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">2</div>
+                <div class="quiz-q-text lang-id">Adisi Br₂ pada <b>cis-2-butena</b> menghasilkan...</div>
+                <div class="quiz-q-text lang-en">Bromine addition to <b>cis-2-butene</b> yields...</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(2,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Campuran rasemat (R,R) + (S,S) yang bersifat optis aktif.</span>
+                <span class="lang-en">A racemic mixture (R,R) + (S,S) that is optically active.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(2,'B',false)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Hanya produk (R,R)-2,3-dibromobutana.</span>
+                <span class="lang-en">Only (R,R)-2,3-dibromobutane.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(2,'C',true)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">meso-2,3-dibromobutana (produk tunggal, tidak optis aktif, memiliki bidang simetri internal).</span>
+                <span class="lang-en">meso-2,3-dibromobutane (single product, not optically active, has internal plane of symmetry).</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(2,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Campuran produk sin dan anti secara acak karena reaksinya tidak stereospesifik.</span>
+                <span class="lang-en">A random mixture of syn and anti products because the reaction is not stereospecific.</span>
+            </button>
+            <div class="feedback" id="fb-2"></div>
+            <div class="pembahasan" id="pem-2">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> <b>C benar ✅.</b> Adisi Br₂ bersifat <b>stereospesifik anti</b> karena melalui intermediat ion bromonium. Pada <b>cis-2-butena</b>: kedua metil berada di sisi yang sama → adisi anti menghasilkan Br yang masuk dari sisi berlawanan terhadap satu sama lain → C2 mendapat konfigurasi berlawanan dengan C3 → hasil = <b>meso</b> (2R,3S atau 2S,3R, keduanya sama karena bidang simetri internal). Produk meso tidak memutar cahaya terpolarisasi. Jika reaktannya <i>trans</i>-2-butena, hasilnya justru campuran rasemat (R,R) + (S,S) secara ekuimolar.</span>
+                <span class="lang-en"> <b>C is correct ✅.</b> Br₂ addition is <b>stereospecific anti</b> via a bromonium ion intermediate. For <b>cis-2-butene</b>: both methyls are on the same side → anti addition gives Br entering from opposite sides → C2 gets opposite configuration to C3 → product = <b>meso</b> (2R,3S or 2S,3R, identical due to internal symmetry plane). The meso product doesn't rotate plane-polarized light. If the reactant were <i>trans</i>-2-butene, the product would be the racemic (R,R) + (S,S) mixture.</span>
+            </div>
+        </div>
+
+        <!-- Q3 -->
+        <div class="quiz-item" id="qi-3">
+            <span class="quiz-tag tag-spesifik">
+                <span class="lang-id">Stereospesifik</span><span class="lang-en">Stereospecific</span>
+            </span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">3</div>
+                <div class="quiz-q-text lang-id">Reaksi <b>SN2</b> pada (R)-2-bromobutana dengan NaOH menghasilkan...</div>
+                <div class="quiz-q-text lang-en">The <b>SN2</b> reaction of (R)-2-bromobutane with NaOH gives...</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(3,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Campuran rasemat (R)-2-butanol dan (S)-2-butanol dalam rasio 50:50.</span>
+                <span class="lang-en">A 50:50 racemic mixture of (R)-2-butanol and (S)-2-butanol.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(3,'B',true)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Hanya (S)-2-butanol, dengan inversi konfigurasi penuh (inversi Walden).</span>
+                <span class="lang-en">Only (S)-2-butanol, with complete configuration inversion (Walden inversion).</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(3,'C',false)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Hanya (R)-2-butanol, dengan retensi konfigurasi.</span>
+                <span class="lang-en">Only (R)-2-butanol, with retention of configuration.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(3,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Campuran rasemat karena ion hidroksil menyerang dari kedua sisi.</span>
+                <span class="lang-en">A racemic mixture because hydroxide ion attacks from both faces.</span>
+            </button>
+            <div class="feedback" id="fb-3"></div>
+            <div class="pembahasan" id="pem-3">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> <b>B benar ✅.</b> SN2 adalah reaksi <b>stereospesifik</b> karena mekanismenya mewajibkan serangan nukleofil dari sisi belakang (anti terhadap gugus pergi). Hal ini menyebabkan <b>inversi sempurna</b> pada karbon sp³. Serangan dari depan secara orbital sangat tidak diizinkan (tumpang tindih orbital antara Nu dan LUMO σ* tidak efisien dari depan). Oleh karena itu: (R)-2-bromobutana → (S)-2-butanol <i>secara eksklusif</i>. Jika reaksinya SN1 (melalui karbokation planar), barulah menghasilkan campuran rasemat.</span>
+                <span class="lang-en"> <b>B is correct ✅.</b> SN2 is a <b>stereospecific</b> reaction because its mechanism mandates backside nucleophilic attack (anti to the leaving group). This causes <b>complete inversion</b> at the sp³ carbon. Front-face attack is orbitally forbidden (Nu overlap with the σ* LUMO is inefficient from the front). Therefore: (R)-2-bromobutane → (S)-2-butanol <i>exclusively</i>. Only in an SN1 reaction (via a planar carbocation) would a racemic mixture result.</span>
+            </div>
+        </div>
+
+        <!-- Q4 -->
+        <div class="quiz-item" id="qi-4">
+            <span class="quiz-tag tag-selektif">
+                <span class="lang-id">Stereoselektif</span><span class="lang-en">Stereoselective</span>
+            </span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">4</div>
+                <div class="quiz-q-text lang-id">Menurut Aturan Cram, pada reduksi nukleofil keton kiral, nukleofil menyerang dari...</div>
+                <div class="quiz-q-text lang-en">According to Cram's Rule, in the nucleophilic reduction of a chiral ketone, the nucleophile attacks from the...</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(4,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Sisi gugus terbesar (L) karena gugus besar menarik nukleofil secara elektronik.</span>
+                <span class="lang-en">Side of the largest group (L), as large groups attract nucleophiles electronically.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(4,'B',true)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Sisi gugus terkecil (S), karena hambatan sterik lebih kecil pada sisi itu, sehingga serangan nukleofil lebih mudah.</span>
+                <span class="lang-en">Side of the smallest group (S), because steric hindrance is lower on that face, making nucleophilic attack easier.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(4,'C',false)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Sisi yang mengandung atom oksigen karena membentuk ikatan hidrogen dengan reagensia hidrida.</span>
+                <span class="lang-en">The side containing the oxygen atom because it forms hydrogen bonds with the hydride reagent.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(4,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Secara acak dari kedua sisi karena keton tidak memiliki preferensi geometri.</span>
+                <span class="lang-en">Randomly from both faces since ketones have no geometric preference.</span>
+            </button>
+            <div class="feedback" id="fb-4"></div>
+            <div class="pembahasan" id="pem-4">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> <b>B benar ✅.</b> Aturan Cram menyatakan bahwa dalam konformasi periplanar karbonilnya, karbon α memiliki tiga substituen: L (besar), M (sedang), S (kecil). Nukleofil memilih menyerang dari <b>sisi kecil (S)</b> karena hambatan steriknya paling minimal — produk yang dihasilkan disebut produk Cram. Model yang lebih modern, <b>Felkin-Anh</b>, menyempurnakan Cram dengan mempertimbangkan sudut serangan Bürgi–Dunitz (~107°) dan orientasi gugus elektronegatif. Semakin besar perbedaan ukuran L dan S, semakin tinggi stereoselektivitasnya. Reagen yang lebih besar seperti L-Selectride memberikan selektivitas yang lebih tinggi daripada NaBH₄.</span>
+                <span class="lang-en"> <b>B is correct ✅.</b> Cram's Rule states that in the periplanar carbonyl conformation, the α-carbon has three substituents: L (large), M (medium), S (small). The nucleophile prefers attacking from the <b>small (S) face</b> because steric hindrance is minimal — the product formed is called the Cram product. The more modern <b>Felkin-Anh</b> model refines Cram by incorporating Bürgi–Dunitz attack angle (~107°) and electronegative group orientation. The greater the size difference between L and S, the higher the stereoselectivity. Bulkier reagents like L-Selectride give higher selectivity than NaBH₄.</span>
+            </div>
+        </div>
+
+        <!-- Q5 -->
+        <div class="quiz-item" id="qi-5">
+            <span class="quiz-tag tag-reaksi">
+                <span class="lang-id">Jenis Reaksi</span><span class="lang-en">Reaction Type</span>
+            </span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">5</div>
+                <div class="quiz-q-text lang-id">Adisi OsO₄ pada suatu alkena menghasilkan <b>sin-diol</b> secara eksklusif. Ini merupakan contoh reaksi...</div>
+                <div class="quiz-q-text lang-en">OsO₄ addition to an alkene gives a <b>syn-diol</b> exclusively. This is an example of a...</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(5,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Stereoselektif, karena sin-diol terbentuk dalam proporsi lebih besar daripada anti-diol.</span>
+                <span class="lang-en">Stereoselective reaction, since syn-diol forms in greater proportion than anti-diol.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(5,'B',true)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Stereospesifik, karena mekanisme ester osmat siklik memaksa kedua OH masuk dari sisi yang sama (sin) secara mutlak — anti-diol tidak dapat terbentuk.</span>
+                <span class="lang-en">Stereospecific reaction, because the cyclic osmate ester mechanism absolutely forces both OH groups onto the same face (syn) — anti-diol cannot form at all.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(5,'C',false)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Tidak stereoselektif dan tidak stereospesifik, karena terbentuk diol yang bersifat achiral.</span>
+                <span class="lang-en">Neither stereoselective nor stereospecific, because the diol product is achiral.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(5,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Stereospesifik, tetapi hanya pada suhu tinggi karena energi aktivasi yang diperlukan.</span>
+                <span class="lang-en">Stereospecific only at high temperatures due to the required activation energy.</span>
+            </button>
+            <div class="feedback" id="fb-5"></div>
+            <div class="pembahasan" id="pem-5">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> <b>B benar ✅.</b> OsO₄ bereaksi dengan alkena membentuk <b>ester osmat siklik sementara (5-anggota)</b>. Karena Os harus terikat dengan kedua atom oksigen pada atom karbon yang berbeda dalam satu siklus, geometri ini <i>memaksakan</i> kedua OH berada di <b>sisi yang sama (sin)</b>. Ini adalah reaksi <b>stereospesifik</b> — tidak ada pilihan mekanistik untuk membentuk anti-diol. Bandingkan dengan pembuatan diol menggunakan mCPBA + pembukaan epoksid (basa lemah) yang memberi <b>anti-diol stereospesifik</b>. OsO₄ (sin) vs mCPBA→anti adalah pasangan reaksi stereospesifik yang sering diuji dalam kimia organik lanjutan.</span>
+                <span class="lang-en"> <b>B is correct ✅.</b> OsO₄ reacts with an alkene to form a temporary <b>5-membered cyclic osmate ester</b>. Since Os must bond to both oxygen atoms on different carbon atoms within one ring, this geometry <i>forces</i> both OH groups onto <b>the same face (syn)</b>. This is a <b>stereospecific</b> reaction — there is no mechanistic pathway for anti-diol formation. Compare to diol synthesis via mCPBA + epoxide opening (mild base) which gives a <b>stereospecific anti-diol</b>. OsO₄ (syn) vs. mCPBA→anti is a frequently tested pair of stereospecific reactions in advanced organic chemistry.</span>
+            </div>
+        </div>
+
+        <!-- Q6 -->
+        <div class="quiz-item" id="qi-6">
+            <span class="quiz-tag tag-mekanisme">
+                <span class="lang-id">Mekanisme</span><span class="lang-en">Mechanism</span>
+            </span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">6</div>
+                <div class="quiz-q-text lang-id">Mengapa reaksi SN1 umumnya menghasilkan campuran rasemat, bukan produk stereospesifik?</div>
+                <div class="quiz-q-text lang-en">Why does the SN1 reaction typically yield a racemic mixture rather than a stereospecific product?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(6,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Karena SN1 berjalan dengan serangan nukleofilik dari dua sisi sekaligus secara simultan (konserted).</span>
+                <span class="lang-en">Because SN1 proceeds with simultaneous nucleophilic attack from both sides at once (concerted).</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(6,'B',false)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Karena gugus pergi meninggalkan molekul dari belakang, mengunci satu sisi.</span>
+                <span class="lang-en">Because the leaving group departs from the back, locking one face.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(6,'C',true)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Karena intermediat karbokation bersifat sp² (planar), sehingga nukleofil dapat menyerang dari kedua muka dengan probabilitas yang hampir sama, menghasilkan campuran ~50:50 enantiomer.</span>
+                <span class="lang-en">Because the carbocation intermediate is sp² (planar), allowing nucleophilic attack from either face with nearly equal probability, yielding a ~50:50 enantiomeric mixture.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(6,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Karena SN1 hanya terjadi pada senyawa achiral sehingga tidak ada stereoisomer yang terbentuk.</span>
+                <span class="lang-en">Because SN1 only occurs in achiral compounds so no stereoisomers are formed.</span>
+            </button>
+            <div class="feedback" id="fb-6"></div>
+            <div class="pembahasan" id="pem-6">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> <b>C benar ✅.</b> Dalam SN1: (1) gugus pergi terlebih dahulu meninggalkan → terbentuk karbokation; (2) karbokation bersifat <b>sp² — planar</b> (hibridisasi karbon pusat = sp², orbital p kosong tegak lurus bidang). Karena karbokation planar, nukleofil dapat mendekati dari <b>kedua sisi bidang yang setara (re face dan si face)</b>. Hasilnya adalah campuran rasemat ~50:50 R dan S. Catatan: dalam praktik, jika ada gugus berdekatan yang lebih besar dari satu sisi, sedikit ketidaksamaan rasio dapat terjadi (inversi sedikit lebih banyak daripada retensi akibat ion pasangan), tetapi produk utama tetap mendekati rasemat.</span>
+                <span class="lang-en"> <b>C is correct ✅.</b> In SN1: (1) the leaving group first departs → carbocation forms; (2) the carbocation is <b>sp² — planar</b> (central carbon hybridization = sp², empty p orbital perpendicular to the plane). Because the carbocation is planar, the nucleophile can approach from <b>either equivalent face (re face and si face)</b>. The result is a ~50:50 racemic mixture of R and S. Note: in practice, if nearby groups are larger on one side, slight ratio inequality can occur (slightly more inversion due to ion-pair effects), but the main product remains approximately racemic.</span>
+            </div>
+        </div>
+
+        <!-- Q7 -->
+        <div class="quiz-item" id="qi-7">
+            <span class="quiz-tag tag-selektif">
+                <span class="lang-id">Stereoselektif</span><span class="lang-en">Stereoselective</span>
+            </span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">7</div>
+                <div class="quiz-q-text lang-id">Seorang kimiawan mereduksi 2-metilsikloheksanon dengan NaBH₄ dan mendapatkan rasio produk trans:cis = 3:1. Pernyataan mana yang paling tepat?</div>
+                <div class="quiz-q-text lang-en">A chemist reduces 2-methylcyclohexanone with NaBH₄ and obtains a trans:cis product ratio of 3:1. Which statement is most accurate?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(7,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">Ini adalah reaksi stereospesifik karena hanya menghasilkan produk trans.</span>
+                <span class="lang-en">This is a stereospecific reaction because it only yields the trans product.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(7,'B',true)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Ini adalah reaksi stereoselektif karena keduanya produk trans dan cis terbentuk, tetapi trans lebih dominan akibat preferensi serangan hidrida dari sisi ekuatorial (equatorial attack) yang kurang terhalang.</span>
+                <span class="lang-en">This is a stereoselective reaction because both trans and cis products form, but trans predominates due to preferred hydride attack from the less-hindered equatorial face.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(7,'C',false)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">Reaksi ini tidak memiliki aspek stereokimia karena NaBH₄ adalah pereaksi achiral.</span>
+                <span class="lang-en">This reaction has no stereochemical aspect because NaBH₄ is an achiral reagent.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(7,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Rasio 3:1 menunjukkan bahwa reaksi berjalan melalui intermediat karbokation planar.</span>
+                <span class="lang-en">The 3:1 ratio indicates the reaction proceeds via a planar carbocation intermediate.</span>
+            </button>
+            <div class="feedback" id="fb-7"></div>
+            <div class="pembahasan" id="pem-7">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> <b>B benar ✅.</b> Karena kedua produk (trans dan cis) tetap terbentuk (hanya dalam rasio berbeda), ini adalah <b>reaksi stereoselektif</b>, bukan stereospesifik. Pada 2-metilsikloheksanon: gugus metil aksial menghalangi serangan hidrida dari sisi aksial → serangan lebih mudah dari sisi <b>ekuatorial</b> → OH mengisi posisi <b>aksial</b> → produk <b>trans</b>-2-metilsikloheksanol (OH aksial, CH₃ ekuatorial) lebih dominan. Ini adalah tipe stereoselektivitas fasial yang dikontrol oleh hambatan sterik dari gugus α-aksial.</span>
+                <span class="lang-en"> <b>B is correct ✅.</b> Since both products (trans and cis) still form (just in different ratios), this is a <b>stereoselective</b> reaction, not stereospecific. For 2-methylcyclohexanone: the axial methyl group blocks hydride attack from the axial face → attack is easier from the <b>equatorial</b> face → OH fills the <b>axial</b> position → <b>trans</b>-2-methylcyclohexanol (axial OH, equatorial CH₃) predominates. This is facial stereoselectivity controlled by steric hindrance from the α-axial substituent.</span>
+            </div>
+        </div>
+
+        <!-- Q8 -->
+        <div class="quiz-item" id="qi-8">
+            <span class="quiz-tag tag-konsep">
+                <span class="lang-id">Konsep Lanjut</span><span class="lang-en">Advanced Concept</span>
+            </span>
+            <div class="quiz-q-header">
+                <div class="quiz-number">8</div>
+                <div class="quiz-q-text lang-id">Manakah pasangan reaksi yang keduanya bersifat <b>stereospesifik</b>?</div>
+                <div class="quiz-q-text lang-en">Which pair of reactions are <b>both stereospecific</b>?</div>
+            </div>
+            <button class="quiz-option" onclick="submitAnswer(8,'A',false)">
+                <span class="opt-letter">A</span>
+                <span class="lang-id">SN1 pada klorida tersier dan reduksi keton dengan L-Selectride.</span>
+                <span class="lang-en">SN1 on a tertiary chloride and ketone reduction with L-Selectride.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(8,'B',false)">
+                <span class="opt-letter">B</span>
+                <span class="lang-id">Reduksi keton Cram dengan NaBH₄ dan aldol Evans dengan oksazolidinon bor.</span>
+                <span class="lang-en">Cram reduction of a ketone with NaBH₄ and Evans aldol with boron oxazolidinone.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(8,'C',true)">
+                <span class="opt-letter">C</span>
+                <span class="lang-id">SN2 pada substrat kiral dan adisi Br₂ pada trans-2-butena.</span>
+                <span class="lang-en">SN2 on a chiral substrate and Br₂ addition to trans-2-butene.</span>
+            </button>
+            <button class="quiz-option" onclick="submitAnswer(8,'D',false)">
+                <span class="opt-letter">D</span>
+                <span class="lang-id">Hidroborasi alkena dan SN1 alkil klorida tersier.</span>
+                <span class="lang-en">Hydroboration of an alkene and SN1 of a tertiary alkyl chloride.</span>
+            </button>
+            <div class="feedback" id="fb-8"></div>
+            <div class="pembahasan" id="pem-8">
+                <strong class="lang-id">📚 Pembahasan:</strong><strong class="lang-en">📚 Explanation:</strong>
+                <span class="lang-id"> <b>C benar ✅.</b> Analisis tiap pilihan:<br>
+                • <b>A — Salah:</b> SN1 → rasemat (karbokation planar = stereoselektif lemah). Reduksi L-Selectride → stereoselektif tinggi, bukan stereospesifik.<br>
+                • <b>B — Salah:</b> Reduksi Cram NaBH₄ = <i>stereoselektif</i>. Aldol Evans = <i>stereoselektif</i> tinggi. Keduanya bukan stereospesifik.<br>
+                • <b>C — Benar ✅:</b> SN2 = <i>stereospesifik</i> (inversi Walden wajib). Adisi Br₂ = <i>stereospesifik</i> (adisi anti wajib via bromonium). Keduanya tepat.<br>
+                • <b>D — Salah:</b> Hidroborasi = <i>stereospesifik</i> (adisi sin), tetapi SN1 = <i>stereoselektif</i> lemah (rasemat). Campuran jenis.</span>
+                <span class="lang-en"> <b>C is correct ✅.</b> Analysis of each option:<br>
+                • <b>A — Wrong:</b> SN1 → racemic (planar carbocation = weakly stereoselective). L-Selectride reduction → highly stereoselective, not stereospecific.<br>
+                • <b>B — Wrong:</b> Cram NaBH₄ reduction = <i>stereoselective</i>. Evans aldol = highly <i>stereoselective</i>. Neither is stereospecific.<br>
+                • <b>C — Correct ✅:</b> SN2 = <i>stereospecific</i> (mandatory Walden inversion). Br₂ addition = <i>stereospecific</i> (mandatory anti addition via bromonium). Both qualify.<br>
+                • <b>D — Wrong:</b> Hydroboration = <i>stereospecific</i> (syn addition), but SN1 = weakly <i>stereoselective</i> (racemic). Mixed types.</span>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="quiz-summary" id="quiz-summary">
+            <h3 class="lang-id">🎉 Selesai! Hasil Evaluasi Anda</h3>
+            <h3 class="lang-en">🎉 Finished! Your Evaluation Result</h3>
+            <div class="big-score" id="final-score">0 / 8</div>
+            <p id="summary-message"></p>
+            <button class="btn-retake" onclick="retakeQuiz()">
+                <span class="lang-id">🔁 Ulangi Latihan</span><span class="lang-en">🔁 Retake Quiz</span>
+            </button>
+        </div>
+
+    </div>
+
+</div><!-- end container -->
+
+<script>
+    // ===== LANGUAGE =====
+    function setLanguage(lang) {
+        document.getElementById('docLang').setAttribute('lang', lang);
+        document.getElementById('btn-id').classList.toggle('active', lang === 'id');
+        document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+    }
+
+    // ===== MOLECULE DATA (XYZ) =====
+    // cis-2-Butene (4 carbons, flat Z arrangement)
+    const molData = {
+        cis2butene: `6\ncis-2-Butene\nC -2.2  0.3  0\nC -1.0 -0.3  0\nC  1.0 -0.3  0\nC  2.2  0.3  0\nC -1.0  1.3 -0.2\nC  1.0  1.3  0.2`,
+
+        trans2butene: `6\ntrans-2-Butene\nC -2.2  0.4  0\nC -1.0 -0.3  0\nC  1.0 -0.3  0\nC  2.2  0.4  0\nC -1.0  1.4 -0.3\nC  1.0 -1.4  0.3`,
+
+        // (R)-2-Bromobutane - chiral center at C2
+        R2bromobutane: `5\n(R)-2-Bromobutane\nC  0.0   0.0  0.0\nBr 0.0   0.0  2.0\nC -1.5  0.0 -0.8\nC  0.8  1.3 -0.5\nC  0.8 -1.3 -0.5`,
+
+        // (S)-2-Bromobutane - mirror image
+        S2bromobutane: `5\n(S)-2-Bromobutane\nC  0.0   0.0  0.0\nBr 0.0   0.0  2.0\nC  1.5   0.0 -0.8\nC -0.8  1.3 -0.5\nC -0.8 -1.3 -0.5`,
+
+        // Ethanol (simplified for Cram major product representation)
+        cramMajor: `4\nCram Major Product\nC  0.0  0.0  0.0\nC  0.0  0.0  1.5\nO  1.3  0.0  2.1\nC -1.3  0.0 -0.8`,
+
+        cramMinor: `4\nCram Minor Product\nC  0.0  0.0  0.0\nC  0.0  0.0  1.5\nO -1.3  0.0  2.1\nC  1.3  0.0 -0.8`,
+
+        // SN2 product (inverted center)
+        sn2prod: `5\nSN2 Product (inverted)\nC  0.0  0.0  0.0\nO  0.0  0.0  1.7\nC  1.5  0.0 -0.6\nC -0.7  1.3 -0.5\nC -0.7 -1.3 -0.5`,
+
+        // SN1 product (carbocation intermediate rep)
+        sn1prod: `5\nSN1 Carbocation\nC  0.0  0.0  0.0\nC  1.4  0.0  0.0\nC -1.4  0.0  0.0\nO  0.0  1.5  0.5\nO  0.0 -1.5 -0.5`
+    };
+
+    let viewers = {};
+    let initialViews = {};
+    let labelsState = {};
+    let spinInterval = null;
+
+    // Color schemes for different molecule types
+    const styleConfigs = {
+        default: { stick: { radius: 0.15, colorscheme: 'Jmol' }, sphere: { scale: 0.35, colorscheme: 'Jmol' } },
+        chiral:  { stick: { radius: 0.16, colorscheme: 'Jmol' }, sphere: { scale: 0.38, colorscheme: 'Jmol' } }
+    };
+
+    function initViewer(elementId, xyzData, styleType) {
+        let el = document.getElementById(elementId);
+        if (!el) return;
+        let viewer = $3Dmol.createViewer(el, { backgroundColor: 'white' });
+        viewer.addModel(xyzData, "xyz");
+        let style = styleConfigs[styleType || 'default'];
+        viewer.setStyle({}, style);
+        viewer.zoomTo();
+        viewer.render();
+        setTimeout(() => { initialViews[elementId] = viewer.getView(); }, 120);
+        viewers[elementId] = viewer;
+        labelsState[elementId] = false;
+    }
+
+    window.onload = function() {
+        initViewer('viewer-cis2but',     molData.cis2butene,     'default');
+        initViewer('viewer-trans2but',   molData.trans2butene,   'default');
+        initViewer('viewer-R-2brombut',  molData.R2bromobutane,  'chiral');
+        initViewer('viewer-S-2brombut',  molData.S2bromobutane,  'chiral');
+        initViewer('viewer-cram-major',  molData.cramMajor,      'default');
+        initViewer('viewer-cram-minor',  molData.cramMinor,      'default');
+        initViewer('viewer-sn2-prod',    molData.sn2prod,        'chiral');
+        initViewer('viewer-sn1-prod',    molData.sn1prod,        'default');
+    };
+
+    function resetView(id) {
+        let v = viewers[id];
+        if (!v) return;
+        v.removeAllLabels();
+        labelsState[id] = false;
+        v.setStyle({}, styleConfigs['default']);
+        if (initialViews[id]) { v.setView(initialViews[id]); } else { v.zoomTo(); }
+        v.render();
+    }
+
+    function toggleLabels(id) {
+        let v = viewers[id];
+        if (!v) return;
+        if (!labelsState[id]) {
+            let atoms = v.getModel().selectedAtoms({});
+            atoms.forEach(function(atom) {
+                v.addLabel(atom.elem, {
+                    position: { x: atom.x, y: atom.y, z: atom.z },
+                    backgroundColor: "rgba(0,0,0,0.75)",
+                    fontColor: "white",
+                    fontSize: 16,
+                    alignment: "center"
+                });
+            });
+            labelsState[id] = true;
+        } else {
+            v.removeAllLabels();
+            labelsState[id] = false;
+        }
+        v.render();
+    }
+
+    function toggle2D3D(viewerId, text2dId) {
+        let vDiv = document.getElementById(viewerId);
+        let tDiv = document.getElementById(text2dId);
+        let showing3d = (vDiv.style.display !== "none");
+        vDiv.style.display = showing3d ? "none" : "block";
+        tDiv.style.display = showing3d ? "flex" : "none";
+        tDiv.style.alignItems = "center";
+        tDiv.style.justifyContent = "center";
+    }
+
+    function rotateAll(ids) {
+        if (spinInterval) { clearInterval(spinInterval); spinInterval = null; }
+        spinInterval = setInterval(() => {
+            ids.forEach(id => {
+                if (viewers[id] && document.getElementById(id) && document.getElementById(id).style.display !== "none") {
+                    viewers[id].rotate(1.5, "y");
+                    viewers[id].render();
+                }
+            });
+        }, 50);
+    }
+
+    function stopRotate() {
+        if (spinInterval) { clearInterval(spinInterval); spinInterval = null; }
+    }
+
+    // ===== QUIZ SYSTEM =====
+    let score = 0;
+    let answered = 0;
+    const totalQ = 8;
+    const correctAnswers = { 1:'B', 2:'C', 3:'B', 4:'B', 5:'B', 6:'C', 7:'B', 8:'C' };
+
+    function submitAnswer(qNum, choice, isCorrect) {
+        let item = document.getElementById('qi-' + qNum);
+        if (item.classList.contains('answered-correct') || item.classList.contains('answered-wrong')) return;
+
+        let lang = document.getElementById('docLang').getAttribute('lang');
+        let fb   = document.getElementById('fb-' + qNum);
+        let pem  = document.getElementById('pem-' + qNum);
+
+        item.querySelectorAll('.quiz-option').forEach(btn => {
+            btn.disabled = true;
+            let btnChoice = btn.getAttribute('onclick').match(/'([A-D])'/)[1];
+            if (btnChoice === correctAnswers[qNum]) {
+                btn.classList.add('correct-choice');
+            } else if (btnChoice === choice && !isCorrect) {
+                btn.classList.add('wrong-choice');
+            }
+        });
+
+        if (isCorrect) {
+            fb.className = 'feedback correct';
+            fb.innerHTML = lang === 'id' ? "✅ Jawaban Anda Tepat!" : "✅ Correct Answer!";
+            item.classList.add('answered-correct');
+            score++;
+        } else {
+            fb.className = 'feedback wrong';
+            fb.innerHTML = lang === 'id'
+                ? "❌ Jawaban Kurang Tepat. Lihat pembahasan di bawah."
+                : "❌ Incorrect. See the explanation below.";
+            item.classList.add('answered-wrong');
+        }
+
+        pem.style.display = 'block';
+        answered++;
+        document.getElementById('answered-count').textContent = answered;
+        document.getElementById('answered-count-en').textContent = answered;
+        document.getElementById('score-display').textContent = score;
+        document.getElementById('score-display-en').textContent = score;
+
+        if (answered === totalQ) showSummary();
+    }
+
+    function showSummary() {
+        let lang = document.getElementById('docLang').getAttribute('lang');
+        let summary = document.getElementById('quiz-summary');
+        document.getElementById('final-score').textContent = score + ' / ' + totalQ;
+
+        let msg = '';
+        if (score === totalQ) {
+            msg = lang === 'id'
+                ? '🏆 Sempurna! Anda menguasai stereokimia reaksi organik dengan luar biasa!'
+                : '🏆 Perfect! You have mastered organic reaction stereochemistry brilliantly!';
+        } else if (score >= 6) {
+            msg = lang === 'id'
+                ? '👏 Bagus! Pemahaman Anda tentang stereospesifik dan stereoselektif sudah solid. Tinjau soal yang belum tepat.'
+                : '👏 Great! Your understanding of stereospecific and stereoselective concepts is solid. Review the incorrect ones.';
+        } else if (score >= 4) {
+            msg = lang === 'id'
+                ? '📖 Cukup. Fokus kembali pada perbedaan mekanisme stereospesifik vs stereoselektif dan pelajari model Cram/Felkin-Anh.'
+                : '📖 Fair. Refocus on the mechanistic differences between stereospecific and stereoselective, and study the Cram/Felkin-Anh models.';
+        } else {
+            msg = lang === 'id'
+                ? '💡 Kembali ke bagian konsep dasar dan visualisasi 3D. Pahami dulu perbedaan ion bromonium (anti) vs karbokation (acak). Semangat!'
+                : '💡 Return to the core concept section and 3D visualizations. First understand the difference between bromonium ion (anti) vs carbocation (random). Keep going!';
+        }
+        document.getElementById('summary-message').textContent = msg;
+        summary.style.display = 'block';
+        summary.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function retakeQuiz() {
+        score = 0;
+        answered = 0;
+        document.getElementById('answered-count').textContent = 0;
+        document.getElementById('answered-count-en').textContent = 0;
+        document.getElementById('score-display').textContent = 0;
+        document.getElementById('score-display-en').textContent = 0;
+        document.getElementById('quiz-summary').style.display = 'none';
+
+        for (let i = 1; i <= totalQ; i++) {
+            let item = document.getElementById('qi-' + i);
+            item.classList.remove('answered-correct', 'answered-wrong');
+            item.querySelectorAll('.quiz-option').forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('correct-choice', 'wrong-choice');
+            });
+            let fb = document.getElementById('fb-' + i);
+            fb.className = 'feedback';
+            fb.innerHTML = '';
+            document.getElementById('pem-' + i).style.display = 'none';
+        }
+        document.getElementById('latihan-soal').scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
+</body>
+</html>

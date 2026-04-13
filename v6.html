@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reaksi Aldol 3D – OKOL-WDI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:ital,wght@0,300;0,400;0,600;0,700;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        /* ===== CSS VARIABLES (OKOL-WDI) ===== */
+        :root {
+            --primary: #0a0e1a;
+            --secondary: #0d1530;
+            --accent-blue: #00b4d8;
+            --accent-cyan: #06ffd8;
+            --accent-purple: #7b2fff;
+            --accent-violet: #c77dff;
+            --accent-orange: #ff8c42;
+            --glow-cyan: rgba(6,255,216,0.4);
+            --glow-purple: rgba(123,47,255,0.3);
+            --glow-orange: rgba(255,140,66,0.4);
+            --text-primary: #e8f4fd;
+            --text-secondary: #8ab4cc;
+            --text-muted: #4a6070;
+            --glass: rgba(13,21,48,0.72);
+            --glass-border: rgba(6,255,216,0.18);
+            --font-display: 'Orbitron', monospace;
+            --font-body: 'Exo 2', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+        body { margin: 0; overflow: hidden; background-color: var(--primary); color: var(--text-primary); font-family: var(--font-body); }
+        ::selection { background: var(--accent-purple); color: #fff; }
+
+        #webgl-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
+
+        .bg-grid {
+            position: fixed; inset: 0; pointer-events: none; z-index: 1;
+            background-image:
+                linear-gradient(rgba(6,255,216,0.018) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(6,255,216,0.018) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse at 50% 50%, black, transparent 85%);
+        }
+
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 32px rgba(0,0,0,0.5), 0 0 0 0 rgba(6,255,216,0);
+            transition: box-shadow 0.3s, border-color 0.3s;
+        }
+        .glass-panel:hover { border-color: rgba(6,255,216,0.35); box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 24px var(--glow-cyan); }
+
+        .ui-layer { position: absolute; z-index: 10; pointer-events: none; }
+        .interactive { pointer-events: auto; }
+
+        input[type=range] { -webkit-appearance: none; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--accent-cyan); cursor: pointer; margin-top: -6px; box-shadow: 0 0 8px var(--glow-cyan); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: rgba(6,255,216,0.15); border-radius: 2px; }
+
+        .glow-text { text-shadow: 0 0 8px var(--glow-cyan); }
+        canvas#energy-chart { width: 100%; height: 150px; }
+
+        /* ===== START OVERLAY ===== */
+        #start-overlay {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: var(--primary); z-index: 50;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: flex-start;
+            padding-top: 18vh;
+            transition: opacity 0.6s;
+        }
+        #start-overlay::before {
+            content: '';
+            position: absolute; inset: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse at 20% 40%, rgba(255,140,66,0.14) 0%, transparent 55%),
+                radial-gradient(ellipse at 80% 30%, rgba(6,255,216,0.12) 0%, transparent 55%),
+                radial-gradient(ellipse at 50% 80%, rgba(123,47,255,0.10) 0%, transparent 55%);
+        }
+        .overlay-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(255,140,66,0.08);
+            border: 1px solid rgba(255,140,66,0.3);
+            border-radius: 20px; padding: 6px 20px;
+            font-family: var(--font-mono); font-size: 0.72rem;
+            color: var(--accent-orange); letter-spacing: 2px;
+            margin-bottom: 1.6rem;
+            animation: pulse-border-orange 2s ease infinite;
+            position: relative; z-index: 1;
+        }
+        .overlay-badge::before { content: '◉'; font-size: 0.6rem; animation: blink 1.5s ease infinite; }
+        @keyframes pulse-border-orange {
+            0%,100% { box-shadow: 0 0 0 0 rgba(255,140,66,0.3); }
+            50% { box-shadow: 0 0 0 6px rgba(255,140,66,0); }
+        }
+        @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+        .overlay-title {
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 5vw, 3.4rem);
+            font-weight: 900; line-height: 1.1;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            position: relative; z-index: 1;
+        }
+        .overlay-title .t1 {
+            background: linear-gradient(135deg, #fff 0%, var(--accent-orange) 50%, var(--accent-violet) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            display: block;
+        }
+        .overlay-title .t2 {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-orange));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            display: block; font-size: 0.5em;
+            letter-spacing: 4px; margin-top: 6px;
+        }
+        .overlay-sub {
+            font-family: var(--font-body);
+            font-size: 0.92rem; font-weight: 300;
+            color: var(--text-secondary);
+            margin: 1.2rem 0 2rem; letter-spacing: 0.5px;
+            position: relative; z-index: 1;
+        }
+        .btn-start {
+            position: relative; z-index: 1;
+            padding: 14px 36px; border-radius: 50px; border: none;
+            font-family: var(--font-body); font-weight: 700; font-size: 0.92rem;
+            letter-spacing: 0.5px; cursor: pointer;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-purple));
+            color: #fff; box-shadow: 0 0 30px var(--glow-orange);
+            transition: all 0.3s; overflow: hidden;
+        }
+        .btn-start::before {
+            content: ''; position: absolute; inset: 0;
+            background: rgba(255,255,255,0.12);
+            transform: translateX(-100%) skewX(-15deg); transition: transform 0.5s;
+        }
+        .btn-start:hover::before { transform: translateX(100%) skewX(-15deg); }
+        .btn-start:hover { transform: translateY(-3px); box-shadow: 0 8px 40px var(--glow-orange); }
+
+        .overlay-formula {
+            position: relative; z-index: 1;
+            font-family: var(--font-mono); font-size: 0.72rem;
+            color: var(--accent-orange); opacity: 0.7;
+            letter-spacing: 2px; margin-top: 2rem;
+        }
+
+        /* ===== SEGMENTED LANG TOGGLE ===== */
+        .lang-toggle-wrap {
+            display: flex;
+            background: rgba(0,0,0,0.28);
+            border-radius: 10px;
+            padding: 3px;
+            gap: 3px;
+        }
+        .lang-seg {
+            padding: 5px 14px;
+            border-radius: 7px;
+            border: none;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 0.72rem;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.25s;
+            color: var(--text-muted);
+            background: transparent;
+            line-height: 1;
+        }
+        .lang-seg:hover { color: var(--accent-cyan); background: rgba(6,255,216,0.08); }
+        .lang-seg.active {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            color: #0a0e1a;
+            box-shadow: 0 0 10px var(--glow-cyan);
+        }
+
+        input:checked[type='checkbox'].toggle-checkbox { transform: translateX(100%); border-color: var(--accent-cyan); }
+        input:checked[type='checkbox'].toggle-checkbox + .toggle-label { background-color: var(--accent-cyan); }
+
+        #btn-play { background: linear-gradient(135deg, var(--accent-orange), var(--accent-purple)); box-shadow: 0 0 20px var(--glow-orange); }
+        #btn-play:hover { box-shadow: 0 0 35px var(--glow-orange); }
+        #btn-reset:hover { background: rgba(123,47,255,0.25); color: var(--accent-violet); }
+
+        #ui-title { font-family: var(--font-display); font-size: 1rem; font-weight: 700; letter-spacing: 1px; color: var(--accent-orange); }
+        #ui-step-badge { font-family: var(--font-mono); background: rgba(255,140,66,0.08); color: var(--accent-orange); border-color: rgba(255,140,66,0.3); }
+        #ui-energy-title { font-family: var(--font-display); font-size: 0.75rem; letter-spacing: 1px; color: var(--accent-orange); }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--primary); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-orange); border-radius: 3px; }
+
+        .overlay-logos {
+            position: relative; z-index: 1;
+            display: flex; align-items: center; justify-content: center;
+            gap: 16px; margin-bottom: 2rem;
+        }
+        .overlay-logo-item {
+            width: 52px; height: 52px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+            transition: all 0.3s;
+            box-shadow: 0 0 0 0 var(--glow-orange);
+        }
+        .overlay-logo-item:hover { border-color: var(--accent-orange); box-shadow: 0 0 16px var(--glow-orange); transform: translateY(-3px); }
+        .overlay-logo-item img { width: 100%; height: 100%; object-fit: contain; padding: 6px; }
+    </style>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <div class="bg-grid"></div>
+    <div id="webgl-container"></div>
+
+    <!-- Start Overlay -->
+    <div id="start-overlay" class="interactive">
+        <div class="overlay-logos">
+            <div class="overlay-logo-item"><img src="logo1.png" alt="Logo 1"></div>
+            <div class="overlay-logo-item"><img src="logo2.png" alt="Logo 2"></div>
+            <div class="overlay-logo-item"><img src="logo3.png" alt="Logo 3"></div>
+            <div class="overlay-logo-item"><img src="logo4.png" alt="Logo 4"></div>
+        </div>
+        <span class="overlay-badge">OKOL-WDI • LAB KIMIA ORGANIK</span>
+        <h1 class="overlay-title">
+            <span class="t1">Reaksi Aldol</span>
+            <span class="t2">Mekanisme 3D Interaktif</span>
+        </h1>
+        <p class="overlay-sub">Interactive 3D Mechanism &bull; Ultra HD &bull; Base-Catalyzed Aldol</p>
+        <button id="start-btn" class="btn-start">▶ &nbsp;Start Experience / Mulai</button>
+        <p class="overlay-formula">2 CH₃CHO →(OH⁻)→ CH₃CH(OH)CH₂CHO &nbsp;|&nbsp; Aldol</p>
+    </div>
+
+    <!-- Main UI Overlay -->
+    <div class="ui-layer w-full h-full flex flex-col justify-between p-4 md:p-6 opacity-0" id="main-ui">
+
+        <!-- Header -->
+        <header class="flex justify-between items-start">
+            <div class="glass-panel rounded-2xl p-4 max-w-sm interactive">
+                <h2 class="font-bold mb-1" id="ui-title">Reaksi Aldol</h2>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-xs px-2 py-1 rounded border" id="ui-step-badge">Tahap 1/4</span>
+                    <span class="text-xs px-2 py-1 rounded border" style="background:rgba(255,140,66,0.12);color:var(--accent-orange);border-color:rgba(255,140,66,0.3);font-family:var(--font-mono)" id="ui-mech-badge">Katalis Basa</span>
+                </div>
+                <p class="text-sm" style="color:var(--text-secondary)" id="ui-desc">Basa (OH⁻) melepas α-hidrogen dari asetaldehida membentuk ion enolat yang nukleofil.</p>
+            </div>
+
+            <div class="flex flex-col gap-3 interactive">
+                <div class="glass-panel rounded-xl p-2 w-fit self-end">
+                    <div class="lang-toggle-wrap">
+                        <button class="lang-seg" id="lang-btn-en" data-lang="EN">EN</button>
+                        <button class="lang-seg" id="lang-btn-id" data-lang="ID">ID</button>
+                    </div>
+                </div>
+                <div class="glass-panel rounded-xl p-3 flex flex-col gap-3">
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <span class="text-sm" style="color:var(--text-secondary)" id="ui-ts-label">Slow-Mo TS</span>
+                        <input type="checkbox" id="ts-toggle" class="cursor-pointer" style="width:15px;height:15px;accent-color:var(--accent-orange);"/>
+                    </label>
+                    <div class="flex flex-col gap-1">
+                        <span class="text-xs" style="color:var(--text-muted)" id="ui-speed-label">Kecepatan: 1x</span>
+                        <input type="range" id="speed-slider" min="0.2" max="2" step="0.1" value="1" class="w-full">
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Right: Energy Diagram -->
+        <div class="absolute right-6 top-1/2 -translate-y-1/2 glass-panel rounded-2xl p-4 w-64 interactive hidden md:block">
+            <h3 class="text-sm font-semibold mb-2" id="ui-energy-title">Profil Energi</h3>
+            <canvas id="energy-chart"></canvas>
+            <div class="flex justify-between mt-1" style="font-size:10px;color:var(--text-muted)">
+                <span id="ui-rxn-coord">Koordinat Reaksi</span>
+            </div>
+        </div>
+
+        <!-- Footer Controls -->
+        <footer class="flex justify-center mb-2">
+            <div class="glass-panel rounded-full p-2 flex items-center gap-4 interactive shadow-[0_0_20px_rgba(0,0,0,0.8)]">
+                <button id="btn-prev" class="w-10 h-10 flex items-center justify-center rounded-full transition-colors" style="color:var(--text-secondary)" onmouseover="this.style.background='rgba(255,140,66,0.1)'" onmouseout="this.style.background='transparent'">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
+                </button>
+                <button id="btn-play" class="w-14 h-14 flex items-center justify-center rounded-full text-white transition-transform transform hover:scale-105">
+                    <svg id="icon-play" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    <svg id="icon-pause" class="hidden" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                </button>
+                <button id="btn-next" class="w-10 h-10 flex items-center justify-center rounded-full transition-colors" style="color:var(--text-secondary)" onmouseover="this.style.background='rgba(255,140,66,0.1)'" onmouseout="this.style.background='transparent'">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+                </button>
+                <div class="w-px h-8 mx-2" style="background:rgba(255,140,66,0.15)"></div>
+                <button id="btn-reset" class="w-10 h-10 flex items-center justify-center rounded-full transition-colors" style="color:var(--accent-violet)" title="Reset Step" onmouseover="this.style.background='rgba(123,47,255,0.2)'" onmouseout="this.style.background='transparent'">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 2D Diagram Panel -->
+    <div id="panel-2d"
+         class="absolute z-20 glass-panel rounded-2xl p-3 interactive"
+         style="display:none; left:1.5rem; top:210px; width:320px; max-height:calc(100vh - 290px); overflow-y:auto; scrollbar-width:thin; scrollbar-color:rgba(255,140,66,0.3) transparent;">
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold" style="color:var(--accent-orange);font-family:var(--font-mono)" id="label-2d">Diagram 2D – Deprotonasi</span>
+            <button id="btn-toggle-2d" class="text-[10px] px-2 py-1 rounded-lg" style="background:rgba(13,21,48,0.8);border:1px solid var(--glass-border);color:var(--text-secondary);transition:all 0.2s">Sembunyikan</button>
+        </div>
+        <div id="svg-2d-container" style="overflow:visible;width:100%;"></div>
+    </div>
+
+    <button id="btn-show-2d" class="z-20 glass-panel rounded-xl px-3 py-2 text-xs font-semibold interactive" style="display:none;position:absolute;left:1.5rem;top:210px;color:var(--accent-orange);font-family:var(--font-mono);transition:all 0.2s">▤ Diagram 2D</button>
+
+    <!-- Quiz Modal -->
+    <div id="quiz-modal" class="absolute top-0 left-0 w-full h-full backdrop-blur-sm z-50 hidden flex-col items-center justify-center interactive" style="background:rgba(10,14,26,0.88)">
+        <div class="glass-panel p-8 rounded-2xl max-w-md w-full" style="border-top:4px solid var(--accent-orange)" id="quiz-box">
+            <h2 class="text-2xl font-bold mb-4" style="font-family:var(--font-display);color:var(--text-primary);font-size:1.1rem;letter-spacing:1px" id="quiz-title">Kuis Konsep</h2>
+            <p class="mb-6" style="color:var(--text-secondary);font-size:0.92rem" id="quiz-q">Produk utama reaksi aldol dari asetaldehida tanpa dehidrasi adalah?</p>
+            <div class="space-y-3">
+                <button class="w-full text-left px-4 py-3 rounded-xl quiz-opt" style="background:rgba(13,21,48,0.85);border:1px solid var(--glass-border);color:var(--text-secondary);transition:all 0.2s;font-size:0.88rem" data-correct="false" id="qopt-a">A) Krotanaldehida (but-2-enal)</button>
+                <button class="w-full text-left px-4 py-3 rounded-xl quiz-opt" style="background:rgba(13,21,48,0.85);border:1px solid var(--glass-border);color:var(--text-secondary);transition:all 0.2s;font-size:0.88rem" data-correct="true" id="qopt-b">B) 3-Hidroksibutanal</button>
+                <button class="w-full text-left px-4 py-3 rounded-xl quiz-opt" style="background:rgba(13,21,48,0.85);border:1px solid var(--glass-border);color:var(--text-secondary);transition:all 0.2s;font-size:0.88rem" data-correct="false" id="qopt-c">C) Asam Asetat</button>
+            </div>
+            <div id="quiz-feedback" class="mt-4 text-center font-bold hidden"></div>
+            <button id="quiz-close" class="mt-6 w-full py-2 rounded-xl font-semibold hidden" style="background:rgba(13,21,48,0.8);border:1px solid var(--glass-border);color:var(--text-secondary)">Tutup & Tinjau</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // ==========================================
+        // 1. KAMUS & LOKALISASI (Bilingual)
+        // ==========================================
+        const locales = {
+            EN: {
+                title: "Aldol Reaction",
+                mechBadge: "Base-Catalyzed",
+                steps: [
+                    { name: "Deprotonation", desc: "OH⁻ + CH₃CHO → ⁻CH₂CHO + H₂O\nBase (OH⁻) removes an α-hydrogen from acetaldehyde. The α-carbon becomes negatively charged, forming an enolate ion stabilized by resonance with the adjacent carbonyl." },
+                    { name: "Nucleophilic Addition", desc: "⁻CH₂CHO + CH₃CHO → CH₃CH(O⁻)CH₂CHO\nThe nucleophilic enolate carbon attacks the electrophilic carbonyl carbon of a second acetaldehyde. A new C–C bond forms, yielding an alkoxide intermediate." },
+                    { name: "Protonation", desc: "CH₃CH(O⁻)CH₂CHO + H₂O → CH₃CH(OH)CH₂CHO\nThe alkoxide ion is protonated by solvent water. The aldol product, 3-hydroxybutanal, is formed. The base catalyst (OH⁻) is regenerated." },
+                    { name: "Dehydration", desc: "CH₃CH(OH)CH₂CHO → CH₃CH=CHCHO + H₂O\nUnder heat or additional base, the aldol product undergoes elimination. Loss of water forms the α,β-unsaturated aldehyde: crotonaldehyde (but-2-enal)." }
+                ],
+                tsLabel: "Slow-Mo TS",
+                speedLabel: "Speed",
+                energyTitle: "Energy Profile",
+                rxnCoord: "Reaction Coordinate",
+                label2d: ["2D – Deprotonation", "2D – Nucleophilic Addition", "2D – Protonation", "2D – Dehydration"],
+                quiz: {
+                    title: "Concept Check",
+                    q: "What is the main product of the aldol reaction of acetaldehyde WITHOUT dehydration?",
+                    opts: ["A) Crotonaldehyde (but-2-enal)", "B) 3-Hydroxybutanal", "C) Acetic Acid"],
+                    correct: "Correct! 3-Hydroxybutanal is the aldol (β-hydroxy aldehyde) product.",
+                    wrong: "Incorrect. Without dehydration, the product is the β-hydroxy aldehyde."
+                }
+            },
+            ID: {
+                title: "Reaksi Aldol",
+                mechBadge: "Katalis Basa",
+                steps: [
+                    { name: "Deprotonasi", desc: "OH⁻ + CH₃CHO → ⁻CH₂CHO + H₂O\nBasa (OH⁻) melepas α-hidrogen dari asetaldehida. Karbon-α menjadi bermuatan negatif, membentuk ion enolat yang distabilkan melalui resonansi dengan gugus karbonil berdekatan." },
+                    { name: "Adisi Nukleofilik", desc: "⁻CH₂CHO + CH₃CHO → CH₃CH(O⁻)CH₂CHO\nKarbon enolat yang bersifat nukleofil menyerang karbon karbonil yang bersifat elektrofil dari asetaldehida kedua. Ikatan C–C baru terbentuk, menghasilkan intermediat alkoksida." },
+                    { name: "Protonasi", desc: "CH₃CH(O⁻)CH₂CHO + H₂O → CH₃CH(OH)CH₂CHO\nIon alkoksida diprotonasi oleh air pelarut. Produk aldol, 3-hidroksibutanal, terbentuk. Katalis basa (OH⁻) diregenerasi kembali." },
+                    { name: "Dehidrasi", desc: "CH₃CH(OH)CH₂CHO → CH₃CH=CHCHO + H₂O\nDi bawah panas atau basa tambahan, produk aldol mengalami eliminasi. Lepasnya air membentuk aldehida α,β-tak jenuh: krotanaldehida (but-2-enal)." }
+                ],
+                tsLabel: "TS Gerak Lambat",
+                speedLabel: "Kecepatan",
+                energyTitle: "Profil Energi",
+                rxnCoord: "Koordinat Reaksi",
+                label2d: ["Diagram 2D – Deprotonasi", "Diagram 2D – Adisi Nukleofilik", "Diagram 2D – Protonasi", "Diagram 2D – Dehidrasi"],
+                quiz: {
+                    title: "Kuis Konsep",
+                    q: "Produk utama reaksi aldol dari asetaldehida TANPA dehidrasi adalah?",
+                    opts: ["A) Krotanaldehida (but-2-enal)", "B) 3-Hidroksibutanal", "C) Asam Asetat"],
+                    correct: "Benar! 3-Hidroksibutanal adalah produk aldol (β-hidroksi aldehida).",
+                    wrong: "Salah. Tanpa dehidrasi, produknya adalah β-hidroksi aldehida."
+                }
+            }
+        };
+
+        let currentLang = 'ID';
+        let currentStep = 0;
+        let isPlaying = false;
+        let isSlowMoTS = false;
+
+        // ==========================================
+        // 2. AUDIO
+        // ==========================================
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSnapSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(900, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.18);
+            gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.18);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.18);
+        }
+
+        function playBondSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.12);
+            gain.gain.setValueAtTime(0, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.12);
+        }
+
+        // ==========================================
+        // 3. THREE.JS SCENE
+        // ==========================================
+        const container = document.getElementById('webgl-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0e1a);
+        scene.fog = new THREE.FogExp2(0x0a0e1a, 0.016);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 2, 14);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 5;
+        controls.maxDistance = 22;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const mainLight = new THREE.DirectionalLight(0xffffff, 2);
+        mainLight.position.set(5, 10, 7);
+        mainLight.castShadow = true;
+        mainLight.shadow.bias = -0.001;
+        scene.add(mainLight);
+        const rimLight = new THREE.PointLight(0xff6040, 3, 20);
+        rimLight.position.set(-5, -2, -5);
+        scene.add(rimLight);
+        const cyanFill = new THREE.PointLight(0x06ffd8, 1.5, 18);
+        cyanFill.position.set(5, 5, 8);
+        scene.add(cyanFill);
+
+        // ==========================================
+        // 4. ATOM FACTORY
+        // ==========================================
+        const mats = {
+            C:  new THREE.MeshPhysicalMaterial({ color: 0x555555, roughness: 0.2, metalness: 0.1, clearcoat: 0.5 }),
+            H:  new THREE.MeshPhysicalMaterial({ color: 0xeeeeee, roughness: 0.3, metalness: 0.0, clearcoat: 0.2 }),
+            O:  new THREE.MeshPhysicalMaterial({ color: 0xff3333, roughness: 0.2, metalness: 0.1, clearcoat: 0.6, emissive: 0x660000, emissiveIntensity: 0.2 }),
+            N:  new THREE.MeshPhysicalMaterial({ color: 0x4488ff, roughness: 0.3, metalness: 0.1, clearcoat: 0.4 }),
+            bond: new THREE.MeshPhysicalMaterial({ color: 0xaaaaaa, roughness: 0.5, metalness: 0.5 }),
+            bondDbl: new THREE.MeshPhysicalMaterial({ color: 0xff8844, roughness: 0.4, metalness: 0.3 }),
+            enolate: new THREE.MeshBasicMaterial({ color: 0xff6600 }),
+            arrow: new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide })
+        };
+
+        const geos = {
+            C: new THREE.SphereGeometry(0.68, 32, 32),
+            H: new THREE.SphereGeometry(0.38, 32, 32),
+            O: new THREE.SphereGeometry(0.60, 32, 32),
+            bond: new THREE.CylinderGeometry(0.12, 0.12, 1, 16),
+            dblBond: new THREE.CylinderGeometry(0.07, 0.07, 1, 12),
+            charge: new THREE.SphereGeometry(0.16, 16, 16)
+        };
+
+        function createAtom(type) {
+            const mesh = new THREE.Mesh(geos[type], mats[type].clone());
+            mesh.castShadow = true; mesh.receiveShadow = true;
+            return mesh;
+        }
+
+        function createBond(length, isDbl) {
+            const geo = isDbl ? geos.dblBond : geos.bond;
+            const mat = isDbl ? mats.bondDbl : mats.bond;
+            const bond = new THREE.Mesh(geo, mat.clone());
+            bond.scale.y = length;
+            bond.castShadow = true;
+            return bond;
+        }
+
+        // Create a bond between two world positions
+        function bondBetween(p1, p2, isDbl) {
+            const dir = new THREE.Vector3().subVectors(p2, p1);
+            const len = dir.length();
+            const b = createBond(len, isDbl);
+            b.position.copy(new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5));
+            b.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.normalize());
+            return b;
+        }
+
+        // Create double bond as two parallel cylinders
+        function createDoubleBondVisual(p1, p2, offset) {
+            const dir = new THREE.Vector3().subVectors(p2, p1).normalize();
+            const perp = new THREE.Vector3(-dir.y, dir.x, dir.z).normalize().multiplyScalar(offset || 0.18);
+            const g = new THREE.Group();
+            const b1 = bondBetween(new THREE.Vector3().addVectors(p1, perp), new THREE.Vector3().addVectors(p2, perp), true);
+            const b2 = bondBetween(new THREE.Vector3().subVectors(p1, perp), new THREE.Vector3().subVectors(p2, perp), true);
+            g.add(b1, b2);
+            return g;
+        }
+
+        function createChargeDot(color) {
+            const c = color || 0xff6600;
+            const mat = new THREE.MeshBasicMaterial({ color: c });
+            const dot = new THREE.Mesh(geos.charge, mat);
+            const glow = new THREE.PointLight(c, 2, 2.5);
+            dot.add(glow);
+            gsap.to(dot.scale, { x: 1.4, y: 1.4, z: 1.4, duration: 0.7, repeat: -1, yoyo: true, ease: "sine.inOut" });
+            return dot;
+        }
+
+        function createFishhookArrow(startPt, endPt, controlPt) {
+            const curve = new THREE.QuadraticBezierCurve3(startPt, controlPt, endPt);
+            const tubeGeo = new THREE.TubeGeometry(curve, 48, 0.055, 10, false);
+            const arrowMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+            const arrow = new THREE.Mesh(tubeGeo, arrowMat);
+            const headGeo = new THREE.ConeGeometry(0.14, 0.35, 12);
+            const head = new THREE.Mesh(headGeo, arrowMat);
+            head.position.copy(endPt);
+            const tangent = curve.getTangent(1).normalize();
+            const up = new THREE.Vector3(0, 1, 0);
+            head.quaternion.setFromUnitVectors(up, tangent);
+            head.position.addScaledVector(tangent, -0.15);
+            const group = new THREE.Group();
+            group.add(arrow, head);
+            return group;
+        }
+
+        // ==========================================
+        // 5. STEP GROUPS
+        // ==========================================
+        const stepGroups = [new THREE.Group(), new THREE.Group(), new THREE.Group(), new THREE.Group()];
+        stepGroups.forEach(g => { scene.add(g); g.visible = false; });
+
+        // ─────────────────────────────────────────
+        // STEP 0: DEPROTONASI
+        // Acetaldehyde + OH⁻ → Enolate + H₂O
+        // ─────────────────────────────────────────
+        const g0 = stepGroups[0];
+
+        // Acetaldehyde: CH₃-CHO
+        // C_carbonyl (C2) at (0.8, 0, 0)
+        // C_methyl/alpha (C1) at (-1.0, 0, 0)
+        // O_carbonyl at (1.6, 1.1, 0)
+        // H_carb at (0.8, -1.3, 0)
+        // H1_meth at (-1.8, 0.9, 0.6), H2_meth at (-1.8, 0.9, -0.6)
+        // H3_alpha at (-1.7, -1.1, 0)  ← this gets removed
+
+        const s0_cCarb = createAtom('C'); s0_cCarb.position.set(0.8, 0, 0);
+        const s0_cMeth = createAtom('C'); s0_cMeth.position.set(-1.0, 0, 0);
+        const s0_oCarb = createAtom('O'); s0_oCarb.position.set(1.6, 1.1, 0);
+        const s0_hCarb = createAtom('H'); s0_hCarb.position.set(0.8, -1.3, 0);
+        const s0_h1    = createAtom('H'); s0_h1.position.set(-1.8, 0.9, 0.6);
+        const s0_h2    = createAtom('H'); s0_h2.position.set(-1.8, 0.9, -0.6);
+        const s0_hAlpha= createAtom('H'); s0_hAlpha.position.set(-1.7, -1.1, 0); // will be removed
+
+        // Bonds for acetaldehyde
+        const s0_bCC   = bondBetween(new THREE.Vector3(-1.0,0,0), new THREE.Vector3(0.8,0,0));
+        const s0_bCO_a = bondBetween(new THREE.Vector3(0.8,0,0), new THREE.Vector3(1.6,1.1,0), true); // part of double bond
+        const s0_bCO_b = bondBetween(new THREE.Vector3(0.8,0,0), new THREE.Vector3(1.6,1.1,0), true);
+        // offset s0_bCO_a and s0_bCO_b slightly for double bond look
+        s0_bCO_a.position.x += 0.1; s0_bCO_b.position.x -= 0.1;
+        const s0_bCH   = bondBetween(new THREE.Vector3(0.8,0,0), new THREE.Vector3(0.8,-1.3,0));
+        const s0_bH1   = bondBetween(new THREE.Vector3(-1.0,0,0), new THREE.Vector3(-1.8,0.9,0.6));
+        const s0_bH2   = bondBetween(new THREE.Vector3(-1.0,0,0), new THREE.Vector3(-1.8,0.9,-0.6));
+        const s0_bHAlpha= bondBetween(new THREE.Vector3(-1.0,0,0), new THREE.Vector3(-1.7,-1.1,0));
+
+        // OH⁻ base: O at (4.5, -2.0, 0), H at (5.3, -2.5, 0)
+        const s0_oBase = createAtom('O'); s0_oBase.position.set(4.5, -2.0, 0);
+        const s0_hBase = createAtom('H'); s0_hBase.position.set(5.3, -2.5, 0);
+        const s0_bOH   = bondBetween(new THREE.Vector3(4.5,-2.0,0), new THREE.Vector3(5.3,-2.5,0));
+        // Charge dot on OH⁻
+        const s0_chargeBase = createChargeDot(0xff4444);
+        s0_chargeBase.position.set(3.8, -1.5, 0);
+        s0_oBase.add(s0_chargeBase);
+
+        // Enolate charge dot (appears after deprotonation, on O of acetaldehyde)
+        const s0_chargeEnolate = createChargeDot(0xff6600);
+        s0_chargeEnolate.position.set(0.6, 0.6, 0);
+        s0_oCarb.add(s0_chargeEnolate);
+        s0_chargeEnolate.visible = false;
+
+        // Fishhook arrows:
+        // Arrow 1: from O of base → H_alpha (base attacks alpha-H)
+        const s0_arr1 = createFishhookArrow(
+            new THREE.Vector3(3.8, -1.7, 0),
+            new THREE.Vector3(-1.3, -0.9, 0),
+            new THREE.Vector3(1.0, -2.5, 0)
+        );
+        // Arrow 2: from C-H_alpha bond → C (electrons go to carbon)
+        const s0_arr2 = createFishhookArrow(
+            new THREE.Vector3(-1.3, -0.55, 0),
+            new THREE.Vector3(-0.2, 0.3, 0),
+            new THREE.Vector3(-1.0, 0.2, 0)
+        );
+        s0_arr1.visible = false; s0_arr2.visible = false;
+
+        g0.add(s0_cCarb, s0_cMeth, s0_oCarb, s0_hCarb, s0_h1, s0_h2, s0_hAlpha);
+        g0.add(s0_bCC, s0_bCO_a, s0_bCO_b, s0_bCH, s0_bH1, s0_bH2, s0_bHAlpha);
+        g0.add(s0_oBase, s0_hBase, s0_bOH);
+        g0.add(s0_arr1, s0_arr2);
+
+        // ─────────────────────────────────────────
+        // STEP 1: ADISI NUKLEOFILIK
+        // Enolate + CH₃CHO → Alkoxide
+        // ─────────────────────────────────────────
+        const g1 = stepGroups[1];
+
+        // Enolate: CH₂=CH-O⁻ (left side at -3.5 offset)
+        const s1_enolate = new THREE.Group();
+        const s1_e_cAlpha  = createAtom('C'); s1_e_cAlpha.position.set(-3.5, 0, 0);
+        const s1_e_cCarb   = createAtom('C'); s1_e_cCarb.position.set(-1.7, 0, 0);
+        const s1_e_oCarb   = createAtom('O'); s1_e_oCarb.position.set(-0.9, 1.1, 0);
+        const s1_e_hCarb   = createAtom('H'); s1_e_hCarb.position.set(-1.7, -1.2, 0);
+        const s1_e_h1      = createAtom('H'); s1_e_h1.position.set(-4.3, 0.9, 0.5);
+        const s1_e_h2      = createAtom('H'); s1_e_h2.position.set(-4.3, 0.9, -0.5);
+
+        const s1_e_bCC  = bondBetween(s1_e_cAlpha.position, s1_e_cCarb.position);
+        // Double bond character between C_alpha and C_carb (enolate resonance)
+        const s1_e_dblCC_a = bondBetween(s1_e_cAlpha.position.clone().add(new THREE.Vector3(0,0.18,0)),
+                                          s1_e_cCarb.position.clone().add(new THREE.Vector3(0,0.18,0)), true);
+        const s1_e_dblCC_b = bondBetween(s1_e_cAlpha.position.clone().add(new THREE.Vector3(0,-0.18,0)),
+                                          s1_e_cCarb.position.clone().add(new THREE.Vector3(0,-0.18,0)), true);
+        const s1_e_bCO  = bondBetween(s1_e_cCarb.position, s1_e_oCarb.position);
+        const s1_e_bCH  = bondBetween(s1_e_cCarb.position, s1_e_hCarb.position);
+        const s1_e_bH1  = bondBetween(s1_e_cAlpha.position, s1_e_h1.position);
+        const s1_e_bH2  = bondBetween(s1_e_cAlpha.position, s1_e_h2.position);
+
+        // Charge dot on enolate O
+        const s1_e_chargeDot = createChargeDot(0xff6600);
+        s1_e_chargeDot.position.set(-0.4, 0.7, 0);
+        s1_e_oCarb.add(s1_e_chargeDot);
+
+        s1_enolate.add(s1_e_cAlpha, s1_e_cCarb, s1_e_oCarb, s1_e_hCarb, s1_e_h1, s1_e_h2);
+        s1_enolate.add(s1_e_bCC, s1_e_dblCC_a, s1_e_dblCC_b, s1_e_bCO, s1_e_bCH, s1_e_bH1, s1_e_bH2);
+        g1.add(s1_enolate);
+
+        // 2nd Acetaldehyde: CH₃-CHO (right side)
+        const s1_ald2 = new THREE.Group();
+        const s1_a_cCarb2 = createAtom('C'); s1_a_cCarb2.position.set(2.5, 0, 0);
+        const s1_a_cMeth2 = createAtom('C'); s1_a_cMeth2.position.set(0.8, 0, 0);
+        const s1_a_oCarb2 = createAtom('O'); s1_a_oCarb2.position.set(3.3, 1.1, 0);
+        const s1_a_hCarb2 = createAtom('H'); s1_a_hCarb2.position.set(2.5, -1.2, 0);
+        const s1_a_h1m    = createAtom('H'); s1_a_h1m.position.set(0.1, 0.9, 0.6);
+        const s1_a_h2m    = createAtom('H'); s1_a_h2m.position.set(0.1, 0.9, -0.6);
+        const s1_a_h3m    = createAtom('H'); s1_a_h3m.position.set(0.1, -0.9, 0);
+
+        const s1_a_bCC  = bondBetween(s1_a_cMeth2.position, s1_a_cCarb2.position);
+        const s1_a_bCO_a= bondBetween(s1_a_cCarb2.position.clone().add(new THREE.Vector3(0.1,0,0)),
+                                       s1_a_oCarb2.position.clone().add(new THREE.Vector3(0.1,0,0)), true);
+        const s1_a_bCO_b= bondBetween(s1_a_cCarb2.position.clone().add(new THREE.Vector3(-0.1,0,0)),
+                                       s1_a_oCarb2.position.clone().add(new THREE.Vector3(-0.1,0,0)), true);
+        const s1_a_bCH  = bondBetween(s1_a_cCarb2.position, s1_a_hCarb2.position);
+        const s1_a_bH1  = bondBetween(s1_a_cMeth2.position, s1_a_h1m.position);
+        const s1_a_bH2  = bondBetween(s1_a_cMeth2.position, s1_a_h2m.position);
+        const s1_a_bH3  = bondBetween(s1_a_cMeth2.position, s1_a_h3m.position);
+
+        s1_ald2.add(s1_a_cCarb2, s1_a_cMeth2, s1_a_oCarb2, s1_a_hCarb2, s1_a_h1m, s1_a_h2m, s1_a_h3m);
+        s1_ald2.add(s1_a_bCC, s1_a_bCO_a, s1_a_bCO_b, s1_a_bCH, s1_a_bH1, s1_a_bH2, s1_a_bH3);
+        g1.add(s1_ald2);
+
+        // New C-C bond (initially hidden)
+        const s1_newBond = bondBetween(new THREE.Vector3(-3.5, 0, 0), new THREE.Vector3(2.5, 0, 0));
+        s1_newBond.visible = false;
+        g1.add(s1_newBond);
+
+        // Alkoxide charge dot (on O of 2nd aldehyde, after addition)
+        const s1_chargeProd = createChargeDot(0xff4444);
+        s1_chargeProd.position.set(0.5, 0.6, 0);
+        s1_a_oCarb2.add(s1_chargeProd);
+        s1_chargeProd.visible = false;
+
+        // Arrows for step 1:
+        // Arrow: from enolate C_alpha → carbonyl C of 2nd aldehyde
+        const s1_arr1 = createFishhookArrow(
+            new THREE.Vector3(-3.2, 0.3, 0),
+            new THREE.Vector3(2.0, 0.3, 0),
+            new THREE.Vector3(-0.5, 2.0, 0)
+        );
+        // Arrow: from C=O of 2nd aldehyde → O (electrons go to O, making O⁻)
+        const s1_arr2 = createFishhookArrow(
+            new THREE.Vector3(2.85, 0.55, 0),
+            new THREE.Vector3(3.6, 1.4, 0),
+            new THREE.Vector3(3.5, 0.6, 0)
+        );
+        s1_arr1.visible = false; s1_arr2.visible = false;
+        g1.add(s1_arr1, s1_arr2);
+
+        // ─────────────────────────────────────────
+        // STEP 2: PROTONASI
+        // Alkoxide + H₂O → Aldol Product (3-hydroxybutanal)
+        // ─────────────────────────────────────────
+        const g2 = stepGroups[2];
+
+        // Simplified alkoxide: show the O⁻ end and the CHO end
+        // 4-carbon chain: C4(CH₃)-C3(O⁻)-C2(CH₂)-C1(CHO)
+        // Positions along x-axis
+        const s2_c4 = createAtom('C'); s2_c4.position.set(-3.5, 0, 0);  // CH₃ end
+        const s2_c3 = createAtom('C'); s2_c3.position.set(-1.7, 0, 0);  // C bearing O⁻
+        const s2_o3 = createAtom('O'); s2_o3.position.set(-1.7, 1.5, 0); // O⁻
+        const s2_c2 = createAtom('C'); s2_c2.position.set(0.1, 0, 0);   // CH₂
+        const s2_c1 = createAtom('C'); s2_c1.position.set(1.9, 0, 0);   // CHO
+        const s2_o1 = createAtom('O'); s2_o1.position.set(2.7, 1.1, 0);  // carbonyl O
+
+        // Hydrogens
+        const s2_hc3  = createAtom('H'); s2_hc3.position.set(-1.0, -0.9, 0);
+        const s2_hc2a = createAtom('H'); s2_hc2a.position.set(0.1, -1.3, 0.5);
+        const s2_hc2b = createAtom('H'); s2_hc2b.position.set(0.1, -1.3, -0.5);
+        const s2_hc1  = createAtom('H'); s2_hc1.position.set(1.9, -1.2, 0);
+        const s2_hc4a = createAtom('H'); s2_hc4a.position.set(-4.3, 0.8, 0.5);
+        const s2_hc4b = createAtom('H'); s2_hc4b.position.set(-4.3, 0.8, -0.5);
+        const s2_hc4c = createAtom('H'); s2_hc4c.position.set(-4.3, -0.8, 0);
+
+        // Bonds
+        const s2_bC4C3  = bondBetween(s2_c4.position, s2_c3.position);
+        const s2_bC3C2  = bondBetween(s2_c3.position, s2_c2.position);
+        const s2_bC2C1  = bondBetween(s2_c2.position, s2_c1.position);
+        const s2_bC3O3  = bondBetween(s2_c3.position, s2_o3.position);
+        // Double bond on C1=O1
+        const s2_bC1O1a = bondBetween(s2_c1.position.clone().add(new THREE.Vector3(0.08,0,0)),
+                                       s2_o1.position.clone().add(new THREE.Vector3(0.08,0,0)), true);
+        const s2_bC1O1b = bondBetween(s2_c1.position.clone().add(new THREE.Vector3(-0.08,0,0)),
+                                       s2_o1.position.clone().add(new THREE.Vector3(-0.08,0,0)), true);
+        const s2_bHC3  = bondBetween(s2_c3.position, s2_hc3.position);
+        const s2_bHC2a = bondBetween(s2_c2.position, s2_hc2a.position);
+        const s2_bHC2b = bondBetween(s2_c2.position, s2_hc2b.position);
+        const s2_bHC1  = bondBetween(s2_c1.position, s2_hc1.position);
+        const s2_bHC4a = bondBetween(s2_c4.position, s2_hc4a.position);
+        const s2_bHC4b = bondBetween(s2_c4.position, s2_hc4b.position);
+        const s2_bHC4c = bondBetween(s2_c4.position, s2_hc4c.position);
+
+        // Charge dot on O3
+        const s2_chargeDot = createChargeDot(0xff4444);
+        s2_chargeDot.position.set(0, 0.7, 0);
+        s2_o3.add(s2_chargeDot);
+
+        // H₂O molecule approaching O⁻
+        const s2_ow = createAtom('O'); s2_ow.position.set(-4.5, 3.5, 0); // starts far
+        const s2_hw1= createAtom('H'); s2_hw1.position.set(-5.2, 4.3, 0);
+        const s2_hw2= createAtom('H'); s2_hw2.position.set(-3.7, 4.3, 0);
+        const s2_bW1= bondBetween(new THREE.Vector3(-4.5,3.5,0), new THREE.Vector3(-5.2,4.3,0));
+        const s2_bW2= bondBetween(new THREE.Vector3(-4.5,3.5,0), new THREE.Vector3(-3.7,4.3,0));
+
+        // New O-H bond (after protonation)
+        const s2_newOH = bondBetween(s2_o3.position, new THREE.Vector3(-1.7, 2.5, 0));
+        s2_newOH.visible = false;
+
+        // Incoming H (from water, goes to O3)
+        const s2_transferH = createAtom('H'); s2_transferH.position.set(-2.3, 3.5, 0);
+        s2_transferH.visible = false;
+
+        // Protonation arrow
+        const s2_arr = createFishhookArrow(
+            new THREE.Vector3(-4.2, 3.3, 0),
+            new THREE.Vector3(-2.0, 2.0, 0),
+            new THREE.Vector3(-3.0, 2.2, 0)
+        );
+        s2_arr.visible = false;
+
+        g2.add(s2_c4, s2_c3, s2_o3, s2_c2, s2_c1, s2_o1);
+        g2.add(s2_hc3, s2_hc2a, s2_hc2b, s2_hc1, s2_hc4a, s2_hc4b, s2_hc4c);
+        g2.add(s2_bC4C3, s2_bC3C2, s2_bC2C1, s2_bC3O3);
+        g2.add(s2_bC1O1a, s2_bC1O1b);
+        g2.add(s2_bHC3, s2_bHC2a, s2_bHC2b, s2_bHC1, s2_bHC4a, s2_bHC4b, s2_bHC4c);
+        g2.add(s2_ow, s2_hw1, s2_hw2, s2_bW1, s2_bW2);
+        g2.add(s2_newOH, s2_transferH, s2_arr);
+
+        // ─────────────────────────────────────────
+        // STEP 3: DEHIDRASI
+        // Aldol Product → Crotonaldehyde + H₂O
+        // ─────────────────────────────────────────
+        const g3 = stepGroups[3];
+
+        // 3-hydroxybutanal: C4(CH₃)-C3(OH)-C2(CH₂)-C1(CHO)
+        const s3_c4 = createAtom('C'); s3_c4.position.set(-3.5, 0, 0);
+        const s3_c3 = createAtom('C'); s3_c3.position.set(-1.7, 0, 0);
+        const s3_o3 = createAtom('O'); s3_o3.position.set(-1.7, 1.5, 0); // OH
+        const s3_ho3= createAtom('H'); s3_ho3.position.set(-1.0, 2.2, 0); // H on OH (leaving)
+        const s3_c2 = createAtom('C'); s3_c2.position.set(0.1, 0, 0);
+        const s3_c1 = createAtom('C'); s3_c1.position.set(1.9, 0, 0);
+        const s3_o1 = createAtom('O'); s3_o1.position.set(2.7, 1.1, 0);
+
+        const s3_hc3  = createAtom('H'); s3_hc3.position.set(-1.0, -0.9, 0); // β-H (leaving)
+        const s3_hc2a = createAtom('H'); s3_hc2a.position.set(0.1, -1.3, 0.5);
+        const s3_hc2b = createAtom('H'); s3_hc2b.position.set(0.1, -1.3, -0.5);
+        const s3_hc1  = createAtom('H'); s3_hc1.position.set(1.9, -1.2, 0);
+        const s3_hc4a = createAtom('H'); s3_hc4a.position.set(-4.3, 0.8, 0.5);
+        const s3_hc4b = createAtom('H'); s3_hc4b.position.set(-4.3, 0.8, -0.5);
+        const s3_hc4c = createAtom('H'); s3_hc4c.position.set(-4.3, -0.8, 0);
+
+        // Bonds
+        const s3_bC4C3  = bondBetween(s3_c4.position, s3_c3.position);
+        const s3_bC3C2  = bondBetween(s3_c3.position, s3_c2.position);
+        const s3_bC2C1  = bondBetween(s3_c2.position, s3_c1.position);
+        const s3_bC3O3  = bondBetween(s3_c3.position, s3_o3.position);
+        const s3_bO3H   = bondBetween(s3_o3.position, s3_ho3.position);
+        const s3_bC1O1a = bondBetween(s3_c1.position.clone().add(new THREE.Vector3(0.08,0,0)),
+                                       s3_o1.position.clone().add(new THREE.Vector3(0.08,0,0)), true);
+        const s3_bC1O1b = bondBetween(s3_c1.position.clone().add(new THREE.Vector3(-0.08,0,0)),
+                                       s3_o1.position.clone().add(new THREE.Vector3(-0.08,0,0)), true);
+        const s3_bHC3  = bondBetween(s3_c3.position, s3_hc3.position);
+        const s3_bHC2a = bondBetween(s3_c2.position, s3_hc2a.position);
+        const s3_bHC2b = bondBetween(s3_c2.position, s3_hc2b.position);
+        const s3_bHC1  = bondBetween(s3_c1.position, s3_hc1.position);
+        const s3_bHC4a = bondBetween(s3_c4.position, s3_hc4a.position);
+        const s3_bHC4b = bondBetween(s3_c4.position, s3_hc4b.position);
+        const s3_bHC4c = bondBetween(s3_c4.position, s3_hc4c.position);
+
+        // New C=C double bond (forms during dehydration, initially hidden)
+        const s3_newDblCC_a = bondBetween(
+            s3_c3.position.clone().add(new THREE.Vector3(0, 0.18, 0)),
+            s3_c2.position.clone().add(new THREE.Vector3(0, 0.18, 0)), true);
+        const s3_newDblCC_b = bondBetween(
+            s3_c3.position.clone().add(new THREE.Vector3(0, -0.18, 0)),
+            s3_c2.position.clone().add(new THREE.Vector3(0, -0.18, 0)), true);
+        s3_newDblCC_a.visible = false; s3_newDblCC_b.visible = false;
+
+        // H₂O leaving group (initially at C atoms, moves away)
+        const s3_waterO = createAtom('O'); s3_waterO.position.set(-1.5, 4.5, 0);
+        const s3_waterH1= createAtom('H'); s3_waterH1.position.set(-2.1, 5.3, 0);
+        const s3_waterH2= createAtom('H'); s3_waterH2.position.set(-0.8, 5.3, 0);
+        const s3_bWO_H1 = bondBetween(new THREE.Vector3(-1.5,4.5,0), new THREE.Vector3(-2.1,5.3,0));
+        const s3_bWO_H2 = bondBetween(new THREE.Vector3(-1.5,4.5,0), new THREE.Vector3(-0.8,5.3,0));
+        [s3_waterO, s3_waterH1, s3_waterH2, s3_bWO_H1, s3_bWO_H2].forEach(x => x.visible = false);
+
+        // Elimination arrows
+        const s3_arr1 = createFishhookArrow(
+            new THREE.Vector3(-0.8, -0.9, 0), // from β-H/C2
+            new THREE.Vector3(-1.35, -0.1, 0),
+            new THREE.Vector3(-1.3, -0.8, 0)
+        );
+        const s3_arr2 = createFishhookArrow(
+            new THREE.Vector3(-1.7, 0.05, 0),
+            new THREE.Vector3(-1.7, 0.9, 0),
+            new THREE.Vector3(-2.2, 0.5, 0)
+        );
+        s3_arr1.visible = false; s3_arr2.visible = false;
+
+        g3.add(s3_c4, s3_c3, s3_o3, s3_ho3, s3_c2, s3_c1, s3_o1);
+        g3.add(s3_hc3, s3_hc2a, s3_hc2b, s3_hc1, s3_hc4a, s3_hc4b, s3_hc4c);
+        g3.add(s3_bC4C3, s3_bC3C2, s3_bC2C1, s3_bC3O3, s3_bO3H);
+        g3.add(s3_bC1O1a, s3_bC1O1b);
+        g3.add(s3_bHC3, s3_bHC2a, s3_bHC2b, s3_bHC1, s3_bHC4a, s3_bHC4b, s3_bHC4c);
+        g3.add(s3_newDblCC_a, s3_newDblCC_b);
+        g3.add(s3_waterO, s3_waterH1, s3_waterH2, s3_bWO_H1, s3_bWO_H2);
+        g3.add(s3_arr1, s3_arr2);
+
+        // ==========================================
+        // 6. TIMELINE ANIMATIONS
+        // ==========================================
+        let currentTimeline = null;
+
+        function onUpdateTS(tl, tsStart, tsEnd) {
+            if (!isSlowMoTS) return;
+            const p = tl.progress();
+            if (p >= tsStart && p <= tsEnd) {
+                gsap.globalTimeline.timeScale(0.2);
+            } else {
+                gsap.globalTimeline.timeScale(parseFloat(document.getElementById('speed-slider').value));
+            }
+        }
+
+        const timelineFactories = [
+            // Timeline 0: Deprotonasi
+            () => {
+                const tl = gsap.timeline({ paused: true, onUpdate: function() { onUpdateTS(this, 0.35, 0.6); } });
+
+                // Reset state
+                tl.set(s0_hAlpha.position, { x: -1.7, y: -1.1, z: 0 });
+                tl.set(s0_bHAlpha.scale, { y: bondBetween(new THREE.Vector3(-1.0,0,0), new THREE.Vector3(-1.7,-1.1,0)).scale.y });
+                tl.set([s0_arr1, s0_arr2, s0_chargeEnolate], { visible: false });
+                tl.set(s0_chargeBase, { visible: true });
+                tl.set(s0_hAlpha, { visible: true });
+                tl.set(s0_bHAlpha, { visible: true });
+                tl.set([s0_oBase, s0_hBase, s0_bOH], { visible: true });
+                tl.set(s0_oBase.position, { x: 4.5, y: -2.0, z: 0 });
+                tl.set(s0_hBase.position, { x: 5.3, y: -2.5, z: 0 });
+
+                // 1. OH⁻ approaches alpha-H
+                tl.to(s0_oBase.position, { x: 0.2, y: -2.2, z: 0, duration: 1.8, ease: "power2.inOut" }, 0);
+                tl.to(s0_hBase.position, { x: 1.0, y: -2.7, z: 0, duration: 1.8, ease: "power2.inOut" }, 0);
+
+                // 2. Show fishhook arrows
+                tl.set([s0_arr1, s0_arr2], { visible: true }, 1.7);
+
+                // 3. SNAP: deprotonation
+                tl.call(playSnapSound, [], 2.3);
+                tl.set([s0_bHAlpha, s0_arr1, s0_arr2], { visible: false }, 2.3);
+                tl.set(s0_chargeEnolate, { visible: true }, 2.3);
+                tl.set(s0_chargeBase, { visible: false }, 2.3);
+
+                // 4. α-H + OH⁻ drift away as H₂O
+                tl.to(s0_hAlpha.position, { x: -1.2, y: -3.5, z: 0, duration: 0.3 }, 2.3);
+                tl.to([s0_oBase.position, s0_hBase.position], { y: "-=2", x: "+=1", duration: 1.5, ease: "power2.out" }, 2.4);
+                tl.to(s0_hAlpha.position, { x: -0.5, y: -4.5, z: 0, duration: 1.5, ease: "power2.out" }, 2.4);
+
+                return tl;
+            },
+
+            // Timeline 1: Adisi Nukleofilik
+            () => {
+                const tl = gsap.timeline({ paused: true, onUpdate: function() { onUpdateTS(this, 0.4, 0.65); } });
+
+                // Reset
+                tl.set(s1_enolate.position, { x: 0, y: 0, z: 0 });
+                tl.set(s1_ald2.position, { x: 0, y: 0, z: 0 });
+                tl.set([s1_arr1, s1_arr2, s1_newBond, s1_chargeProd], { visible: false });
+                tl.set(s1_e_chargeDot, { visible: true });
+                tl.set([s1_e_dblCC_a, s1_e_dblCC_b], { visible: true });
+                tl.set(s1_e_bCC, { visible: true });
+
+                // 1. Enolate moves closer to aldehyde
+                tl.to(s1_enolate.position, { x: 0.8, y: 0, z: 0, duration: 1.5, ease: "power2.inOut" }, 0);
+                tl.to(s1_ald2.position, { x: -0.8, y: 0, z: 0, duration: 1.5, ease: "power2.inOut" }, 0);
+
+                // 2. Show arrows
+                tl.set([s1_arr1, s1_arr2], { visible: true }, 1.4);
+
+                // 3. SNAP: C-C bond forms
+                tl.call(playBondSound, [], 2.1);
+                tl.set([s1_arr1, s1_arr2], { visible: false }, 2.1);
+                tl.set(s1_e_chargeDot, { visible: false }, 2.1);
+                tl.set([s1_e_dblCC_a, s1_e_dblCC_b], { visible: false }, 2.1);
+                tl.set(s1_chargeProd, { visible: true }, 2.1);
+
+                // Show new bond
+                tl.set(s1_newBond, { visible: true }, 2.1);
+                tl.call(() => {
+                    // Recompute new C-C bond between enolate C_alpha world pos and ald2 C_carb2 world pos
+                    const pa = new THREE.Vector3(-3.5 + 0.8, 0, 0); // enolate shifted
+                    const pb = new THREE.Vector3(2.5 - 0.8, 0, 0);  // ald2 shifted
+                    const dir = new THREE.Vector3().subVectors(pb, pa).normalize();
+                    const len = pa.distanceTo(pb);
+                    s1_newBond.scale.y = len;
+                    s1_newBond.position.copy(new THREE.Vector3().addVectors(pa,pb).multiplyScalar(0.5));
+                    s1_newBond.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir);
+                }, [], 2.1);
+
+                // 4. Products settle
+                tl.to(s1_enolate.position, { x: 0.9, y: 0, z: 0, duration: 0.5, ease: "back.out(2)" }, 2.2);
+                tl.to(s1_ald2.position, { x: -0.9, y: 0, z: 0, duration: 0.5, ease: "back.out(2)" }, 2.2);
+
+                return tl;
+            },
+
+            // Timeline 2: Protonasi
+            () => {
+                const tl = gsap.timeline({ paused: true, onUpdate: function() { onUpdateTS(this, 0.4, 0.6); } });
+
+                // Reset
+                tl.set([s2_ow.position, s2_hw1.position, s2_hw2.position], { x: s2_ow.position.x, y: s2_ow.position.y });
+                tl.set(s2_ow.position, { x: -4.5, y: 3.5, z: 0 });
+                tl.set(s2_hw1.position, { x: -5.2, y: 4.3, z: 0 });
+                tl.set(s2_hw2.position, { x: -3.7, y: 4.3, z: 0 });
+                tl.set([s2_ow, s2_hw1, s2_hw2, s2_bW1, s2_bW2], { visible: true });
+                tl.set(s2_chargeDot, { visible: true });
+                tl.set([s2_arr, s2_newOH, s2_transferH], { visible: false });
+
+                // 1. H₂O approaches O⁻
+                tl.to(s2_ow.position, { x: -2.5, y: 2.8, z: 0, duration: 1.5, ease: "power2.inOut" }, 0);
+                tl.to(s2_hw1.position, { x: -3.2, y: 3.6, z: 0, duration: 1.5 }, 0);
+                tl.to(s2_hw2.position, { x: -1.8, y: 3.6, z: 0, duration: 1.5 }, 0);
+
+                // 2. Show arrow
+                tl.set(s2_arr, { visible: true }, 1.4);
+
+                // 3. SNAP: proton transfer
+                tl.call(playSnapSound, [], 2.1);
+                tl.set([s2_arr, s2_chargeDot], { visible: false }, 2.1);
+                tl.set([s2_newOH, s2_transferH], { visible: true }, 2.1);
+                tl.call(() => {
+                    s2_transferH.position.set(-1.7, 2.5, 0);
+                    // Update s2_newOH bond to go from o3 to transferH
+                    const pa = s2_o3.position.clone();
+                    const pb = s2_transferH.position.clone();
+                    const dir = new THREE.Vector3().subVectors(pb, pa).normalize();
+                    const len = pa.distanceTo(pb);
+                    s2_newOH.scale.y = len;
+                    s2_newOH.position.copy(new THREE.Vector3().addVectors(pa,pb).multiplyScalar(0.5));
+                    s2_newOH.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir);
+                }, [], 2.1);
+
+                // 4. H₂O (now OH⁻) drifts away
+                tl.to([s2_ow.position, s2_hw1.position, s2_hw2.position], { y: "+=2", x: "-=1", duration: 1.5, ease: "power2.out" }, 2.2);
+                tl.to(s2_transferH.position, { y: 2.5, x: -1.7, duration: 0.3, ease: "back.out(2)" }, 2.2);
+
+                return tl;
+            },
+
+            // Timeline 3: Dehidrasi
+            () => {
+                const tl = gsap.timeline({ paused: true, onUpdate: function() { onUpdateTS(this, 0.4, 0.65); } });
+
+                // Reset
+                tl.set([s3_ho3, s3_hc3, s3_bO3H, s3_bHC3, s3_bC3O3], { visible: true });
+                tl.set([s3_arr1, s3_arr2, s3_newDblCC_a, s3_newDblCC_b], { visible: false });
+                tl.set([s3_waterO, s3_waterH1, s3_waterH2, s3_bWO_H1, s3_bWO_H2], { visible: false });
+                tl.set(s3_waterO.position, { x: -1.5, y: 4.5, z: 0 });
+                tl.set(s3_waterH1.position, { x: -2.1, y: 5.3, z: 0 });
+                tl.set(s3_waterH2.position, { x: -0.8, y: 5.3, z: 0 });
+                tl.set(s3_ho3.position, { x: -1.0, y: 2.2, z: 0 });
+                tl.set(s3_hc3.position, { x: -1.0, y: -0.9, z: 0 });
+                tl.set(s3_o3.position, { x: -1.7, y: 1.5, z: 0 });
+
+                // 1. Show arrows (E2 elimination)
+                tl.set([s3_arr1, s3_arr2], { visible: true }, 0.5);
+
+                // 2. Bonds start stretching
+                tl.to(s3_ho3.position, { y: 2.8, duration: 0.8 }, 0.5);
+                tl.to(s3_hc3.position, { y: -1.4, duration: 0.8 }, 0.5);
+
+                // 3. SNAP: elimination
+                tl.call(playSnapSound, [], 1.5);
+                tl.set([s3_arr1, s3_arr2, s3_bO3H, s3_bHC3, s3_bC3O3], { visible: false }, 1.5);
+                tl.set([s3_newDblCC_a, s3_newDblCC_b], { visible: true }, 1.5);
+                tl.set([s3_waterO, s3_waterH1, s3_waterH2, s3_bWO_H1, s3_bWO_H2], { visible: true }, 1.5);
+
+                // Water forms and floats away
+                tl.call(() => {
+                    s3_waterO.position.set(-1.35, 0.6, 0);
+                    s3_waterH1.position.set(-1.1, 1.5, 0.4);
+                    s3_waterH2.position.set(-1.1, 1.5, -0.4);
+                }, [], 1.5);
+                tl.to([s3_waterO.position, s3_waterH1.position, s3_waterH2.position], { y: "+=3.5", x: "-=0.5", duration: 2.0, ease: "power2.out" }, 1.6);
+
+                // O3 repositions (detaches)
+                tl.to(s3_o3.position, { y: 3.8, duration: 1.5, ease: "power2.out" }, 1.6);
+                tl.to(s3_ho3.position, { y: 4.5, x: -1.3, duration: 1.5, ease: "power2.out" }, 1.6);
+
+                return tl;
+            }
+        ];
+
+        // ==========================================
+        // 7. UI UPDATE & LOAD STEP
+        // ==========================================
+        function updateUI() {
+            const loc = locales[currentLang];
+            const step = loc.steps[currentStep];
+            document.getElementById('ui-title').textContent = loc.title;
+            document.getElementById('ui-step-badge').textContent = `${currentLang === 'ID' ? 'Tahap' : 'Step'} ${currentStep+1}/4`;
+            document.getElementById('ui-mech-badge').textContent = loc.mechBadge;
+            document.getElementById('ui-desc').textContent = step.desc;
+            document.getElementById('ui-energy-title').textContent = loc.energyTitle;
+            document.getElementById('ui-rxn-coord').textContent = loc.rxnCoord;
+            document.getElementById('ui-ts-label').textContent = loc.tsLabel;
+            document.getElementById('ui-speed-label').textContent = `${loc.speedLabel}: ${document.getElementById('speed-slider').value}x`;
+            document.getElementById('label-2d').textContent = loc.label2d[currentStep];
+            // Quiz
+            document.getElementById('quiz-title').textContent = loc.quiz.title;
+            document.getElementById('quiz-q').textContent = loc.quiz.q;
+            document.getElementById('qopt-a').textContent = loc.quiz.opts[0];
+            document.getElementById('qopt-b').textContent = loc.quiz.opts[1];
+            document.getElementById('qopt-c').textContent = loc.quiz.opts[2];
+            update2DDiagram(currentStep);
+            updateEnergyDiagram(currentStep, currentTimeline ? currentTimeline.progress() : 0);
+        }
+
+        function togglePlayUI(playing) {
+            isPlaying = playing;
+            document.getElementById('icon-play').classList.toggle('hidden', playing);
+            document.getElementById('icon-pause').classList.toggle('hidden', !playing);
+        }
+
+        function loadStep(step) {
+            if (currentTimeline) { currentTimeline.kill(); }
+            stepGroups.forEach((g, i) => g.visible = i === step);
+            currentStep = step;
+            currentTimeline = timelineFactories[step]();
+            currentTimeline.eventCallback('onComplete', () => {
+                togglePlayUI(false);
+                if (step < 3) {
+                    setTimeout(() => {
+                        document.getElementById('quiz-modal').classList.remove('hidden');
+                        document.getElementById('quiz-modal').classList.add('flex');
+                        document.querySelectorAll('.quiz-opt').forEach(b => {
+                            b.style.background = ''; b.style.borderColor = '';
+                        });
+                        document.getElementById('quiz-feedback').classList.add('hidden');
+                        document.getElementById('quiz-close').classList.add('hidden');
+                    }, 800);
+                }
+            });
+            togglePlayUI(false);
+            updateUI();
+        }
+
+        // ==========================================
+        // 8. 2D SVG DIAGRAMS
+        // ==========================================
+        const svg2d = [
+            // Step 0: Deprotonasi
+            `<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;font-family:'Space Mono',monospace">
+              <defs>
+                <marker id="ah" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="#38bdf8"/>
+                </marker>
+              </defs>
+              <!-- Acetaldehyde -->
+              <text x="10" y="50" fill="#aaa" font-size="11" font-weight="bold">CH₃</text>
+              <line x1="42" y1="46" x2="62" y2="46" stroke="#aaa" stroke-width="1.5"/>
+              <text x="62" y="50" fill="#aaa" font-size="11" font-weight="bold">C</text>
+              <line x1="72" y1="38" x2="85" y2="25" stroke="#ff4444" stroke-width="1.5"/>
+              <line x1="75" y1="40" x2="88" y2="27" stroke="#ff4444" stroke-width="1.5"/>
+              <text x="86" y="22" fill="#ff4444" font-size="11" font-weight="bold">O</text>
+              <line x1="68" y1="50" x2="78" y2="60" stroke="#aaa" stroke-width="1.5"/>
+              <text x="78" y="72" fill="#aaa" font-size="11">H</text>
+              <!-- Base OH⁻ -->
+              <text x="200" y="90" fill="#06ffd8" font-size="11" font-weight="bold">OH⁻</text>
+              <!-- Arrow: base approaches alpha-H -->
+              <path d="M 195,80 Q 150,60 55,58" stroke="#38bdf8" stroke-width="1.5" fill="none" marker-end="url(#ah)"/>
+              <!-- Alpha H label -->
+              <text x="8" y="78" fill="#ff8c42" font-size="10" font-weight="bold">α-H</text>
+              <text x="10" y="100" fill="#8ab4cc" font-size="9">Basa melepas α-H</text>
+              <!-- Products -->
+              <text x="10" y="130" fill="#aaa" font-size="10">→  Enolat:</text>
+              <text x="70" y="130" fill="#aaa" font-size="11">CH₂=CH–O⁻</text>
+              <text x="10" y="150" fill="#aaa" font-size="10">→  Air:</text>
+              <text x="55" y="150" fill="#06ffd8" font-size="11">H₂O</text>
+              <!-- Charge delta -->
+              <text x="155" y="127" fill="#ff6600" font-size="14" font-weight="bold">⊖</text>
+              <text x="10" y="175" fill="#4a6070" font-size="9">CH₃CHO + OH⁻ → ⁻CH₂CHO + H₂O</text>
+            </svg>`,
+
+            // Step 1: Adisi Nukleofilik
+            `<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;font-family:'Space Mono',monospace">
+              <defs>
+                <marker id="ah1" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="#38bdf8"/>
+                </marker>
+              </defs>
+              <!-- Enolate left -->
+              <text x="5" y="90" fill="#ff6600" font-size="11" font-weight="bold">⊖</text>
+              <text x="16" y="90" fill="#aaa" font-size="11">CH₂–CH=O</text>
+              <!-- 2nd Aldehyde right -->
+              <text x="165" y="90" fill="#aaa" font-size="11">CH₃–C</text>
+              <line x1="208" y1="78" x2="218" y2="65" stroke="#ff4444" stroke-width="1.5"/>
+              <line x1="211" y1="80" x2="221" y2="67" stroke="#ff4444" stroke-width="1.5"/>
+              <text x="220" y="62" fill="#ff4444" font-size="11" font-weight="bold">O</text>
+              <line x1="207" y1="90" x2="217" y2="100" stroke="#aaa" stroke-width="1.5"/>
+              <text x="218" y="112" fill="#aaa" font-size="9">H</text>
+              <!-- Nucleophilic attack arrow -->
+              <path d="M 100,83 Q 130,65 158,83" stroke="#38bdf8" stroke-width="1.5" fill="none" marker-end="url(#ah1)"/>
+              <text x="105" y="62" fill="#38bdf8" font-size="9">Serangan nukleofilik</text>
+              <!-- Electron arrow C=O to O -->
+              <path d="M 208,75 Q 225,55 235,58" stroke="#38bdf8" stroke-width="1.5" fill="none" marker-end="url(#ah1)"/>
+              <!-- Product -->
+              <text x="5" y="135" fill="#8ab4cc" font-size="9">→  Intermediat Alkoksida:</text>
+              <text x="5" y="155" fill="#aaa" font-size="10">CH₃–CH(O⁻)–CH₂–CHO</text>
+              <text x="135" y="152" fill="#ff6600" font-size="13" font-weight="bold">⊖</text>
+              <text x="5" y="180" fill="#4a6070" font-size="9">Ikatan C–C baru terbentuk</text>
+            </svg>`,
+
+            // Step 2: Protonasi
+            `<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;font-family:'Space Mono',monospace">
+              <defs>
+                <marker id="ah2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="#38bdf8"/>
+                </marker>
+              </defs>
+              <!-- Alkoxide -->
+              <text x="5" y="50" fill="#aaa" font-size="10">CH₃–CH(O⁻)–CH₂–CHO</text>
+              <text x="93" y="47" fill="#ff6600" font-size="13" font-weight="bold">⊖</text>
+              <!-- Water -->
+              <text x="200" y="50" fill="#06ffd8" font-size="12" font-weight="bold">H₂O</text>
+              <!-- Arrow: H₂O protonates O⁻ -->
+              <path d="M 198,44 Q 165,20 108,42" stroke="#38bdf8" stroke-width="1.5" fill="none" marker-end="url(#ah2)"/>
+              <text x="130" y="22" fill="#38bdf8" font-size="9">Protonasi</text>
+              <!-- Product aldol -->
+              <line x1="5" y1="80" x2="290" y2="80" stroke="rgba(6,255,216,0.15)" stroke-width="1"/>
+              <text x="5" y="105" fill="#06ffd8" font-size="10">Produk Aldol:</text>
+              <text x="5" y="125" fill="#aaa" font-size="11">CH₃–CH(OH)–CH₂–CHO</text>
+              <text x="5" y="150" fill="#8ab4cc" font-size="9">3-Hidroksibutanal</text>
+              <text x="5" y="165" fill="#8ab4cc" font-size="9">(β-hidroksi aldehida)</text>
+              <!-- Byproduct -->
+              <text x="5" y="185" fill="#4a6070" font-size="9">Produk samping: OH⁻ (katalis teregenerasi)</text>
+            </svg>`,
+
+            // Step 3: Dehidrasi
+            `<svg viewBox="0 0 300 210" xmlns="http://www.w3.org/2000/svg" style="width:100%;font-family:'Space Mono',monospace">
+              <defs>
+                <marker id="ah3" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="#38bdf8"/>
+                </marker>
+              </defs>
+              <!-- Aldol product -->
+              <text x="5" y="40" fill="#aaa" font-size="10">CH₃–CH(OH)–CH₂–CHO</text>
+              <!-- Labels: β-H and OH -->
+              <text x="55" y="25" fill="#ff8c42" font-size="9">β-H</text>
+              <line x1="62" y1="26" x2="62" y2="35" stroke="#ff8c42" stroke-width="1" stroke-dasharray="2,1"/>
+              <text x="88" y="25" fill="#ff4444" font-size="9">OH</text>
+              <line x1="96" y1="26" x2="96" y2="35" stroke="#ff4444" stroke-width="1" stroke-dasharray="2,1"/>
+              <!-- Elimination arrows -->
+              <path d="M 65,38 Q 75,20 90,38" stroke="#38bdf8" stroke-width="1.5" fill="none" marker-end="url(#ah3)"/>
+              <text x="60" y="15" fill="#38bdf8" font-size="8">Eliminasi</text>
+              <!-- Arrow down -->
+              <text x="130" y="70" fill="#aaa" font-size="14">↓</text>
+              <text x="148" y="72" fill="#ff8c42" font-size="9">−H₂O / Δ</text>
+              <!-- Products -->
+              <line x1="5" y1="85" x2="290" y2="85" stroke="rgba(6,255,216,0.15)" stroke-width="1"/>
+              <text x="5" y="110" fill="#ff8c42" font-size="10" font-weight="bold">Krotanaldehida:</text>
+              <text x="5" y="130" fill="#aaa" font-size="11">CH₃–CH=CH–CHO</text>
+              <text x="5" y="150" fill="#8ab4cc" font-size="9">but-2-enal</text>
+              <text x="5" y="165" fill="#8ab4cc" font-size="9">(α,β-aldehida tak jenuh)</text>
+              <!-- Water -->
+              <text x="5" y="185" fill="#4a6070" font-size="9">+ H₂O (produk sampingan)</text>
+              <text x="200" y="130" fill="#06ffd8" font-size="11">+  H₂O</text>
+              <!-- Double bond indicator -->
+              <rect x="58" y="122" width="34" height="14" rx="3" fill="rgba(255,140,66,0.12)" stroke="rgba(255,140,66,0.4)" stroke-width="1"/>
+              <text x="59" y="133" fill="#ff8c42" font-size="9">C=C baru</text>
+            </svg>`
+        ];
+
+        function update2DDiagram(step) {
+            document.getElementById('svg-2d-container').innerHTML = svg2d[step];
+        }
+
+        // ==========================================
+        // 9. ENERGY DIAGRAM
+        // ==========================================
+        const energyData = [
+            { label: 'Deprotonasi', curves: [{ start: 130, peak: 40, end: 80, peakAt: 0.5 }], colors: ['#ff8c42'] },
+            { label: 'Adisi Nukleofil', curves: [{ start: 80, peak: 30, end: 60, peakAt: 0.5 }], colors: ['#06ffd8'] },
+            { label: 'Protonasi', curves: [{ start: 60, peak: 20, end: 90, peakAt: 0.5 }], colors: ['#c77dff'] },
+            { label: 'Dehidrasi', curves: [{ start: 90, peak: 25, end: 110, peakAt: 0.5 }], colors: ['#ff4444'] }
+        ];
+
+        function updateEnergyDiagram(step, progress) {
+            const canvas = document.getElementById('energy-chart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth * 2;
+            canvas.height = 150 * 2;
+            ctx.scale(2, 2);
+            const W = canvas.offsetWidth, H = 150;
+            ctx.clearRect(0, 0, W, H);
+
+            const data = energyData[step];
+            const curve = data.curves[0];
+            const color = data.colors[0];
+
+            // Draw path
+            ctx.beginPath();
+            for (let i = 0; i <= 100; i++) {
+                const t = i / 100;
+                const x = t * W;
+                let y;
+                if (t < curve.peakAt) {
+                    const tt = t / curve.peakAt;
+                    y = curve.start + (curve.peak - curve.start) * (3*tt*tt - 2*tt*tt*tt);
+                } else {
+                    const tt = (t - curve.peakAt) / (1 - curve.peakAt);
+                    y = curve.peak + (curve.end - curve.peak) * (3*tt*tt - 2*tt*tt*tt);
+                }
+                i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 6;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Progress dot
+            const px = progress * W;
+            let py;
+            if (progress < curve.peakAt) {
+                const t = progress / curve.peakAt;
+                py = curve.start + (curve.peak - curve.start) * (3*t*t - 2*t*t*t);
+            } else {
+                const t = (progress - curve.peakAt) / (1 - curve.peakAt);
+                py = curve.peak + (curve.end - curve.peak) * (3*t*t - 2*t*t*t);
+            }
+            ctx.fillStyle = "#06ffd8";
+            ctx.beginPath();
+            ctx.arc(px, py, 5, 0, Math.PI * 2);
+            ctx.shadowColor = "#06ffd8";
+            ctx.shadowBlur = 10;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        // ==========================================
+        // 10. PANEL 2D REPOSITION
+        // ==========================================
+        function repositionPanel2D() {
+            const header = document.querySelector('#main-ui header > div.glass-panel');
+            const panel = document.getElementById('panel-2d');
+            const btnShow = document.getElementById('btn-show-2d');
+            if (!header || !panel) return;
+            const rect = header.getBoundingClientRect();
+            const topPx = rect.bottom + 12;
+            const maxH = window.innerHeight - topPx - 90;
+            const leftPx = rect.left;
+            const widthPx = Math.min(340, rect.width);
+            panel.style.top = topPx + 'px';
+            panel.style.left = leftPx + 'px';
+            panel.style.width = widthPx + 'px';
+            panel.style.maxHeight = maxH + 'px';
+            btnShow.style.top = topPx + 'px';
+            btnShow.style.left = leftPx + 'px';
+        }
+
+        // ==========================================
+        // 11. EVENT LISTENERS
+        // ==========================================
+        document.getElementById('start-btn').addEventListener('click', () => {
+            initAudio();
+            document.getElementById('start-overlay').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('start-overlay').style.display = 'none';
+                document.getElementById('main-ui').classList.remove('opacity-0');
+                document.getElementById('panel-2d').style.display = 'block';
+                repositionPanel2D();
+                loadStep(0);
+            }, 500);
+        });
+
+        document.getElementById('btn-play').addEventListener('click', () => {
+            if (!currentTimeline) return;
+            initAudio();
+            if (isPlaying) {
+                currentTimeline.pause();
+                togglePlayUI(false);
+            } else {
+                if (currentTimeline.progress() === 1) {
+                    currentTimeline.restart();
+                } else {
+                    currentTimeline.play();
+                }
+                togglePlayUI(true);
+            }
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            if (currentTimeline) {
+                currentTimeline.pause();
+                currentTimeline.progress(0);
+                togglePlayUI(false);
+            }
+        });
+
+        document.getElementById('btn-next').addEventListener('click', () => {
+            if (currentStep < 3) loadStep(currentStep + 1);
+        });
+
+        document.getElementById('btn-prev').addEventListener('click', () => {
+            if (currentStep > 0) loadStep(currentStep - 1);
+        });
+
+        function updateLangToggle() {
+            document.querySelectorAll('.lang-seg').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === currentLang);
+            });
+        }
+
+        document.querySelectorAll('.lang-seg').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentLang = btn.dataset.lang;
+                updateLangToggle();
+                updateUI();
+            });
+        });
+        updateLangToggle();
+
+        document.getElementById('ts-toggle').addEventListener('change', (e) => {
+            isSlowMoTS = e.target.checked;
+        });
+
+        document.getElementById('speed-slider').addEventListener('input', (e) => {
+            const speed = parseFloat(e.target.value);
+            const loc = locales[currentLang];
+            document.getElementById('ui-speed-label').innerText = `${loc.speedLabel}: ${speed}x`;
+            if (currentTimeline) gsap.globalTimeline.timeScale(speed);
+        });
+
+        // 2D Panel toggle
+        const panel2d = document.getElementById('panel-2d');
+        const btnToggle2d = document.getElementById('btn-toggle-2d');
+        const btnShow2d = document.getElementById('btn-show-2d');
+        let panel2dVisible = true;
+
+        btnToggle2d.addEventListener('click', () => {
+            panel2dVisible = !panel2dVisible;
+            panel2d.style.display = panel2dVisible ? 'block' : 'none';
+            btnShow2d.style.display = panel2dVisible ? 'none' : 'block';
+            btnToggle2d.textContent = panel2dVisible ? 'Sembunyikan' : 'Tampilkan';
+        });
+        btnShow2d.addEventListener('click', () => {
+            panel2dVisible = true;
+            panel2d.style.display = 'block';
+            btnShow2d.style.display = 'none';
+        });
+
+        // Quiz
+        document.querySelectorAll('.quiz-opt').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const isCorrect = e.target.getAttribute('data-correct') === 'true';
+                const feedback = document.getElementById('quiz-feedback');
+                const loc = locales[currentLang];
+                document.querySelectorAll('.quiz-opt').forEach(b => {
+                    if (b.getAttribute('data-correct') === 'true') {
+                        b.style.background = 'rgba(255,140,66,0.25)';
+                        b.style.borderColor = 'var(--accent-orange)';
+                    }
+                });
+                feedback.classList.remove('hidden');
+                if (isCorrect) {
+                    feedback.innerText = loc.quiz.correct;
+                    feedback.style.color = 'var(--accent-orange)';
+                } else {
+                    e.target.style.background = 'rgba(123,47,255,0.3)';
+                    e.target.style.borderColor = 'var(--accent-violet)';
+                    feedback.innerText = loc.quiz.wrong;
+                    feedback.style.color = 'var(--accent-violet)';
+                }
+                document.getElementById('quiz-close').classList.remove('hidden');
+            });
+        });
+
+        document.getElementById('quiz-close').addEventListener('click', () => {
+            document.getElementById('quiz-modal').classList.add('hidden');
+            document.getElementById('quiz-modal').classList.remove('flex');
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            if (currentTimeline) updateEnergyDiagram(currentStep, currentTimeline.progress());
+            repositionPanel2D();
+        });
+
+        const headerPanel = document.querySelector('#main-ui header > div.glass-panel');
+        if (headerPanel && window.ResizeObserver) {
+            new ResizeObserver(() => repositionPanel2D()).observe(headerPanel);
+        }
+
+        // ==========================================
+        // 12. RENDER LOOP
+        // ==========================================
+        renderer.setAnimationLoop((time) => {
+            controls.update();
+            const elapsed = time * 0.001 || performance.now() * 0.001;
+            if (stepGroups[currentStep]) {
+                stepGroups[currentStep].position.y = Math.sin(elapsed * 0.8) * 0.08;
+            }
+            if (currentTimeline && isPlaying) {
+                updateEnergyDiagram(currentStep, currentTimeline.progress());
+            }
+            renderer.render(scene, camera);
+        });
+    </script>
+</body>
+</html>

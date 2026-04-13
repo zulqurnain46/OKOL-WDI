@@ -1,0 +1,1926 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Halogenasi Radikal 3D – OKOL-WDI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:ital,wght@0,300;0,400;0,600;0,700;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        /* ===== CSS VARIABLES (OKOL-WDI) ===== */
+        :root {
+            --primary: #0a0e1a;
+            --secondary: #0d1530;
+            --accent-blue: #00b4d8;
+            --accent-cyan: #06ffd8;
+            --accent-purple: #7b2fff;
+            --accent-violet: #c77dff;
+            --glow-cyan: rgba(6,255,216,0.4);
+            --glow-purple: rgba(123,47,255,0.3);
+            --text-primary: #e8f4fd;
+            --text-secondary: #8ab4cc;
+            --text-muted: #4a6070;
+            --glass: rgba(13,21,48,0.72);
+            --glass-border: rgba(6,255,216,0.18);
+            --font-display: 'Orbitron', monospace;
+            --font-body: 'Exo 2', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+        body { margin: 0; overflow: hidden; background-color: var(--primary); color: var(--text-primary); font-family: var(--font-body); }
+        ::selection { background: var(--accent-purple); color: #fff; }
+
+        #webgl-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
+
+        /* Background grid OKOL-WDI */
+        .bg-grid {
+            position: fixed; inset: 0; pointer-events: none; z-index: 1;
+            background-image:
+                linear-gradient(rgba(6,255,216,0.018) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(6,255,216,0.018) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse at 50% 50%, black, transparent 85%);
+        }
+
+        /* Glassmorphism UI – style OKOL-WDI */
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 32px rgba(0,0,0,0.5), 0 0 0 0 rgba(6,255,216,0);
+            transition: box-shadow 0.3s, border-color 0.3s;
+        }
+        .glass-panel:hover { border-color: rgba(6,255,216,0.35); box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 24px var(--glow-cyan); }
+
+        .ui-layer { position: absolute; z-index: 10; pointer-events: none; }
+        .interactive { pointer-events: auto; }
+
+        /* Custom Range Slider */
+        input[type=range] { -webkit-appearance: none; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--accent-cyan); cursor: pointer; margin-top: -6px; box-shadow: 0 0 8px var(--glow-cyan); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: rgba(6,255,216,0.15); border-radius: 2px; }
+
+        .glow-text { text-shadow: 0 0 8px var(--glow-cyan); }
+        canvas#energy-chart { width: 100%; height: 150px; }
+
+        /* ===== START OVERLAY (style OKOL-WDI) ===== */
+        #start-overlay {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: var(--primary); z-index: 50;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: flex-start;
+            padding-top: 18vh;
+            transition: opacity 0.6s;
+        }
+        /* Glow orbs di background overlay */
+        #start-overlay::before {
+            content: '';
+            position: absolute; inset: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse at 20% 40%, rgba(123,47,255,0.18) 0%, transparent 55%),
+                radial-gradient(ellipse at 80% 30%, rgba(0,180,216,0.14) 0%, transparent 55%),
+                radial-gradient(ellipse at 50% 80%, rgba(6,255,216,0.10) 0%, transparent 55%);
+        }
+        /* Badge animasi */
+        .overlay-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(6,255,216,0.08);
+            border: 1px solid rgba(6,255,216,0.3);
+            border-radius: 20px; padding: 6px 20px;
+            font-family: var(--font-mono); font-size: 0.72rem;
+            color: var(--accent-cyan); letter-spacing: 2px;
+            margin-bottom: 1.6rem;
+            animation: pulse-border 2s ease infinite;
+            position: relative; z-index: 1;
+        }
+        .overlay-badge::before { content: '◉'; font-size: 0.6rem; animation: blink 1.5s ease infinite; }
+        @keyframes pulse-border {
+            0%,100% { box-shadow: 0 0 0 0 rgba(6,255,216,0.3); }
+            50% { box-shadow: 0 0 0 6px rgba(6,255,216,0); }
+        }
+        @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+        /* Judul overlay */
+        .overlay-title {
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 5vw, 3.4rem);
+            font-weight: 900; line-height: 1.1;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            position: relative; z-index: 1;
+        }
+        .overlay-title .t1 {
+            background: linear-gradient(135deg, #fff 0%, var(--accent-cyan) 50%, var(--accent-violet) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            display: block;
+        }
+        .overlay-title .t2 {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            display: block; font-size: 0.5em;
+            letter-spacing: 4px; margin-top: 6px;
+        }
+        /* Subtitle overlay */
+        .overlay-sub {
+            font-family: var(--font-body);
+            font-size: 0.92rem; font-weight: 300;
+            color: var(--text-secondary);
+            margin: 1.2rem 0 2rem; letter-spacing: 0.5px;
+            position: relative; z-index: 1;
+        }
+        /* Tombol start */
+        .btn-start {
+            position: relative; z-index: 1;
+            padding: 14px 36px; border-radius: 50px; border: none;
+            font-family: var(--font-body); font-weight: 700; font-size: 0.92rem;
+            letter-spacing: 0.5px; cursor: pointer;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            color: #fff; box-shadow: 0 0 30px var(--glow-cyan);
+            transition: all 0.3s; overflow: hidden;
+        }
+        .btn-start::before {
+            content: ''; position: absolute; inset: 0;
+            background: rgba(255,255,255,0.12);
+            transform: translateX(-100%) skewX(-15deg); transition: transform 0.5s;
+        }
+        .btn-start:hover::before { transform: translateX(100%) skewX(-15deg); }
+        .btn-start:hover { transform: translateY(-3px); box-shadow: 0 8px 40px var(--glow-cyan); }
+
+        /* Decorative formula bawah tombol */
+        .overlay-formula {
+            position: relative; z-index: 1;
+            font-family: var(--font-mono); font-size: 0.72rem;
+            color: var(--accent-purple); opacity: 0.7;
+            letter-spacing: 2px; margin-top: 2rem;
+        }
+
+        /* ===== SEGMENTED LANG TOGGLE ===== */
+        .lang-toggle-wrap {
+            display: flex;
+            background: rgba(0,0,0,0.28);
+            border-radius: 10px;
+            padding: 3px;
+            gap: 3px;
+        }
+        .lang-seg {
+            padding: 5px 14px;
+            border-radius: 7px;
+            border: none;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 0.72rem;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.25s;
+            color: var(--text-muted);
+            background: transparent;
+            line-height: 1;
+        }
+        .lang-seg:hover {
+            color: var(--accent-cyan);
+            background: rgba(6,255,216,0.08);
+        }
+        .lang-seg.active {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            color: #0a0e1a;
+            box-shadow: 0 0 10px var(--glow-cyan);
+        }
+
+        /* ===== TOGGLE CHECKBOX ===== */
+        input:checked[type='checkbox'].toggle-checkbox { transform: translateX(100%); border-color: var(--accent-cyan); }
+        input:checked[type='checkbox'].toggle-checkbox + .toggle-label { background-color: var(--accent-cyan); }
+
+        /* ===== PLAY BUTTON ===== */
+        #btn-play { background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple)); box-shadow: 0 0 20px var(--glow-cyan); }
+        #btn-play:hover { box-shadow: 0 0 35px var(--glow-cyan); }
+
+        /* ===== RESET BUTTON ===== */
+        #btn-reset:hover { background: rgba(123,47,255,0.25); color: var(--accent-violet); }
+
+        /* ===== HEADER TITLE ===== */
+        #ui-title { font-family: var(--font-display); font-size: 1rem; font-weight: 700; letter-spacing: 1px; color: var(--accent-cyan); }
+
+        /* ===== STEP BADGE ===== */
+        #ui-step-badge { font-family: var(--font-mono); background: rgba(6,255,216,0.08); color: var(--accent-cyan); border-color: rgba(6,255,216,0.3); }
+
+        /* ===== ENERGY CHART TITLE ===== */
+        #ui-energy-title { font-family: var(--font-display); font-size: 0.75rem; letter-spacing: 1px; color: var(--accent-cyan); }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--primary); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-cyan); border-radius: 3px; }
+
+        /* ===== LOGO ROW ===== */
+        .overlay-logos {
+            position: relative; z-index: 1;
+            display: flex; align-items: center; justify-content: center;
+            gap: 16px; margin-bottom: 2rem;
+        }
+        .overlay-logo-item {
+            width: 52px; height: 52px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+            transition: all 0.3s;
+            box-shadow: 0 0 0 0 var(--glow-cyan);
+        }
+        .overlay-logo-item:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 16px var(--glow-cyan);
+            transform: translateY(-3px);
+        }
+        .overlay-logo-item img {
+            width: 100%; height: 100%;
+            object-fit: contain; padding: 6px;
+        }
+    </style>
+    
+    <!-- Import Maps untuk Modul Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <!-- Background grid OKOL-WDI -->
+    <div class="bg-grid"></div>
+
+    <!-- Container Canvas 3D -->
+    <div id="webgl-container"></div>
+
+    <!-- Overlay Mulai & Aktifkan Audio -->
+    <div id="start-overlay" class="interactive">
+        <!-- 4 Logo Institusi -->
+        <div class="overlay-logos">
+            <div class="overlay-logo-item"><img src="logo1.png" alt="Logo 1"></div>
+            <div class="overlay-logo-item"><img src="logo2.png" alt="Logo 2"></div>
+            <div class="overlay-logo-item"><img src="logo3.png" alt="Logo 3"></div>
+            <div class="overlay-logo-item"><img src="logo4.png" alt="Logo 4"></div>
+        </div>
+        <span class="overlay-badge">OKOL-WDI • LAB KIMIA ORGANIK</span>
+        <h1 class="overlay-title">
+            <span class="t1">Radical Halogenation</span>
+            <span class="t2">Mekanisme 3D Interaktif</span>
+        </h1>
+        <p class="overlay-sub">Interactive 3D Mechanism &bull; Ultra HD &bull; Free Radical</p>
+        <button id="start-btn" class="btn-start">▶ &nbsp;Start Experience / Mulai</button>
+        <p class="overlay-formula">CH₄ + Cl₂ → CH₃Cl + HCl &nbsp;|&nbsp; hν / Δ</p>
+    </div>
+
+    <!-- UI Overlay -->
+    <div class="ui-layer w-full h-full flex flex-col justify-between p-4 md:p-6 opacity-0" id="main-ui">
+        
+        <!-- Header -->
+        <header class="flex justify-between items-start">
+            <div class="glass-panel rounded-2xl p-4 max-w-sm interactive">
+                <h2 class="font-bold mb-1" style="font-family:var(--font-display);color:var(--accent-cyan);font-size:0.95rem;letter-spacing:1px" id="ui-title">Methane Halogenation</h2>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-xs px-2 py-1 rounded border" style="background:rgba(6,255,216,0.08);color:var(--accent-cyan);border-color:rgba(6,255,216,0.3);font-family:var(--font-mono)" id="ui-step-badge">Step 1/4</span>
+                    <span class="text-xs px-2 py-1 rounded border" style="background:rgba(123,47,255,0.12);color:var(--accent-violet);border-color:rgba(123,47,255,0.3);font-family:var(--font-mono)">Free Radical</span>
+                </div>
+                <p class="text-sm" style="color:var(--text-secondary)" id="ui-desc">Initiation: UV light provides energy to break the Cl-Cl bond homolytically.</p>
+            </div>
+            
+            <div class="flex flex-col gap-3 interactive">
+                <!-- Kontrol Bahasa -->
+                <div class="glass-panel rounded-xl p-2 w-fit self-end">
+                    <div class="lang-toggle-wrap">
+                        <button class="lang-seg" id="lang-btn-en" data-lang="EN">EN</button>
+                        <button class="lang-seg" id="lang-btn-id" data-lang="ID">ID</button>
+                    </div>
+                </div>
+                
+                <!-- Toggle Kecepatan & TS Slow-Mo -->
+                <div class="glass-panel rounded-xl p-3 flex flex-col gap-3">
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <span class="text-sm" style="color:var(--text-secondary)" id="ui-ts-label">Slow-Mo TS</span>
+                        <input type="checkbox" id="ts-toggle" class="cursor-pointer" style="width:15px;height:15px;accent-color:var(--accent-cyan);"/>
+                    </label>
+                    <div class="flex flex-col gap-1">
+                        <span class="text-xs" style="color:var(--text-muted)" id="ui-speed-label">Speed: 1x</span>
+                        <input type="range" id="speed-slider" min="0.2" max="2" step="0.1" value="1" class="w-full">
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Kanan Tengah: Diagram Energi -->
+        <div class="absolute right-6 top-1/2 -translate-y-1/2 glass-panel rounded-2xl p-4 w-64 interactive hidden md:block">
+            <h3 class="text-sm font-semibold mb-2" style="font-family:var(--font-display);color:var(--accent-cyan);font-size:0.75rem;letter-spacing:1px" id="ui-energy-title">Energy Diagram</h3>
+            <canvas id="energy-chart"></canvas>
+            <div class="flex justify-between mt-1" style="font-size:10px;color:var(--text-muted)">
+                <span id="ui-rxn-coord">Reaction Coordinate</span>
+            </div>
+        </div>
+
+        <!-- Footer / Kontrol Playback -->
+        <footer class="flex justify-center mb-2">
+            <div class="glass-panel rounded-full p-2 flex items-center gap-4 interactive shadow-[0_0_20px_rgba(0,0,0,0.8)]">
+                <button id="btn-prev" class="w-10 h-10 flex items-center justify-center rounded-full transition-colors" style="color:var(--text-secondary)" onmouseover="this.style.background='rgba(6,255,216,0.1)'" onmouseout="this.style.background='transparent'">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
+                </button>
+                <button id="btn-play" class="w-14 h-14 flex items-center justify-center rounded-full text-white transition-transform transform hover:scale-105">
+                    <!-- Ikon Play -->
+                    <svg id="icon-play" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    <!-- Ikon Pause (tersembunyi secara default) -->
+                    <svg id="icon-pause" class="hidden" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                </button>
+                <button id="btn-next" class="w-10 h-10 flex items-center justify-center rounded-full transition-colors" style="color:var(--text-secondary)" onmouseover="this.style.background='rgba(6,255,216,0.1)'" onmouseout="this.style.background='transparent'">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+                </button>
+                <div class="w-px h-8 mx-2" style="background:rgba(6,255,216,0.15)"></div>
+                <button id="btn-reset" class="w-10 h-10 flex items-center justify-center rounded-full transition-colors" style="color:var(--accent-violet)" title="Reset Step" onmouseover="this.style.background='rgba(123,47,255,0.2)'" onmouseout="this.style.background='transparent'">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         PANEL DIAGRAM 2D – tampil di kiri bawah
+         ══════════════════════════════════════════════ -->
+    <div id="panel-2d"
+         class="absolute z-20 glass-panel rounded-2xl p-3 interactive"
+         style="display:none;
+                left: 1.5rem;
+                top: 210px;
+                width: 320px;
+                max-height: calc(100vh - 290px);
+                overflow-y: auto;
+                scrollbar-width: thin;
+                scrollbar-color: rgba(6,255,216,0.3) transparent;">
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold" style="color:var(--accent-cyan);font-family:var(--font-mono)" id="label-2d">Diagram 2D – Inisiasi</span>
+            <button id="btn-toggle-2d"
+                    class="text-[10px] px-2 py-1 rounded-lg"
+                    style="background:rgba(13,21,48,0.8);border:1px solid var(--glass-border);color:var(--text-secondary);transition:all 0.2s">
+                Sembunyikan
+            </button>
+        </div>
+        <!-- SVG diagram disisipkan oleh JS -->
+        <div id="svg-2d-container" style="overflow:visible; width:100%;"></div>
+    </div>
+
+    <!-- Tombol tampilkan 2D (muncul saat panel disembunyikan) -->
+    <button id="btn-show-2d"
+            class="z-20 glass-panel rounded-xl px-3 py-2 text-xs font-semibold interactive"
+            style="display:none; position:absolute; left:1.5rem; top:210px; color:var(--accent-cyan); font-family:var(--font-mono); transition:all 0.2s">
+        ▤ Diagram 2D
+    </button>
+
+
+    <div id="quiz-modal" class="absolute top-0 left-0 w-full h-full backdrop-blur-sm z-50 hidden flex-col items-center justify-center interactive" style="background:rgba(10,14,26,0.88)">
+        <div class="glass-panel p-8 rounded-2xl max-w-md w-full transform scale-95 transition-transform duration-300" style="border-top:4px solid var(--accent-cyan)" id="quiz-box">
+            <h2 class="text-2xl font-bold mb-4" style="font-family:var(--font-display);color:var(--text-primary);font-size:1.1rem;letter-spacing:1px" id="quiz-title">Concept Check</h2>
+            <p class="mb-6" style="color:var(--text-secondary);font-size:0.92rem" id="quiz-q">Which of the following is a product of the termination step involving two methyl radicals?</p>
+            <div class="space-y-3">
+                <button class="w-full text-left px-4 py-3 rounded-xl quiz-opt" style="background:rgba(13,21,48,0.85);border:1px solid var(--glass-border);color:var(--text-secondary);transition:all 0.2s;font-size:0.88rem" data-correct="false">A) CH₃Cl</button>
+                <button class="w-full text-left px-4 py-3 rounded-xl quiz-opt" style="background:rgba(13,21,48,0.85);border:1px solid var(--glass-border);color:var(--text-secondary);transition:all 0.2s;font-size:0.88rem" data-correct="true">B) C₂H₆ (Ethane)</button>
+                <button class="w-full text-left px-4 py-3 rounded-xl quiz-opt" style="background:rgba(13,21,48,0.85);border:1px solid var(--glass-border);color:var(--text-secondary);transition:all 0.2s;font-size:0.88rem" data-correct="false">C) HCl</button>
+            </div>
+            <div id="quiz-feedback" class="mt-4 text-center font-bold hidden"></div>
+            <button id="quiz-close" class="mt-6 w-full py-2 rounded-xl font-semibold hidden" style="background:rgba(13,21,48,0.8);border:1px solid var(--glass-border);color:var(--text-secondary)">Close & Review</button>
+        </div>
+    </div>
+
+    <!-- style toggle sudah di head -->
+
+    <!-- Logika Inti Aplikasi -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // ==========================================
+        // 1. KAMUS & LOKALISASI (Bilingual)
+        // ==========================================
+        const locales = {
+            EN: {
+                title: "Radical Halogenation",
+                steps: [
+                    { name: "Initiation", desc: "Cl₂ → 2 Cl•\nUV light (hν) provides energy to break the Cl-Cl bond homolytically. One electron goes to each chlorine atom, forming highly reactive radicals." },
+                    { name: "Propagation 1", desc: "Cl• + CH₄ → CH₃• + HCl\nThe Chlorine radical abstracts a hydrogen atom from Methane. A fishhook arrow shows the single electron movement, forming a Methyl radical." },
+                    { name: "Propagation 2", desc: "CH₃• + Cl₂ → CH₃Cl + Cl•\nThe Methyl radical reacts with a new Chlorine molecule, forming Chloromethane and regenerating a Chlorine radical to continue the chain." },
+                    { name: "Termination", desc: "CH₃• + Cl• → CH₃Cl\nTwo free radicals collide and form a stable bond. Here, a Methyl radical and a Chlorine radical form Chloromethane, ending the chain reaction sequence." }
+                ],
+                tsLabel: "Slow-Mo TS",
+                speedLabel: "Speed",
+                energyTitle: "Energy Profile",
+                rxnCoord: "Reaction Coordinate",
+                quiz: {
+                    title: "Concept Check",
+                    q: "Which of the following is a product of the termination step involving two methyl radicals (CH₃• + CH₃•)?",
+                    opts: ["A) Chloromethane (CH₃Cl)", "B) Ethane (C₂H₆)", "C) Hydrogen Chloride (HCl)"],
+                    correct: "Correct! Two methyl radicals form Ethane.",
+                    wrong: "Incorrect. Try again!"
+                }
+            },
+            ID: {
+                title: "Halogenasi Radikal",
+                steps: [
+                    { name: "Inisiasi", desc: "Cl₂ → 2 Cl•\nSinar UV (hν) memberikan energi untuk memutus ikatan Cl-Cl secara homolitik. Masing-masing atom klorin menerima satu elektron, membentuk radikal reaktif." },
+                    { name: "Propagasi 1", desc: "Cl• + CH₄ → CH₃• + HCl\nRadikal Klorin mengambil atom hidrogen dari Metana. Panah mata kail menunjukkan perpindahan elektron tunggal, membentuk radikal Metil." },
+                    { name: "Propagasi 2", desc: "CH₃• + Cl₂ → CH₃Cl + Cl•\nRadikal Metil bereaksi dengan molekul Klorin baru, membentuk Klorometana dan menghasilkan kembali radikal Klorin untuk melanjutkan rantai." },
+                    { name: "Terminasi", desc: "CH₃• + Cl• → CH₃Cl\nDua radikal bebas bertabrakan dan membentuk ikatan stabil. Di sini, radikal Metil dan radikal Klorin membentuk Klorometana, mengakhiri reaksi berantai." }
+                ],
+                tsLabel: "TS Gerak Lambat",
+                speedLabel: "Kecepatan",
+                energyTitle: "Profil Energi",
+                rxnCoord: "Koordinat Reaksi",
+                quiz: {
+                    title: "Kuis Konsep",
+                    q: "Manakah dari berikut ini yang merupakan produk dari tahap terminasi yang melibatkan dua radikal metil (CH₃• + CH₃•)?",
+                    opts: ["A) Klorometana (CH₃Cl)", "B) Etana (C₂H₆)", "C) Hidrogen Klorida (HCl)"],
+                    correct: "Benar! Dua radikal metil bergabung membentuk Etana.",
+                    wrong: "Salah. Coba lagi!"
+                }
+            }
+        };
+
+        let currentLang = 'ID'; // Set default to ID based on request
+        let currentStep = 0; // 0 sampai 3
+        let isPlaying = false;
+        let isSlowMoTS = false;
+        
+        // ==========================================
+        // 2. SINTESIS AUDIO (Web Audio API)
+        // ==========================================
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSnapSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.15);
+            
+            gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.15);
+        }
+
+        function playPopSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.02);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        // ==========================================
+        // 3. SETUP SCENE THREE.JS (Ultra HD)
+        // ==========================================
+        const container = document.getElementById('webgl-container');
+        const scene = new THREE.Scene();
+        // Latar belakang ilmiah gelap
+        scene.background = new THREE.Color(0x0a0e1a);
+        scene.fog = new THREE.FogExp2(0x0a0e1a, 0.018);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 2, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        
+        // Pemetaan Nada HDR
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 5;
+        controls.maxDistance = 20;
+
+        // Pencahayaan (Efek HDR lembut)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const mainLight = new THREE.DirectionalLight(0xffffff, 2);
+        mainLight.position.set(5, 10, 7);
+        mainLight.castShadow = true;
+        mainLight.shadow.bias = -0.001;
+        scene.add(mainLight);
+
+        const blueRimLight = new THREE.PointLight(0x4080ff, 3, 20);
+        blueRimLight.position.set(-5, -2, -5);
+        scene.add(blueRimLight);
+        
+        const uvLight = new THREE.PointLight(0xa855f7, 0, 20);
+        uvLight.position.set(0, 5, 0);
+        scene.add(uvLight);
+
+        // ==========================================
+        // 4. PABRIK PEMBUAT MOLEKUL
+        // ==========================================
+        // Material (Plastik/Kaca Realistis)
+        const mats = {
+            C: new THREE.MeshPhysicalMaterial({ color: 0x333333, roughness: 0.2, metalness: 0.1, clearcoat: 0.5 }),
+            H: new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.3, metalness: 0.0, clearcoat: 0.2 }),
+            Cl: new THREE.MeshPhysicalMaterial({ color: 0x10b981, roughness: 0.4, metalness: 0.1, clearcoat: 0.3 }), // Hijau Zamrud
+            bond: new THREE.MeshPhysicalMaterial({ color: 0xaaaaaa, roughness: 0.5, metalness: 0.5 }),
+            radical: new THREE.MeshBasicMaterial({ color: 0xff3333 }),
+            arrow: new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide })
+        };
+
+        const geos = {
+            C: new THREE.SphereGeometry(0.7, 32, 32),
+            H: new THREE.SphereGeometry(0.4, 32, 32),
+            Cl: new THREE.SphereGeometry(0.9, 32, 32),
+            bond: new THREE.CylinderGeometry(0.12, 0.12, 1, 16),
+            radical: new THREE.SphereGeometry(0.15, 16, 16)
+        };
+
+        function createAtom(type) {
+            const mesh = new THREE.Mesh(geos[type], mats[type]);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            return mesh;
+        }
+
+        function createBond(length) {
+            const bond = new THREE.Mesh(geos.bond, mats.bond);
+            bond.scale.y = length;
+            bond.castShadow = true;
+            return bond;
+        }
+
+        function createRadicalDot() {
+            const dot = new THREE.Mesh(geos.radical, mats.radical);
+            // Tambahkan lampu titik cahaya lembut ke radikal
+            const glow = new THREE.PointLight(0xff3333, 1, 3);
+            dot.add(glow);
+            // Animasi berdenyut
+            gsap.to(dot.scale, { x: 1.3, y: 1.3, z: 1.3, duration: 0.6, repeat: -1, yoyo: true, ease: "sine.inOut" });
+            return dot;
+        }
+
+        function createFishhookArrow(startPt, endPt, controlPt) {
+            const curve = new THREE.QuadraticBezierCurve3(startPt, controlPt, endPt);
+            // Lebih banyak segmen & radius lebih tebal agar halus
+            const tubeGeo = new THREE.TubeGeometry(curve, 48, 0.055, 10, false);
+            const arrowMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+            const arrow = new THREE.Mesh(tubeGeo, arrowMat);
+            
+            // Kepala panah: kerucut penuh, lebih besar
+            const headGeo = new THREE.ConeGeometry(0.14, 0.35, 12);
+            const head = new THREE.Mesh(headGeo, arrowMat);
+            head.position.copy(endPt);
+            
+            // Arahkan kepala mengikuti tangent kurva di ujung
+            const tangent = curve.getTangent(1).normalize();
+            const up = new THREE.Vector3(0, 1, 0);
+            const quaternion = new THREE.Quaternion().setFromUnitVectors(up, tangent);
+            head.quaternion.copy(quaternion);
+            // Offset sedikit mundur agar kepala tidak melayang di luar ujung
+            head.position.addScaledVector(tangent, -0.15);
+            
+            const group = new THREE.Group();
+            group.add(arrow);
+            group.add(head);
+            return group;
+        }
+
+        // --- Bangun Molekul Spesifik ---
+        
+        // Grup untuk menyimpan status setiap langkah
+        const stepGroups = [new THREE.Group(), new THREE.Group(), new THREE.Group(), new THREE.Group()];
+        scene.add(stepGroups[0]);
+        scene.add(stepGroups[1]);
+        scene.add(stepGroups[2]);
+        scene.add(stepGroups[3]);
+        
+        // Sembunyikan semua awalnya
+        stepGroups.forEach(g => g.visible = false);
+
+        // Pembantu untuk matematika
+        const bondLengthCCl = 2.0;
+        const bondLengthCH = 1.4;
+
+        // --- LANGKAH 0: INISIASI (Cl2) ---
+        const g0 = stepGroups[0];
+        const cl1 = createAtom('Cl'); cl1.position.set(-bondLengthCCl/2, 0, 0);
+        const cl2 = createAtom('Cl'); cl2.position.set(bondLengthCCl/2, 0, 0);
+        const bondClCl = createBond(bondLengthCCl);
+        bondClCl.rotation.z = Math.PI / 2; // horizontal
+        const dot1 = createRadicalDot(); dot1.position.set(-1.2, 0.5, 0); dot1.visible = false;
+        const dot2 = createRadicalDot(); dot2.position.set(1.2, 0.5, 0); dot2.visible = false;
+        
+        // Mata kail untuk inisiasi
+        const arrow1 = createFishhookArrow(new THREE.Vector3(0,0.2,0), new THREE.Vector3(-0.8, 0.8, 0), new THREE.Vector3(-0.4, 0.8, 0));
+        const arrow2 = createFishhookArrow(new THREE.Vector3(0,-0.2,0), new THREE.Vector3(0.8, -0.8, 0), new THREE.Vector3(0.4, -0.8, 0));
+        arrow1.visible = false; arrow2.visible = false;
+
+        g0.add(cl1, cl2, bondClCl, dot1, dot2, arrow1, arrow2);
+
+        // --- LANGKAH 1: PROPAGASI 1 (Cl* + CH4) ---
+        const g1 = stepGroups[1];
+        // Metana
+        const methane = new THREE.Group();
+        const c1 = createAtom('C');
+        methane.add(c1);
+        const hPos = [
+            new THREE.Vector3(0, 1, 0).normalize().multiplyScalar(bondLengthCH),
+            new THREE.Vector3(0.9428, -0.3333, 0).normalize().multiplyScalar(bondLengthCH),
+            new THREE.Vector3(-0.4714, -0.3333, 0.8165).normalize().multiplyScalar(bondLengthCH),
+            new THREE.Vector3(-0.4714, -0.3333, -0.8165).normalize().multiplyScalar(bondLengthCH)
+        ];
+        const hAtoms = [], chBonds = [];
+        hPos.forEach(pos => {
+            const h = createAtom('H'); h.position.copy(pos); hAtoms.push(h); methane.add(h);
+            const b = createBond(bondLengthCH);
+            b.position.copy(pos).multiplyScalar(0.5);
+            b.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), pos.clone().normalize());
+            chBonds.push(b); methane.add(b);
+        });
+        g1.add(methane);
+
+        // Radikal Cl yang masuk
+        const incomingCl = new THREE.Group();
+        const clProp = createAtom('Cl');
+        const dotProp = createRadicalDot(); dotProp.position.set(0.8, 0.8, 0);
+        incomingCl.add(clProp, dotProp);
+        incomingCl.position.set(4, 3, 0); // Mulai dari kanan atas
+        g1.add(incomingCl);
+
+        // Ikatan HCl baru (awalnya tersembunyi)
+        const bondHCl = createBond(bondLengthCH * 1.2);
+        bondHCl.visible = false;
+        g1.add(bondHCl);
+
+        // Titik radikal C (muncul nanti)
+        const dotC = createRadicalDot(); dotC.position.set(0, 1.5, 0); dotC.visible = false;
+        methane.add(dotC);
+        
+        // ── PANAH MATA KAIL PROPAGASI 1 (3 panah sesuai mekanisme radikal) ──
+        //
+        // Posisi saat panah muncul:
+        //   Cl  berada di ≈ (1, 2, 0)
+        //   Titik radikal (dotProp) offset (0.8,0.8) dari Cl → world ≈ (1.8, 2.8, 0)
+        //   H[0] direntangkan ke ≈ (0, 1.8, 0)
+        //   Midpoint ikatan C–H[0] ≈ (0, 0.9, 0)
+        //   "Ruang kosong" antara Cl dan H ≈ (0.55, 1.9, 0)
+        //   Atom C di (0, 0, 0)
+
+        // Panah 1 : dari titik elektron Cl•  →  ruang kosong Cl···H
+        const p1Arrow1 = createFishhookArrow(
+            new THREE.Vector3(1.75, 2.75, 0),   // asal: titik radikal Cl•
+            new THREE.Vector3(0.55,  1.9,  0),  // ujung: ruang Cl···H
+            new THREE.Vector3(1.6,   3.3,  0)   // kontrol: lengkung ke luar
+        );
+
+        // Panah 2 : dari midpoint C–H  →  ruang kosong Cl···H  (membentuk H–Cl baru)
+        const p1Arrow2 = createFishhookArrow(
+            new THREE.Vector3(0.0,  0.9,  0),   // asal: tengah ikatan C–H
+            new THREE.Vector3(0.55, 1.9,  0),   // ujung: ruang Cl···H  (bertemu panah 1)
+            new THREE.Vector3(0.1,  1.5,  0)    // kontrol: melengkung ke atas
+        );
+
+        // Panah 3 : dari midpoint C–H  →  atom C  (sisa satu e⁻ membentuk CH₃•)
+        const p1Arrow3 = createFishhookArrow(
+            new THREE.Vector3(0.0,  0.9,  0),   // asal: tengah ikatan C–H (sama dgn panah 2)
+            new THREE.Vector3(0.0,  0.05, 0),   // ujung: dekat atom C
+            new THREE.Vector3(-0.6, 0.45, 0)    // kontrol: memutar balik ke C
+        );
+
+        p1Arrow1.visible = false;
+        p1Arrow2.visible = false;
+        p1Arrow3.visible = false;
+        g1.add(p1Arrow1, p1Arrow2, p1Arrow3);
+
+
+        // --- LANGKAH 2: PROPAGASI 2 (CH3* + Cl2) DIPERBAIKI ---
+        const g2 = stepGroups[2];
+        // Radikal Metil (planar sp2)
+        const methyl = new THREE.Group();
+        const c2 = createAtom('C'); methyl.add(c2);
+        const dotC2 = createRadicalDot(); dotC2.position.set(0, 1.5, 0); methyl.add(dotC2);
+        // 3 H planar - simpan referensi untuk animasi tetrahedral
+        const methyl2HAtoms = [];  // {mesh, planar, tetra}
+        const methyl2HBonds = [];
+        for(let i=0; i<3; i++) {
+            const angle = i * Math.PI * 2 / 3;
+            const posPlanar = new THREE.Vector3(Math.cos(angle)*bondLengthCH, -0.5, Math.sin(angle)*bondLengthCH);
+            // Posisi tetrahedral target saat Cl terikat di atas (+Y):
+            // cos(109.47°) = -0.333, sin(109.47°) = 0.943
+            const posTetra = new THREE.Vector3(
+                Math.cos(angle) * bondLengthCH * 0.943,
+                -bondLengthCH * 0.333,
+                Math.sin(angle) * bondLengthCH * 0.943
+            );
+            const h = createAtom('H'); h.position.copy(posPlanar);
+            methyl2HAtoms.push({ mesh: h, planar: posPlanar.clone(), tetra: posTetra.clone() });
+            methyl.add(h);
+            const b = createBond(bondLengthCH);
+            b.position.copy(posPlanar).multiplyScalar(0.5);
+            b.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), posPlanar.clone().normalize());
+            methyl2HBonds.push(b);
+            methyl.add(b);
+        }
+        g2.add(methyl);
+
+        // Cl2 masuk dari atas
+        // clA = Cl atas (LOCAL y=+1) → pergi menjadi Cl• baru
+        // clB = Cl bawah (LOCAL y=-1) → terikat ke C membentuk CH3Cl
+        const cl2Prop = new THREE.Group();
+        const clA = createAtom('Cl'); clA.position.set(0, 1, 0);   // Cl atas → akan pergi sbg radikal
+        const clB = createAtom('Cl'); clB.position.set(0, -1, 0);  // Cl bawah → akan terikat ke C
+        const bClCl2 = createBond(2);
+        cl2Prop.add(clA, clB, bClCl2);
+        cl2Prop.position.set(0, 4, 0); // Mulai dari atas
+        g2.add(cl2Prop);
+
+        // Ikatan C-Cl baru (awalnya tersembunyi)
+        const bondCCl = createBond(bondLengthCCl); bondCCl.visible = false;
+        g2.add(bondCCl);
+        
+        // Titik radikal pada clA (bukan clB!) - clA yang meninggalkan reaksi sebagai Cl•
+        const dotClLeave = createRadicalDot(); dotClLeave.position.set(0, 1.2, 0); dotClLeave.visible = false;
+        clA.add(dotClLeave);
+
+        // ── PANAH MATA KAIL PROPAGASI 2 ──
+        // Posisi saat panah muncul (t≈1.8):
+        //   C di (0,0,0),  dotC2 di (0, 1.5, 0)
+        //   cl2Prop di y=2.5,  clB-world ≈ (0,1.5,0),  clA-world ≈ (0,3.8,0)
+        //   midpoint Cl–Cl ≈ (0, 2.65, 0)
+
+        // Panah A: dari radikal C•  →  midpoint ikatan Cl–Cl  (C menyerang Cl₂)
+        const p2ArrowA = createFishhookArrow(
+            new THREE.Vector3( 0.4, 1.5, 0),   // asal: titik radikal C
+            new THREE.Vector3( 0.4, 2.3, 0),   // ujung: dekat midpoint Cl–Cl
+            new THREE.Vector3( 1.1, 1.95, 0)   // kontrol: lengkung ke kanan
+        );
+        // Panah B: dari midpoint Cl–Cl  →  menuju clA  (ikatan Cl–Cl pecah, e⁻ ke clA)
+        const p2ArrowB = createFishhookArrow(
+            new THREE.Vector3( 0.4, 2.85, 0),  // asal: midpoint Cl–Cl
+            new THREE.Vector3( 0.5, 3.8, 0),   // ujung: dekat clA
+            new THREE.Vector3( 1.1, 3.35, 0)   // kontrol: lengkung ke kanan
+        );
+        p2ArrowA.visible = false;
+        p2ArrowB.visible = false;
+        g2.add(p2ArrowA, p2ArrowB);
+
+
+        // --- LANGKAH 3: TERMINASI (CH3* + Cl*) DIPERBAIKI ---
+        const g3 = stepGroups[3];
+        
+        // Buat Grup Radikal Metil khusus untuk terminasi
+        const termMethyl = new THREE.Group();
+        const termC = createAtom('C'); termMethyl.add(termC);
+        const termDotC = createRadicalDot();
+        // Posisikan titik radikal di sebelah kanan (sumbu X positif)
+        termDotC.position.set(1.5, 0, 0); 
+        termMethyl.add(termDotC);
+        
+        const termHBonds = [];
+        const termHAtoms = [];
+        
+        // 3 atom H planar menghadap ke kiri
+        for(let i=0; i<3; i++) {
+            // Sebar 3 H dalam bidang YZ, dengan offset X sedikit negatif
+            const angle = i * Math.PI * 2 / 3;
+            const radius = Math.sin(109.5 * Math.PI/180) * bondLengthCH; // Tetrahedral angle calc roughly
+            const xOffset = Math.cos(109.5 * Math.PI/180) * bondLengthCH;
+            
+            // Awalnya planar (radikal)
+            const posPlanar = new THREE.Vector3(-0.3, Math.cos(angle)*bondLengthCH, Math.sin(angle)*bondLengthCH);
+            // Target tetrahedral (setelah ikatan)
+            const posTetra = new THREE.Vector3(-0.5, Math.cos(angle)*1.2, Math.sin(angle)*1.2);
+            
+            const h = createAtom('H'); h.position.copy(posPlanar);
+            termHAtoms.push({mesh: h, posPlanar, posTetra});
+            termMethyl.add(h);
+            
+            const b = createBond(bondLengthCH);
+            b.position.copy(posPlanar).multiplyScalar(0.5);
+            b.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), posPlanar.clone().normalize());
+            termHBonds.push(b);
+            termMethyl.add(b);
+        }
+        
+        termMethyl.position.set(-3, 0, 0);
+        g3.add(termMethyl);
+        
+        // Grup Radikal Klorin
+        const termClGroup = new THREE.Group();
+        const termClAtom = createAtom('Cl');
+        const termDotCl = createRadicalDot();
+        // Posisikan titik radikal di sebelah kiri (menghadap karbon)
+        termDotCl.position.set(-1.5, 0, 0);
+        termClGroup.add(termClAtom, termDotCl);
+        
+        termClGroup.position.set(3, 0, 0);
+        g3.add(termClGroup);
+        
+        // Ikatan C-Cl baru untuk Terminasi (Awalnya tersembunyi)
+        const termBondCCl = createBond(bondLengthCCl);
+        termBondCCl.rotation.z = Math.PI/2;
+        termBondCCl.visible = false;
+        g3.add(termBondCCl);
+
+        // ── PANAH MATA KAIL TERMINASI ──
+        // Posisi awal: termMethyl di (-3.5,0,0), termClGroup di (3.5,0,0)
+        //   dotC world  = (-3.5+1.5, 0, 0) = (-2, 0, 0)
+        //   dotCl world = (3.5-1.5,  0, 0) = ( 2, 0, 0)
+        //   ruang tengah ≈ (0, 0, 0)
+
+        // Panah A: dari radikal C•  →  ruang tengah  (e⁻ menuju ikatan baru)
+        const p3ArrowA = createFishhookArrow(
+            new THREE.Vector3(-1.9, 0.4, 0),   // asal: dekat dotC
+            new THREE.Vector3(-0.1, 0.4, 0),   // ujung: ruang tengah atas
+            new THREE.Vector3(-1.0, 1.1, 0)    // kontrol: busur ke atas
+        );
+        // Panah B: dari radikal Cl•  →  ruang tengah  (e⁻ menuju ikatan baru)
+        const p3ArrowB = createFishhookArrow(
+            new THREE.Vector3( 1.9,-0.4, 0),   // asal: dekat dotCl
+            new THREE.Vector3( 0.1,-0.4, 0),   // ujung: ruang tengah bawah
+            new THREE.Vector3( 1.0,-1.1, 0)    // kontrol: busur ke bawah
+        );
+        p3ArrowA.visible = false;
+        p3ArrowB.visible = false;
+        g3.add(p3ArrowA, p3ArrowB);
+
+
+        // ==========================================
+        // 5. TIMELINE ANIMASI (GSAP)
+        // ==========================================
+        let currentTimeline = null;
+
+        function getBaseSpeed() {
+            return parseFloat(document.getElementById('speed-slider').value);
+        }
+
+        // Pembantu untuk menangani TS SlowMo
+        function onUpdateTS(tl, progressThresholdStart, progressThresholdEnd) {
+            const p = tl.progress();
+            if (isSlowMoTS && p > progressThresholdStart && p < progressThresholdEnd) {
+                gsap.globalTimeline.timeScale(getBaseSpeed() * 0.2); // Melambat
+            } else {
+                gsap.globalTimeline.timeScale(getBaseSpeed()); // Normal
+            }
+            updateEnergyDiagram(currentStep, p);
+        }
+
+        const timelines = [
+            // Timeline 0: Inisiasi
+            () => {
+                const tl = gsap.timeline({ paused: true, onUpdate: function() { onUpdateTS(this, 0.4, 0.6); } });
+                tl.set([dot1, dot2, arrow1, arrow2], { visible: false });
+                tl.set([cl1.position, cl2.position], { x: i => i===0 ? -bondLengthCCl/2 : bondLengthCCl/2 });
+                tl.set(bondClCl.scale, { y: bondLengthCCl });
+                tl.set(bondClCl, { visible: true });
+                tl.set(uvLight, { intensity: 0 });
+
+                tl.to(uvLight, { intensity: 50, duration: 0.5, yoyo: true, repeat: 1, ease: "power2.inOut" }, 0);
+                
+                tl.to(cl1.position, { x: -1.5, duration: 1, ease: "power1.inOut" }, 0.5);
+                tl.to(cl2.position, { x: 1.5, duration: 1, ease: "power1.inOut" }, 0.5);
+                tl.to(bondClCl.scale, { y: 3, duration: 1, ease: "power1.inOut" }, 0.5);
+                tl.to(bondClCl.position, { x: 0.05, duration: 0.05, yoyo: true, repeat: 10 }, 0.5); 
+                
+                tl.set([arrow1, arrow2], { visible: true }, 1.3);
+                tl.to([arrow1.scale, arrow2.scale], { x: 1.1, y: 1.1, duration: 0.2, yoyo: true, repeat: 1 }, 1.3);
+                
+                tl.call(playSnapSound, [], 1.5);
+                tl.set(bondClCl, { visible: false }, 1.5);
+                tl.set([arrow1, arrow2], { visible: false }, 1.6);
+                
+                tl.set([dot1, dot2], { visible: true }, 1.5);
+                tl.to(cl1.position, { x: -3, duration: 1, ease: "back.out(1.5)" }, 1.5);
+                tl.to(cl2.position, { x: 3, duration: 1, ease: "back.out(1.5)" }, 1.5);
+                
+                return tl;
+            },
+            
+            // Timeline 1: Propagasi 1
+            () => {
+                const tl = gsap.timeline({ paused: true, onUpdate: function() { onUpdateTS(this, 0.4, 0.6); } });
+                tl.set([p1Arrow1, p1Arrow2, p1Arrow3, bondHCl, dotC], { visible: false });
+                tl.set(incomingCl.position, { x: 4, y: 3, z: 0 });
+                tl.set(hAtoms[0].position, { x: hPos[0].x, y: hPos[0].y, z: hPos[0].z });
+                tl.set(chBonds[0].scale, { y: bondLengthCH });
+                tl.set(chBonds[0].position, { x: hPos[0].x/2, y: hPos[0].y/2, z: hPos[0].z/2 });
+                tl.set(chBonds[0], { visible: true });
+                tl.set(dotProp, { visible: true });
+                tl.set(methane.position, {x:0, y:0, z:0});
+
+                tl.to(incomingCl.position, { x: 1, y: 2, duration: 1.5, ease: "power2.inOut" }, 0);
+                
+                tl.to(hAtoms[0].position, { y: 1.8, duration: 1, ease: "power1.inOut" }, 1.0);
+                tl.to(chBonds[0].scale, { y: 1.8, duration: 1, ease: "power1.inOut" }, 1.0);
+                tl.to(chBonds[0].position, { y: 0.9, duration: 1, ease: "power1.inOut" }, 1.0);
+                
+                tl.set([p1Arrow1, p1Arrow2, p1Arrow3], { visible: true }, 1.8);
+                
+                tl.call(playSnapSound, [], 2.2);
+                tl.set([p1Arrow1, p1Arrow2, p1Arrow3, chBonds[0], dotProp], { visible: false }, 2.2);
+                tl.set(dotC, { visible: true }, 2.2);
+                tl.set(bondHCl, { visible: true }, 2.2);
+                
+                tl.call(() => {
+                    const clp = incomingCl.position;
+                    const hp = hAtoms[0].position;
+                    const mid = new THREE.Vector3().addVectors(clp, hp).multiplyScalar(0.5);
+                    bondHCl.position.copy(mid);
+                    bondHCl.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3().subVectors(clp, hp).normalize());
+                }, [], 2.2);
+                
+                tl.to([incomingCl.position, hAtoms[0].position, bondHCl.position], { 
+                    x: "+=3", y: "+=3", duration: 1.5, ease: "power2.out" 
+                }, 2.3);
+                
+                hAtoms.slice(1).forEach((h, i) => {
+                    const angle = i * Math.PI * 2 / 3;
+                    const targetPos = new THREE.Vector3(Math.cos(angle)*bondLengthCH, -0.3, Math.sin(angle)*bondLengthCH);
+                    tl.to(h.position, { x: targetPos.x, y: targetPos.y, z: targetPos.z, duration: 1 }, 2.3);
+                    tl.to(chBonds[i+1].position, { x: targetPos.x/2, y: targetPos.y/2, z: targetPos.z/2, duration: 1 }, 2.3);
+                    
+                    const dummy = new THREE.Object3D();
+                    dummy.position.copy(targetPos).multiplyScalar(0.5);
+                    dummy.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), targetPos.clone().normalize());
+                    tl.to(chBonds[i+1].quaternion, { x: dummy.quaternion.x, y: dummy.quaternion.y, z: dummy.quaternion.z, w: dummy.quaternion.w, duration: 1 }, 2.3);
+                });
+
+                return tl;
+            },
+
+            // Timeline 2: Propagasi 2 (DIPERBAIKI)
+            () => {
+                const tl = gsap.timeline({ paused: true, onUpdate: function() { onUpdateTS(this, 0.4, 0.6); } });
+                // Reset state
+                tl.set([bondCCl, dotClLeave, p2ArrowA, p2ArrowB], { visible: false });
+                tl.set(cl2Prop.position, { x: 0, y: 4, z: 0 });
+                tl.set(clA.position, { y: 1 }); tl.set(clB.position, { y: -1 });
+                tl.set(bClCl2.scale, { y: 2 }); tl.set(bClCl2.position, { y: 0 });
+                tl.set(bClCl2, { visible: true });
+                tl.set(dotC2, { visible: true });
+                // Reset H ke posisi planar
+                methyl2HAtoms.forEach((item, i) => {
+                    tl.set(item.mesh.position, { x: item.planar.x, y: item.planar.y, z: item.planar.z });
+                    tl.set(methyl2HBonds[i].position, { x: item.planar.x/2, y: item.planar.y/2, z: item.planar.z/2 });
+                    const dummy0 = new THREE.Object3D();
+                    dummy0.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), item.planar.clone().normalize());
+                    tl.set(methyl2HBonds[i].quaternion, { x: dummy0.quaternion.x, y: dummy0.quaternion.y, z: dummy0.quaternion.z, w: dummy0.quaternion.w });
+                });
+
+                // 1. Cl2 turun mendekati C (clB = bawah mendekati radikal C)
+                tl.to(cl2Prop.position, { y: 2.5, duration: 1.5, ease: "power2.inOut" }, 0);
+                
+                // 2. Ikatan Cl-Cl meregang sebelum putus
+                tl.to(clA.position, { y: 1.5, duration: 1 }, 1);
+                tl.to(bClCl2.scale, { y: 2.5, duration: 1 }, 1);
+                tl.to(bClCl2.position, { y: 0.25, duration: 1 }, 1);
+
+                // 2b. Tampilkan panah mata kail sebelum snap
+                tl.set([p2ArrowA, p2ArrowB], { visible: true }, 1.7);
+                
+                // 3. SNAP: ikatan Cl-Cl putus, ikatan C-Cl terbentuk
+                tl.call(playSnapSound, [], 2.2);
+                tl.set([bClCl2, dotC2, p2ArrowA, p2ArrowB], { visible: false }, 2.2);
+                tl.set([bondCCl, dotClLeave], { visible: true }, 2.2);
+                
+                // Posisikan bondCCl: C di (0,0,0), clB di world y = cl2Prop.y + clB.local.y = 2.5 + (-1) = 1.5
+                // Midpoint = (0, 0.75, 0), jarak = 1.5, bond pointing +Y
+                tl.call(() => {
+                    const clBWorldY = cl2Prop.position.y + clB.position.y; // 2.5 + (-1) = 1.5
+                    const midY = clBWorldY / 2;
+                    bondCCl.position.set(0, midY, 0);
+                    bondCCl.scale.y = clBWorldY; // panjang sesuai jarak nyata
+                    bondCCl.rotation.set(0, 0, 0); // tegak lurus Y
+                }, [], 2.2);
+
+                // 4. clA (Cl atas) pergi ke atas menjadi Cl• baru
+                tl.to(clA.position, { y: 4.5, duration: 1.2, ease: "power2.out" }, 2.3);
+                // Gerakkan sedikit cl2Prop ke atas agar clB tetap di posisi C-Cl
+                tl.to(cl2Prop.position, { y: 2.5, duration: 0.1 }, 2.3); // tetap
+
+                // 5. Geometri CH3Cl: H dari planar → tetrahedral saat Cl terikat
+                methyl2HAtoms.forEach((item, i) => {
+                    tl.to(item.mesh.position, {
+                        x: item.tetra.x, y: item.tetra.y, z: item.tetra.z,
+                        duration: 0.6, ease: "power2.out"
+                    }, 2.3);
+                    tl.to(methyl2HBonds[i].position, {
+                        x: item.tetra.x / 2, y: item.tetra.y / 2, z: item.tetra.z / 2,
+                        duration: 0.6, ease: "power2.out"
+                    }, 2.3);
+                    // Update orientasi ikatan C-H secara dinamis
+                    tl.to(methyl2HBonds[i].quaternion, {
+                        duration: 0.6, ease: "power2.out",
+                        onUpdate: function() {
+                            const cp = item.mesh.position;
+                            const nq = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), cp.clone().normalize());
+                            methyl2HBonds[i].quaternion.copy(nq);
+                        }
+                    }, 2.3);
+                });
+
+                return tl;
+            },
+
+            // Timeline 3: Terminasi (CH3• + Cl• -> CH3Cl)
+            () => {
+                const tl = gsap.timeline({ paused: true, onUpdate: function() { onUpdateTS(this, 0.4, 0.6); } });
+                
+                // Reset posisi awal
+                tl.set(termMethyl.position, { x: -3.5, y: 0 });
+                tl.set(termClGroup.position, { x: 3.5, y: 0 });
+                tl.set([termDotC, termDotCl], { visible: true });
+                tl.set([p3ArrowA, p3ArrowB], { visible: true });   // panah tampil dari awal
+                
+                tl.set(termBondCCl, { visible: false, scale: { y: 0 }, position: { x: 0, y: 0, z: 0 } });
+                
+                // Reset atom H ke posisi planar radikal
+                termHAtoms.forEach((item, index) => {
+                    tl.set(item.mesh.position, { x: item.posPlanar.x, y: item.posPlanar.y, z: item.posPlanar.z });
+                    tl.set(termHBonds[index].position, { x: item.posPlanar.x/2, y: item.posPlanar.y/2, z: item.posPlanar.z/2 });
+                    
+                    const dummy = new THREE.Object3D();
+                    dummy.position.copy(item.posPlanar).multiplyScalar(0.5);
+                    dummy.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), item.posPlanar.clone().normalize());
+                    tl.set(termHBonds[index].quaternion, { x: dummy.quaternion.x, y: dummy.quaternion.y, z: dummy.quaternion.z, w: dummy.quaternion.w });
+                });
+
+                // 1. Radikal saling mendekat (Tabrakan)
+                const targetX = bondLengthCCl / 2;
+                tl.to(termMethyl.position, { x: -targetX, duration: 1.5, ease: "power2.in" }, 0);
+                tl.to(termClGroup.position, { x: targetX, duration: 1.5, ease: "power2.in" }, 0);
+                
+                // 2. Ikatan terbentuk, titik radikal dan panah hilang
+                tl.call(playPopSound, [], 1.5);
+                tl.set([termDotC, termDotCl, p3ArrowA, p3ArrowB], { visible: false }, 1.5);
+                tl.set(termBondCCl, { visible: true }, 1.5);
+                
+                // Animasi pembentukan ikatan baru (memanjang)
+                tl.to(termBondCCl.scale, { y: bondLengthCCl, duration: 0.3, ease: "back.out(1.5)" }, 1.5);
+                
+                // 3. Pergeseran Geometri CH3 dari Planar ke Tetrahedral
+                // Saat ikatan terbentuk, tolakan elektron memaksa ikatan C-H menekuk ke belakang
+                termHAtoms.forEach((item, index) => {
+                    tl.to(item.mesh.position, { 
+                        x: item.posTetra.x, y: item.posTetra.y, z: item.posTetra.z, 
+                        duration: 0.5, ease: "power2.out" 
+                    }, 1.5);
+                    
+                    // Hitung dan animasikan posisi ikatan C-H
+                    tl.to(termHBonds[index].position, { 
+                        x: item.posTetra.x/2, y: item.posTetra.y/2, z: item.posTetra.z/2, 
+                        duration: 0.5, ease: "power2.out" 
+                    }, 1.5);
+                    
+                    // Rotasi ikatan C-H
+                    tl.to(termHBonds[index].quaternion, {
+                        duration: 0.5, ease: "power2.out",
+                        onUpdate: function() {
+                            // Karena GSAP tidak bisa langsung tween quaternion dengan baik lewat .to() biasa,
+                            // kita update orientasi secara dinamis berdasarkan posisi H yang sedang bergerak
+                            const currentHPos = item.mesh.position;
+                            const newQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), currentHPos.clone().normalize());
+                            termHBonds[index].quaternion.copy(newQuat);
+                        }
+                    }, 1.5);
+                });
+
+                // Tampilkan Kuis setelah terminasi selesai
+                tl.call(() => {
+                    setTimeout(() => {
+                        document.getElementById('quiz-modal').classList.remove('hidden');
+                        document.getElementById('quiz-modal').classList.add('flex');
+                    }, 1200);
+                }, [], 2.0);
+
+                return tl;
+            }
+        ];
+
+        // ==========================================
+        // 6a. DIAGRAM 2D (SVG OVERLAY)
+        // ==========================================
+
+        /* ── Definisi SVG untuk setiap langkah ── */
+        /* ── Definisi SVG untuk setiap langkah ── */
+        /* ── Definisi SVG untuk setiap langkah ── */
+        const svgDiagrams = [
+
+
+/* ══════════════════════════════════════════════════════
+   LANGKAH 0 : INISIASI
+   Cl₂ + hν → Cl• + •Cl
+══════════════════════════════════════════════════════ */
+`<svg viewBox="0 0 340 240" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+<defs>
+  <filter id="s0-glow" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <marker id="s0-rxn" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="userSpaceOnUse">
+    <polygon points="0,0 10,3.5 0,7" fill="#7c3aed"/>
+  </marker>
+  <marker id="s0-uv" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto" markerUnits="userSpaceOnUse">
+    <polygon points="0,0 9,3.5 0,7" fill="#a78bfa"/>
+  </marker>
+  <!-- fishhook kiri: barb ke atas-kiri -->
+  <marker id="s0-fhL" markerWidth="20" markerHeight="14" refX="18" refY="7" orient="auto" markerUnits="userSpaceOnUse">
+    <line x1="18" y1="7" x2="5" y2="1" stroke="#38bdf8" stroke-width="2.8" stroke-linecap="round"/>
+  </marker>
+  <!-- fishhook kanan: barb ke bawah-kiri -->
+  <marker id="s0-fhR" markerWidth="20" markerHeight="14" refX="18" refY="7" orient="auto" markerUnits="userSpaceOnUse">
+    <line x1="18" y1="7" x2="5" y2="13" stroke="#38bdf8" stroke-width="2.8" stroke-linecap="round"/>
+  </marker>
+</defs>
+<rect width="340" height="240" fill="#0a0e1a" rx="10"/>
+<text x="170" y="20" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" font-style="italic">Inisiasi — Pemecahan Ikatan Homolitik</text>
+
+<!-- Foton UV -->
+<text x="115" y="39" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" font-weight="bold" fill="#c4b5fd" filter="url(#s0-glow)">hν</text>
+<line x1="115" y1="44" x2="115" y2="56" stroke="#a78bfa" stroke-width="2.2" marker-end="url(#s0-uv)"/>
+
+<!-- Cl KIRI -->
+<circle cx="74" cy="90" r="24" fill="#064e3b" stroke="#10b981" stroke-width="2.5"/>
+<text x="74" y="95" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#6ee7b7">Cl</text>
+
+<!-- ikatan Cl–Cl (putus-putus = akan pecah) -->
+<line x1="98" y1="90" x2="132" y2="90" stroke="#d1d5db" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="5,3"/>
+
+<!-- Cl KANAN -->
+<circle cx="156" cy="90" r="24" fill="#064e3b" stroke="#10b981" stroke-width="2.5"/>
+<text x="156" y="95" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#6ee7b7">Cl</text>
+
+<!-- label Cl₂ -->
+
+<!-- Dua titik elektron pada ikatan Cl–Cl SEJAJAR VERTIKAL (pasangan elektron) -->
+<circle cx="115" cy="82" r="5.5" fill="#fbbf24" filter="url(#s0-glow)"/>
+<circle cx="115" cy="98" r="5.5" fill="#fbbf24" filter="url(#s0-glow)"/>
+
+<!-- Fishhook KIRI: e⁻ atas → Cl kiri (presisi dari titik elektron atas) -->
+<path d="M 115,82 C 95,55 75,55 68,72"
+      fill="none" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#s0-fhL)" filter="url(#s0-glow)"/>
+<!-- Fishhook KANAN: e⁻ bawah → Cl kanan (presisi dari titik elektron bawah) -->
+<path d="M 115,98 C 135,125 155,125 164,108"
+      fill="none" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#s0-fhR)" filter="url(#s0-glow)"/>
+
+<!-- Panah reaksi → -->
+<line x1="192" y1="90" x2="214" y2="90" stroke="#7c3aed" stroke-width="2.5" marker-end="url(#s0-rxn)"/>
+
+<!-- PRODUK Cl• kiri -->
+<circle cx="244" cy="90" r="22" fill="#064e3b" stroke="#10b981" stroke-width="2.5"/>
+<text x="244" y="95" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#6ee7b7">Cl</text>
+<circle cx="226" cy="71" r="7" fill="#ef4444" filter="url(#s0-glow)"/>
+
+
+<text x="270" y="95" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#475569">+</text>
+
+<!-- PRODUK •Cl kanan -->
+<circle cx="310" cy="90" r="22" fill="#064e3b" stroke="#10b981" stroke-width="2.5"/>
+<text x="310" y="95" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#6ee7b7">Cl</text>
+<circle cx="328" cy="71" r="7" fill="#ef4444" filter="url(#s0-glow)"/>
+
+
+<!-- LEGENDA -->
+<rect x="4" y="134" width="332" height="98" rx="8" fill="#0f172a" stroke="#1e293b" stroke-width="1.5"/>
+<text x="14" y="151" font-family="Arial,sans-serif" font-size="10.5" font-weight="bold" fill="#64748b">LEGENDA</text>
+<!-- fishhook -->
+<path d="M 14,166 Q 23,159 31,166" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round"/>
+<line x1="31" y1="166" x2="23" y2="159" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round"/>
+<text x="39" y="170" font-family="Arial,sans-serif" font-size="10.5" fill="#93c5fd">= Panah mata kail (½ kepala) → 1 elektron pindah</text>
+<!-- radical dot -->
+<circle cx="21" cy="186" r="6" fill="#ef4444"/>
+<text x="39" y="190" font-family="Arial,sans-serif" font-size="10.5" fill="#fca5a5">= Titik radikal (elektron tunggal bebas)</text>
+<!-- midpoint dot -->
+<circle cx="21" cy="206" r="5.5" fill="#fbbf24"/>
+<text x="39" y="210" font-family="Arial,sans-serif" font-size="10.5" fill="#fcd34d">= Titik midpoint (asal perpindahan elektron)</text>
+<text x="39" y="222" font-family="Arial,sans-serif" font-size="10.5" fill="#fcd34d">  dan ikatan putus-putus = ikatan yang akan pecah</text>
+</svg>`,
+
+/* ══════════════════════════════════════════════════════
+   LANGKAH 1 : PROPAGASI 1
+   Cl• + CH₄ → HCl + •CH₃
+══════════════════════════════════════════════════════ */
+`<svg viewBox="0 0 340 330" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+<defs>
+  <filter id="s1-glow" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <marker id="s1-rxn" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="userSpaceOnUse">
+    <polygon points="0,0 10,3.5 0,7" fill="#7c3aed"/>
+  </marker>
+  <!-- ❶ Fishhook BIRU: barb atas-kiri -->
+  <marker id="s1-fhB" markerWidth="20" markerHeight="14" refX="18" refY="7" orient="auto" markerUnits="userSpaceOnUse">
+    <line x1="18" y1="7" x2="5" y2="1" stroke="#38bdf8" stroke-width="2.8" stroke-linecap="round"/>
+  </marker>
+  <!-- ❷ Fishhook KUNING: barb atas-kiri -->
+  <marker id="s1-fhYu" markerWidth="20" markerHeight="14" refX="18" refY="7" orient="auto" markerUnits="userSpaceOnUse">
+    <line x1="18" y1="7" x2="5" y2="1" stroke="#fbbf24" stroke-width="2.8" stroke-linecap="round"/>
+  </marker>
+  <!-- ❸ Fishhook ORANYE: barb bawah-kiri -->
+  <marker id="s1-fhOd" markerWidth="20" markerHeight="14" refX="18" refY="7" orient="auto" markerUnits="userSpaceOnUse">
+    <line x1="18" y1="7" x2="5" y2="13" stroke="#fb923c" stroke-width="2.8" stroke-linecap="round"/>
+  </marker>
+</defs>
+
+<rect width="340" height="330" fill="#0a0e1a" rx="10"/>
+<text x="170" y="20" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" font-style="italic">Propagasi 1 — Abstraksi Hidrogen</text>
+
+<!-- Cl• kiri -->
+<circle cx="38" cy="82" r="24" fill="#064e3b" stroke="#10b981" stroke-width="2.5"/>
+<text x="38" y="87" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#6ee7b7">Cl</text>
+<circle cx="20" cy="62" r="7" fill="#ef4444" filter="url(#s1-glow)"/>
+
+
+<!-- H yang diambil (oranye = reaktif) -->
+<circle cx="170" cy="82" r="18" fill="#431407" stroke="#f97316" stroke-width="2.5"/>
+<text x="170" y="87" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#fdba74">H</text>
+
+<!-- ikatan C–H putus-putus -->
+<line x1="188" y1="82" x2="212" y2="82" stroke="#f97316" stroke-width="2.5" stroke-dasharray="4,3" stroke-linecap="round"/>
+
+<!-- Dua titik elektron pada ikatan C–H SEJAJAR VERTIKAL (pasangan elektron) -->
+<circle cx="200" cy="74" r="5.5" fill="#fbbf24" filter="url(#s1-glow)"/>
+<circle cx="200" cy="90" r="5.5" fill="#fbbf24" filter="url(#s1-glow)"/>
+
+<!-- C atom CH₄ -->
+<circle cx="232" cy="82" r="24" fill="#1e1e2e" stroke="#64748b" stroke-width="2.5"/>
+<text x="232" y="87" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#e2e8f0">C</text>
+
+<!-- 3 H di sebelah kanan saja (susunan rapi) -->
+<!-- H atas kanan -->
+<circle cx="265" cy="60" r="13" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.8"/>
+<text x="265" y="65" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#bfdbfe">H</text>
+<line x1="248" y1="72" x2="254" y2="66" stroke="#60a5fa" stroke-width="1.5"/>
+
+<!-- H tengah kanan -->
+<circle cx="275" cy="82" r="13" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.8"/>
+<text x="275" y="87" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#bfdbfe">H</text>
+<line x1="256" y1="82" x2="262" y2="82" stroke="#60a5fa" stroke-width="1.5"/>
+
+<!-- H bawah kanan -->
+<circle cx="265" cy="104" r="13" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.8"/>
+<text x="265" y="109" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#bfdbfe">H</text>
+<line x1="248" y1="92" x2="254" y2="98" stroke="#60a5fa" stroke-width="1.5"/>
+
+
+<!-- ═══ TIGA PANAH MATA KAIL ═══ -->
+<!-- ❶ BIRU: e⁻ dari Cl• → zona pembentukan H–Cl (bertemu dengan panah ❷) -->
+<path d="M 20,63 C 60,28 100,35 128,70"
+      fill="none" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#s1-fhB)" filter="url(#s1-glow)"/>
+<text x="88" y="30" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#38bdf8">❶</text>
+
+<!-- ❷ KUNING: e⁻ atas C–H → zona pembentukan H–Cl (bertemu dengan panah ❶) -->
+<path d="M 200,74 C 170,55 150,60 128,70"
+      fill="none" stroke="#fbbf24" stroke-width="2.5" marker-end="url(#s1-fhYu)" filter="url(#s1-glow)"/>
+<text x="175" y="45" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#fbbf24">❷</text>
+
+<!-- ❸ ORANYE: midpoint C–H → atom C (e⁻ tersisa → CH₃•) -->
+<path d="M 200,90 C 198,108 216,118 222,106"
+      fill="none" stroke="#fb923c" stroke-width="2.5" marker-end="url(#s1-fhOd)" filter="url(#s1-glow)"/>
+<text x="188" y="126" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#fb923c">❸</text>
+
+<!-- Panah reaksi ke bawah -->
+<line x1="170" y1="155" x2="170" y2="172" stroke="#7c3aed" stroke-width="2.5" marker-end="url(#s1-rxn)"/>
+
+<!-- ═══ PRODUK ═══ -->
+<!-- H–Cl -->
+<circle cx="72" cy="200" r="16" fill="#431407" stroke="#f97316" stroke-width="2"/>
+<text x="72" y="205" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="bold" fill="#fdba74">H</text>
+<line x1="88" y1="200" x2="104" y2="200" stroke="#d1d5db" stroke-width="3.5" stroke-linecap="round"/>
+<circle cx="122" cy="200" r="22" fill="#064e3b" stroke="#10b981" stroke-width="2.5"/>
+<text x="122" y="205" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#6ee7b7">Cl</text>
+
+
+<text x="160" y="206" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#475569">+</text>
+
+<!-- •CH₃ -->
+<circle cx="212" cy="200" r="22" fill="#1e1e2e" stroke="#64748b" stroke-width="2.5"/>
+<text x="212" y="205" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#e2e8f0">C</text>
+<circle cx="190" cy="182" r="7" fill="#ef4444" filter="url(#s1-glow)"/>
+
+<!-- 3 H di sebelah kanan saja (susunan rapi) -->
+<!-- H atas kanan -->
+<circle cx="245" cy="178" r="11" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.5"/>
+<text x="245" y="183" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#bfdbfe">H</text>
+<line x1="230" y1="190" x2="235" y2="185" stroke="#60a5fa" stroke-width="1.3"/>
+
+<!-- H tengah kanan -->
+<circle cx="255" cy="200" r="11" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.5"/>
+<text x="255" y="205" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#bfdbfe">H</text>
+<line x1="234" y1="200" x2="244" y2="200" stroke="#60a5fa" stroke-width="1.3"/>
+
+<!-- H bawah kanan -->
+<circle cx="245" cy="222" r="11" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.5"/>
+<text x="245" y="227" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#bfdbfe">H</text>
+<line x1="230" y1="210" x2="235" y2="216" stroke="#60a5fa" stroke-width="1.3"/>
+
+<!-- LEGENDA -->
+<rect x="4" y="248" width="332" height="76" rx="8" fill="#0f172a" stroke="#1e293b" stroke-width="1.5"/>
+<text x="14" y="264" font-family="Arial,sans-serif" font-size="10" font-weight="bold" fill="#64748b">LEGENDA PANAH</text>
+<path d="M 14,278 Q 22,272 30,278" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="30" y1="278" x2="23" y2="272" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>
+<text x="38" y="282" font-family="Arial,sans-serif" font-size="10" fill="#38bdf8">❶ e⁻ dari Cl• → membentuk ikatan H–Cl</text>
+<path d="M 14,292 Q 22,286 30,292" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="30" y1="292" x2="23" y2="286" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round"/>
+<text x="38" y="296" font-family="Arial,sans-serif" font-size="10" fill="#fbbf24">❷ ikatan C–H putus → elektron ke H–Cl</text>
+<path d="M 14,306 Q 22,300 30,306" fill="none" stroke="#fb923c" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="30" y1="306" x2="23" y2="312" stroke="#fb923c" stroke-width="2.2" stroke-linecap="round"/>
+<text x="38" y="310" font-family="Arial,sans-serif" font-size="10" fill="#fb923c">❸ e⁻ sisa ikatan C–H → tetap di C (membentuk CH₃•)</text>
+<circle cx="21" cy="320" r="5" fill="#fbbf24"/>
+<text x="38" y="323" font-family="Arial,sans-serif" font-size="10" fill="#fcd34d">= midpoint ikatan (asal e⁻)</text>
+</svg>`,
+
+/* ══════════════════════════════════════════════════════
+   LANGKAH 2 : PROPAGASI 2
+   •CH₃ + Cl₂ → CH₃Cl + Cl•
+══════════════════════════════════════════════════════ */
+`<svg viewBox="0 0 340 310" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+<defs>
+  <filter id="s2-glow" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <marker id="s2-rxn" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="userSpaceOnUse">
+    <polygon points="0,0 10,3.5 0,7" fill="#7c3aed"/>
+  </marker>
+  <!-- ❶ Fishhook BIRU: barb atas-kiri -->
+  <marker id="s2-fhB" markerWidth="20" markerHeight="14" refX="18" refY="7" orient="auto" markerUnits="userSpaceOnUse">
+    <line x1="18" y1="7" x2="5" y2="1" stroke="#38bdf8" stroke-width="2.8" stroke-linecap="round"/>
+  </marker>
+  <!-- ❷ Fishhook KUNING: barb atas-kiri -->
+  <marker id="s2-fhY" markerWidth="20" markerHeight="14" refX="18" refY="7" orient="auto" markerUnits="userSpaceOnUse">
+    <line x1="18" y1="7" x2="5" y2="1" stroke="#fbbf24" stroke-width="2.8" stroke-linecap="round"/>
+  </marker>
+</defs>
+
+<rect width="340" height="310" fill="#0a0e1a" rx="10"/>
+<text x="170" y="20" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" font-style="italic">Propagasi 2 — CH₃• + Cl–Cl</text>
+
+<!-- •CH₃ kiri -->
+<circle cx="56" cy="90" r="24" fill="#1e1e2e" stroke="#64748b" stroke-width="2.5"/>
+<text x="56" y="95" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#e2e8f0">C</text>
+<circle cx="78" cy="68" r="7" fill="#ef4444" filter="url(#s2-glow)"/>
+
+<!-- 3 H kecil -->
+<circle cx="34" cy="112" r="12" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.6"/>
+<text x="34" y="117" text-anchor="middle" font-family="Arial,sans-serif" font-size="9.5" fill="#bfdbfe">H</text>
+<line x1="42" y1="109" x2="46" y2="100" stroke="#60a5fa" stroke-width="1.5"/>
+<circle cx="56" cy="118" r="12" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.6"/>
+<text x="56" y="123" text-anchor="middle" font-family="Arial,sans-serif" font-size="9.5" fill="#bfdbfe">H</text>
+<line x1="56" y1="106" x2="56" y2="100" stroke="#60a5fa" stroke-width="1.5"/>
+<circle cx="78" cy="112" r="12" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.6"/>
+<text x="78" y="117" text-anchor="middle" font-family="Arial,sans-serif" font-size="9.5" fill="#bfdbfe">H</text>
+<line x1="70" y1="109" x2="68" y2="100" stroke="#60a5fa" stroke-width="1.5"/>
+
+<text x="128" y="96" text-anchor="middle" font-family="Arial,sans-serif" font-size="17" fill="#475569">+</text>
+
+<!-- Cl₂ kanan: Cl-A (kiri, terikat ke C) dan Cl-B (kanan, pergi sebagai Cl•) -->
+<circle cx="172" cy="90" r="24" fill="#064e3b" stroke="#10b981" stroke-width="2.5"/>
+<text x="172" y="95" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#6ee7b7">Cl</text>
+
+<!-- ikatan Cl–Cl (putus-putus = akan pecah) -->
+<line x1="196" y1="90" x2="230" y2="90" stroke="#d1d5db" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="5,3"/>
+
+<!-- Dua titik elektron pada ikatan Cl–Cl SEJAJAR VERTIKAL (pasangan elektron) -->
+<circle cx="213" cy="82" r="5.5" fill="#fbbf24" filter="url(#s2-glow)"/>
+<circle cx="213" cy="98" r="5.5" fill="#fbbf24" filter="url(#s2-glow)"/>
+
+<circle cx="252" cy="90" r="24" fill="#064e3b" stroke="#10b981" stroke-width="2.5"/>
+<text x="252" y="95" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#6ee7b7">Cl</text>
+
+
+<!-- ═══ DUA PANAH MATA KAIL ═══ -->
+<!-- ❶ BIRU: e⁻ dari C• → zona pembentukan C–Cl (bertemu dengan panah ❷) -->
+<path d="M 78,69 C 100,45 115,65 110,90"
+      fill="none" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#s2-fhB)" filter="url(#s2-glow)"/>
+<text x="90" y="38" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#38bdf8">❶</text>
+
+<!-- ❷ KUNING: e⁻ bawah Cl–Cl → zona pembentukan C–Cl (bertemu dengan panah ❶) -->
+<path d="M 213,98 C 180,115 135,105 110,90"
+      fill="none" stroke="#fbbf24" stroke-width="2.5" marker-end="url(#s2-fhY)" filter="url(#s2-glow)"/>
+<text x="160" y="120" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#fbbf24">❷</text>
+
+<!-- Panah reaksi ke bawah -->
+<line x1="170" y1="142" x2="170" y2="160" stroke="#7c3aed" stroke-width="2.5" marker-end="url(#s2-rxn)"/>
+
+<!-- ═══ PRODUK ═══ -->
+<!-- CH₃Cl -->
+<circle cx="76" cy="195" r="22" fill="#1e1e2e" stroke="#64748b" stroke-width="2.5"/>
+<text x="76" y="200" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#e2e8f0">C</text>
+<line x1="98" y1="195" x2="118" y2="195" stroke="#d1d5db" stroke-width="3.5" stroke-linecap="round"/>
+<circle cx="136" cy="195" r="22" fill="#064e3b" stroke="#10b981" stroke-width="2.5"/>
+<text x="136" y="200" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#6ee7b7">Cl</text>
+
+<!-- H di CH₃Cl -->
+<circle cx="56" cy="215" r="11" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.5"/>
+<text x="56" y="219" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#bfdbfe">H</text>
+<line x1="63" y1="212" x2="66" y2="206" stroke="#60a5fa" stroke-width="1.3"/>
+<circle cx="76" cy="221" r="11" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.5"/>
+<text x="76" y="225" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#bfdbfe">H</text>
+<line x1="76" y1="210" x2="76" y2="205" stroke="#60a5fa" stroke-width="1.3"/>
+<circle cx="96" cy="215" r="11" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.5"/>
+<text x="96" y="219" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#bfdbfe">H</text>
+<line x1="89" y1="212" x2="87" y2="206" stroke="#60a5fa" stroke-width="1.3"/>
+
+<text x="174" y="200" text-anchor="middle" font-family="Arial,sans-serif" font-size="17" fill="#475569">+</text>
+
+<!-- Cl• baru -->
+<circle cx="224" cy="195" r="22" fill="#064e3b" stroke="#10b981" stroke-width="2.5"/>
+<text x="224" y="200" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#6ee7b7">Cl</text>
+<circle cx="246" cy="175" r="7" fill="#ef4444" filter="url(#s2-glow)"/>
+
+
+<!-- LEGENDA -->
+<rect x="4" y="242" width="332" height="62" rx="8" fill="#0f172a" stroke="#1e293b" stroke-width="1.5"/>
+<text x="14" y="258" font-family="Arial,sans-serif" font-size="10" font-weight="bold" fill="#64748b">LEGENDA PANAH</text>
+<path d="M 14,272 Q 22,266 30,272" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="30" y1="272" x2="23" y2="266" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>
+<text x="38" y="276" font-family="Arial,sans-serif" font-size="10" fill="#38bdf8">❶ e⁻ dari C• → menyerang midpoint ikatan Cl–Cl</text>
+<path d="M 14,288 Q 22,282 30,288" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="30" y1="288" x2="23" y2="282" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round"/>
+<text x="38" y="292" font-family="Arial,sans-serif" font-size="10" fill="#fbbf24">❷ ikatan Cl–Cl pecah → e⁻ ke Cl• baru (kanan)</text>
+<circle cx="21" cy="300" r="5" fill="#fbbf24"/>
+<text x="38" y="303" font-family="Arial,sans-serif" font-size="10" fill="#fcd34d">= midpoint ikatan Cl–Cl (asal e⁻)</text>
+</svg>`,
+
+/* ══════════════════════════════════════════════════════
+   LANGKAH 3 : TERMINASI
+   •CH₃ + •Cl → CH₃Cl
+══════════════════════════════════════════════════════ */
+`<svg viewBox="0 0 340 280" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+<defs>
+  <filter id="s3-glow" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <marker id="s3-rxn" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="userSpaceOnUse">
+    <polygon points="0,0 10,3.5 0,7" fill="#7c3aed"/>
+  </marker>
+  <!-- ❶ Fishhook BIRU (dari C• ke kanan): barb bawah-kiri (masuk ke zona) -->
+  <marker id="s3-fhB" markerWidth="20" markerHeight="14" refX="18" refY="7" orient="auto" markerUnits="userSpaceOnUse">
+    <line x1="18" y1="7" x2="5" y2="13" stroke="#38bdf8" stroke-width="2.8" stroke-linecap="round"/>
+  </marker>
+  <!-- ❷ Fishhook KUNING (dari Cl• ke kiri): barb bawah-kiri -->
+  <marker id="s3-fhY" markerWidth="20" markerHeight="14" refX="18" refY="7" orient="auto" markerUnits="userSpaceOnUse">
+    <line x1="18" y1="7" x2="5" y2="13" stroke="#fbbf24" stroke-width="2.8" stroke-linecap="round"/>
+  </marker>
+</defs>
+
+<rect width="340" height="280" fill="#0a0e1a" rx="10"/>
+<text x="170" y="20" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" font-style="italic">Terminasi — Penggabungan Dua Radikal</text>
+
+<!-- •CH₃ kiri -->
+<circle cx="52" cy="90" r="24" fill="#1e1e2e" stroke="#64748b" stroke-width="2.5"/>
+<text x="52" y="95" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#e2e8f0">C</text>
+<circle cx="74" cy="68" r="7" fill="#ef4444" filter="url(#s3-glow)"/>
+
+<!-- 3 H kiri -->
+<circle cx="30" cy="112" r="12" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.6"/>
+<text x="30" y="117" text-anchor="middle" font-family="Arial,sans-serif" font-size="9.5" fill="#bfdbfe">H</text>
+<line x1="38" y1="109" x2="42" y2="100" stroke="#60a5fa" stroke-width="1.5"/>
+<circle cx="52" cy="118" r="12" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.6"/>
+<text x="52" y="123" text-anchor="middle" font-family="Arial,sans-serif" font-size="9.5" fill="#bfdbfe">H</text>
+<line x1="52" y1="106" x2="52" y2="100" stroke="#60a5fa" stroke-width="1.5"/>
+<circle cx="74" cy="112" r="12" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.6"/>
+<text x="74" y="117" text-anchor="middle" font-family="Arial,sans-serif" font-size="9.5" fill="#bfdbfe">H</text>
+<line x1="66" y1="109" x2="64" y2="100" stroke="#60a5fa" stroke-width="1.5"/>
+
+<!-- Tanda + -->
+<text x="170" y="96" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#475569">+</text>
+
+<!-- •Cl kanan -->
+<circle cx="288" cy="90" r="24" fill="#064e3b" stroke="#10b981" stroke-width="2.5"/>
+<text x="288" y="95" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#6ee7b7">Cl</text>
+<circle cx="266" cy="68" r="7" fill="#ef4444" filter="url(#s3-glow)"/>
+
+
+<!-- ═══ Zona pembentukan ikatan (di tengah) ═══ -->
+<rect x="136" y="56" width="68" height="28" rx="10"
+      fill="rgba(16,185,129,0.12)" stroke="#10b981" stroke-width="1.5" stroke-dasharray="5,3"/>
+<text x="170" y="74" text-anchor="middle" font-family="Arial,sans-serif" font-size="9.5" fill="#34d399">ikatan baru</text>
+
+<!-- ❶ BIRU: e⁻ dari C• → zona ikatan (kiri zona) -->
+<path d="M 74,69 C 100,38 130,52 140,62"
+      fill="none" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#s3-fhB)" filter="url(#s3-glow)"/>
+<text x="92" y="36" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#38bdf8">❶</text>
+
+<!-- ❷ KUNING: e⁻ dari Cl• → zona ikatan (kanan zona) -->
+<path d="M 266,69 C 240,38 210,52 200,62"
+      fill="none" stroke="#fbbf24" stroke-width="2.5" marker-end="url(#s3-fhY)" filter="url(#s3-glow)"/>
+<text x="240" y="36" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#fbbf24">❷</text>
+
+<!-- Panah reaksi ke bawah -->
+<line x1="170" y1="136" x2="170" y2="155" stroke="#7c3aed" stroke-width="2.5" marker-end="url(#s3-rxn)"/>
+
+<!-- ═══ PRODUK: CH₃Cl STABIL ═══ -->
+<circle cx="128" cy="192" r="22" fill="#1e1e2e" stroke="#64748b" stroke-width="2.5"/>
+<text x="128" y="197" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#e2e8f0">C</text>
+<line x1="150" y1="192" x2="168" y2="192" stroke="#d1d5db" stroke-width="3.5" stroke-linecap="round"/>
+<circle cx="188" cy="192" r="22" fill="#064e3b" stroke="#10b981" stroke-width="2.5"/>
+<text x="188" y="197" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#6ee7b7">Cl</text>
+
+<!-- H di CH₃Cl -->
+<circle cx="108" cy="212" r="11" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.5"/>
+<text x="108" y="216" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#bfdbfe">H</text>
+<line x1="116" y1="209" x2="119" y2="204" stroke="#60a5fa" stroke-width="1.3"/>
+<circle cx="128" cy="218" r="11" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.5"/>
+<text x="128" y="222" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#bfdbfe">H</text>
+<line x1="128" y1="207" x2="128" y2="202" stroke="#60a5fa" stroke-width="1.3"/>
+<circle cx="148" cy="212" r="11" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.5"/>
+<text x="148" y="216" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#bfdbfe">H</text>
+<line x1="141" y1="209" x2="140" y2="204" stroke="#60a5fa" stroke-width="1.3"/>
+
+<!-- LEGENDA -->
+<rect x="4" y="236" width="332" height="40" rx="8" fill="#0f172a" stroke="#1e293b" stroke-width="1.5"/>
+<path d="M 14,251 Q 22,245 30,251" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="30" y1="251" x2="23" y2="257" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>
+<text x="38" y="255" font-family="Arial,sans-serif" font-size="10" fill="#38bdf8">❶ e⁻ dari C•  →  bergabung di zona ikatan baru</text>
+<path d="M 14,266 Q 22,260 30,266" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="30" y1="266" x2="23" y2="272" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round"/>
+<text x="38" y="270" font-family="Arial,sans-serif" font-size="10" fill="#fbbf24">❷ e⁻ dari Cl•  →  bergabung di zona ikatan baru</text>
+</svg>`
+
+
+        ];
+
+        const stepLabels2D = [
+            'Diagram 2D – Inisiasi',
+            'Diagram 2D – Propagasi 1',
+            'Diagram 2D – Propagasi 2',
+            'Diagram 2D – Terminasi'
+        ];
+
+        function update2DDiagram(stepIndex) {
+            const panel  = document.getElementById('panel-2d');
+            const label  = document.getElementById('label-2d');
+            const cont   = document.getElementById('svg-2d-container');
+            if (!panel || !label || !cont) return;
+            label.innerText    = stepLabels2D[stepIndex];
+            cont.innerHTML     = svgDiagrams[stepIndex];
+            cont.style.overflow = 'visible';
+            // Pastikan SVG di dalam container mengisi lebar penuh
+            const svgEl = cont.querySelector('svg');
+            if (svgEl) {
+                svgEl.setAttribute('width', '100%');
+                svgEl.setAttribute('height', 'auto');
+                svgEl.style.display = 'block';
+            }
+        }
+
+        // Tampilkan / sembunyikan panel 2D
+        document.getElementById('btn-toggle-2d').addEventListener('click', () => {
+            document.getElementById('panel-2d').style.display   = 'none';
+            document.getElementById('btn-show-2d').style.display = 'block';
+        });
+        document.getElementById('btn-show-2d').addEventListener('click', () => {
+            document.getElementById('panel-2d').style.display   = 'block';
+            document.getElementById('btn-show-2d').style.display = 'none';
+        });
+
+        // ==========================================
+        // 6. MANAJEMEN UI & LOGIKA
+        // ==========================================
+        
+        function updateUI() {
+            const l = locales[currentLang];
+            document.getElementById('ui-title').innerText = l.title;
+            document.getElementById('ui-step-badge').innerText = `Step ${currentStep + 1}/4: ${l.steps[currentStep].name}`;
+            document.getElementById('ui-desc').innerText = l.steps[currentStep].desc;
+            document.getElementById('ui-ts-label').innerText = l.tsLabel;
+            document.getElementById('ui-speed-label').innerText = `${l.speedLabel}: ${document.getElementById('speed-slider').value}x`;
+            document.getElementById('ui-energy-title').innerText = l.energyTitle;
+            document.getElementById('ui-rxn-coord').innerText = l.rxnCoord;
+            
+            // UI Kuis
+            document.getElementById('quiz-title').innerText = l.quiz.title;
+            document.getElementById('quiz-q').innerText = l.quiz.q;
+            const qBtns = document.querySelectorAll('.quiz-opt');
+            qBtns.forEach((btn, idx) => {
+                btn.innerText = l.quiz.opts[idx];
+                btn.className = "w-full text-left px-4 py-3 rounded-xl quiz-opt";
+                btn.style.cssText = "background:rgba(13,21,48,0.85);border:1px solid var(--glass-border);color:var(--text-secondary);transition:all 0.2s;font-size:0.88rem"; // reset styles
+            });
+            document.getElementById('quiz-feedback').classList.add('hidden');
+            document.getElementById('quiz-close').classList.add('hidden');
+
+            updateEnergyDiagram(currentStep, 0);
+            update2DDiagram(currentStep);
+            // Reposisikan panel 2D setelah layout direflow
+            requestAnimationFrame(() => repositionPanel2D());
+        }
+
+        function loadStep(stepIndex) {
+            if (currentTimeline) {
+                currentTimeline.pause();
+                currentTimeline.kill();
+            }
+            
+            stepGroups.forEach((g, i) => g.visible = (i === stepIndex));
+            
+            currentStep = stepIndex;
+            updateUI();
+            
+            currentTimeline = timelines[stepIndex]();
+            
+            if (isPlaying) {
+                currentTimeline.timeScale(getBaseSpeed());
+                currentTimeline.play();
+                togglePlayUI(true);
+            } else {
+                currentTimeline.progress(0);
+                togglePlayUI(false);
+            }
+        }
+
+        function togglePlayUI(playing) {
+            isPlaying = playing;
+            if (playing) {
+                document.getElementById('icon-play').classList.add('hidden');
+                document.getElementById('icon-pause').classList.remove('hidden');
+            } else {
+                document.getElementById('icon-play').classList.remove('hidden');
+                document.getElementById('icon-pause').classList.add('hidden');
+            }
+        }
+
+        // --- Canvas Diagram Energi ---
+        const eCanvas = document.getElementById('energy-chart');
+        const ctx = eCanvas.getContext('2d');
+        
+        function updateEnergyDiagram(step, progress) {
+            const rect = eCanvas.parentElement.getBoundingClientRect();
+            eCanvas.width = rect.width - 32; 
+            eCanvas.height = 150;
+            
+            const w = eCanvas.width;
+            const h = eCanvas.height;
+            
+            ctx.clearRect(0,0,w,h);
+            
+            ctx.strokeStyle = "rgba(6,255,216,0.18)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(10, 10); ctx.lineTo(10, h-10); ctx.lineTo(w-10, h-10);
+            ctx.stroke();
+
+            const curves = [
+                { start: h-30, peak: 20, end: h-50 }, 
+                { start: h-50, peak: 30, end: h-40 }, 
+                { start: h-40, peak: 40, end: h-80 }, 
+                { start: h-80, peak: h-80, end: h-120 } 
+            ];
+
+            const c = curves[step];
+            
+            ctx.strokeStyle = "#06ffd8"; 
+            ctx.lineWidth = 3;
+            ctx.lineCap = "round";
+            ctx.beginPath();
+            ctx.moveTo(10, c.start);
+            if(step < 3) {
+                ctx.bezierCurveTo(w*0.3, c.start, w*0.4, c.peak, w*0.5, c.peak);
+                ctx.bezierCurveTo(w*0.6, c.peak, w*0.7, c.end, w-10, c.end);
+            } else {
+                ctx.bezierCurveTo(w*0.5, c.start, w*0.5, c.end, w-10, c.end);
+            }
+            ctx.stroke();
+
+            if (step < 3) {
+                ctx.strokeStyle = "rgba(123,47,255,0.5)"; 
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(w*0.5, c.peak); ctx.lineTo(w*0.5, h-10);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                ctx.fillStyle = "rgba(199,125,255,0.9)";
+                ctx.font = "10px sans-serif";
+                ctx.fillText("TS", w*0.5 + 4, c.peak + 10);
+            }
+
+            const px = 10 + (w - 20) * progress;
+            let py;
+            if (step < 3) {
+                if (progress < 0.5) {
+                    const t = progress * 2;
+                    py = c.start + (c.peak - c.start) * (3*t*t - 2*t*t*t);
+                } else {
+                    const t = (progress - 0.5) * 2;
+                    py = c.peak + (c.end - c.peak) * (3*t*t - 2*t*t*t);
+                }
+            } else {
+                const t = progress;
+                py = c.start + (c.end - c.start) * (3*t*t - 2*t*t*t);
+            }
+
+            ctx.fillStyle = "#06ffd8"; 
+            ctx.beginPath();
+            ctx.arc(px, py, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowColor = "#06ffd8";
+            ctx.shadowBlur = 10;
+            ctx.fill();
+            ctx.shadowBlur = 0; 
+        }
+
+        // ==========================================
+        // 7. EVENT LISTENERS
+        // ==========================================
+        
+        // ── Posisikan panel-2d tepat di bawah header info panel ──
+        function repositionPanel2D() {
+            const header = document.querySelector('#main-ui header > div.glass-panel');
+            const panel  = document.getElementById('panel-2d');
+            const btnShow= document.getElementById('btn-show-2d');
+            if (!header || !panel) return;
+
+            const rect    = header.getBoundingClientRect();
+            const topPx   = rect.bottom + 12;                       // 12px gap di bawah header
+            const maxH    = window.innerHeight - topPx - 90;        // sisakan ruang footer
+            const leftPx  = rect.left;                              // sejajar dengan tepi kiri header
+            const widthPx = Math.min(340, rect.width);              // max 340px, tapi ≤ lebar header
+
+            panel.style.top      = topPx  + 'px';
+            panel.style.left     = leftPx + 'px';
+            panel.style.width    = widthPx + 'px';
+            panel.style.maxHeight= maxH   + 'px';
+
+            btnShow.style.top    = topPx  + 'px';
+            btnShow.style.left   = leftPx + 'px';
+        }
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            initAudio();
+            document.getElementById('start-overlay').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('start-overlay').style.display = 'none';
+                document.getElementById('main-ui').classList.remove('opacity-0');
+                document.getElementById('panel-2d').style.display = 'block';
+                repositionPanel2D();
+                loadStep(0);
+            }, 500);
+        });
+
+        document.getElementById('btn-play').addEventListener('click', () => {
+            if (!currentTimeline) return;
+            initAudio();
+            if (isPlaying) {
+                currentTimeline.pause();
+                togglePlayUI(false);
+            } else {
+                if (currentTimeline.progress() === 1) {
+                    currentTimeline.restart();
+                } else {
+                    currentTimeline.play();
+                }
+                togglePlayUI(true);
+            }
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            if (currentTimeline) {
+                currentTimeline.pause();
+                currentTimeline.progress(0);
+                togglePlayUI(false);
+            }
+        });
+
+        document.getElementById('btn-next').addEventListener('click', () => {
+            if (currentStep < 3) {
+                loadStep(currentStep + 1);
+            }
+        });
+
+        document.getElementById('btn-prev').addEventListener('click', () => {
+            if (currentStep > 0) {
+                loadStep(currentStep - 1);
+            }
+        });
+
+        function updateLangToggle() {
+            document.querySelectorAll('.lang-seg').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === currentLang);
+            });
+        }
+
+        document.querySelectorAll('.lang-seg').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentLang = btn.dataset.lang;
+                updateLangToggle();
+                updateUI();
+            });
+        });
+        updateLangToggle(); // set initial state
+
+        document.getElementById('ts-toggle').addEventListener('change', (e) => {
+            isSlowMoTS = e.target.checked;
+        });
+
+        document.getElementById('speed-slider').addEventListener('input', (e) => {
+            const speed = parseFloat(e.target.value);
+            document.getElementById('ui-speed-label').innerText = `${locales[currentLang].speedLabel}: ${speed}x`;
+            if (currentTimeline) {
+                gsap.globalTimeline.timeScale(speed);
+            }
+        });
+
+        // Logika Kuis
+        document.querySelectorAll('.quiz-opt').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const isCorrect = e.target.getAttribute('data-correct') === 'true';
+                const feedback = document.getElementById('quiz-feedback');
+                
+                document.querySelectorAll('.quiz-opt').forEach(b => {
+                    b.classList.remove('okol-correct', 'okol-wrong');
+                    if (b.getAttribute('data-correct') === 'true') {
+                        b.style.background='rgba(6,255,216,0.25)'; b.style.borderColor='var(--accent-cyan)'; 
+                    }
+                });
+
+                feedback.classList.remove('hidden'); feedback.style.color='';
+                if (isCorrect) {
+                    feedback.innerText = locales[currentLang].quiz.correct;
+                    feedback.style.color='var(--accent-cyan)';
+                } else {
+                    e.target.style.background='rgba(123,47,255,0.3)'; e.target.style.borderColor='var(--accent-violet)';
+                    feedback.innerText = locales[currentLang].quiz.wrong;
+                    feedback.style.color='var(--accent-violet)';
+                }
+                
+                document.getElementById('quiz-close').classList.remove('hidden');
+            });
+        });
+
+        document.getElementById('quiz-close').addEventListener('click', () => {
+            document.getElementById('quiz-modal').classList.add('hidden');
+            document.getElementById('quiz-modal').classList.remove('flex');
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            if(currentTimeline) updateEnergyDiagram(currentStep, currentTimeline.progress());
+            repositionPanel2D();
+        });
+
+        // Otomatis reposisi panel-2d setiap kali tinggi header berubah
+        const headerPanel = document.querySelector('#main-ui header > div.glass-panel');
+        if (headerPanel && window.ResizeObserver) {
+            new ResizeObserver(() => repositionPanel2D()).observe(headerPanel);
+        }
+
+        // ==========================================
+        // 8. RENDER LOOP
+        // ==========================================
+        renderer.setAnimationLoop((time) => {
+            controls.update();
+            
+            // Efek melayang halus untuk grup aktif
+            const elapsed = time * 0.001 || performance.now() * 0.001;
+            if(stepGroups[currentStep]) {
+               stepGroups[currentStep].position.y = Math.sin(elapsed) * 0.1; 
+            }
+
+            renderer.render(scene, camera);
+        });
+
+    </script>
+</body>
+</html>
