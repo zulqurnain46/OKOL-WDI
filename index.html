@@ -1,0 +1,1787 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OKOL-WDI – Web Digital Interaktif</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:ital,wght@0,300;0,400;0,600;0,700;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  /* ===== CSS VARIABLES ===== */
+  :root {
+    --primary: #0a0e1a;
+    --secondary: #0d1530;
+    --accent-blue: #00b4d8;
+    --accent-cyan: #06ffd8;
+    --accent-purple: #7b2fff;
+    --accent-violet: #c77dff;
+    --glow-cyan: rgba(6,255,216,0.4);
+    --glow-blue: rgba(0,180,216,0.3);
+    --glow-purple: rgba(123,47,255,0.3);
+    --text-primary: #e8f4fd;
+    --text-secondary: #8ab4cc;
+    --text-muted: #4a6070;
+    --glass: rgba(13,21,48,0.7);
+    --glass-border: rgba(6,255,216,0.15);
+    --glass-hover: rgba(6,255,216,0.08);
+    --card-bg: rgba(10,14,26,0.85);
+    --radius: 16px;
+    --radius-sm: 8px;
+    --font-display: 'Orbitron', monospace;
+    --font-body: 'Exo 2', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+
+    /* ============================================================
+       UKURAN LOGO — ubah nilai di sini untuk mengatur skala logo
+       Nilai default = 1.0 (100%). Contoh: 0.8 = 80%, 1.2 = 120%
+       transform:scale dipakai agar tata letak tidak bergeser.
+       ============================================================ */
+
+    /* Logo OKOL-WDI (logo1.png) */
+    --logo1-header-scale : 1.0;   /* di header (container 75×75 px) */
+    --logo1-footer-scale : 1.0;   /* di footer  (container 40×40 px) */
+
+    /* Logo Universitas Sriwijaya (logo2.png) */
+    --logo2-header-scale : 1.2;   /* di header inst-logo (70×70 px) */
+    --logo2-footer-scale : 1.2;   /* di footer partner   (28×28 px) */
+
+    /* Logo BPSDM Sumatera Selatan (logo3.png) */
+    --logo3-header-scale : 1.0;
+    --logo3-footer-scale : 1.0;
+
+    /* Logo Kemendiktisaintek (logo4.png) */
+    --logo4-header-scale : 1.0;
+    --logo4-footer-scale : 1.0;
+  }
+
+  /* ===== LOGO SIZE CONTROL (transform:scale — tidak menggeser layout) ===== */
+  .logo1-header img { transform: scale(var(--logo1-header-scale)); }
+  .logo1-footer img { transform: scale(var(--logo1-footer-scale)); }
+  /* Sembunyikan pseudo-element ::before agar tidak ada bayangan putih di logo OKOL-WDI */
+  .logo-icon.logo1-header::before,
+  .logo-icon.logo1-footer::before { display: none; }
+  .logo2-header img { transform: scale(var(--logo2-header-scale)); }
+  .logo2-footer img { transform: scale(var(--logo2-footer-scale)); }
+  .logo3-header img { transform: scale(var(--logo3-header-scale)); }
+  .logo3-footer img { transform: scale(var(--logo3-footer-scale)); }
+  .logo4-header img { transform: scale(var(--logo4-header-scale)); }
+  .logo4-footer img { transform: scale(var(--logo4-footer-scale)); }
+
+  /* ===== RESET & BASE ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font-body);
+    background: var(--primary);
+    color: var(--text-primary);
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+  ::selection { background: var(--accent-purple); color: #fff; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--primary); }
+  ::-webkit-scrollbar-thumb { background: var(--accent-cyan); border-radius: 3px; }
+  a { text-decoration: none; color: inherit; }
+
+  /* ===== LOADING SCREEN ===== */
+  #loader {
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--primary);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: opacity 0.8s, visibility 0.8s;
+  }
+  #loader.hidden { opacity: 0; visibility: hidden; }
+  .loader-ring {
+    width: 80px; height: 80px;
+    border: 3px solid rgba(6,255,216,0.1);
+    border-top-color: var(--accent-cyan);
+    border-right-color: var(--accent-purple);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 24px;
+    box-shadow: 0 0 30px var(--glow-cyan);
+  }
+  .loader-text { font-family: var(--font-display); font-size: 0.85rem; letter-spacing: 4px; color: var(--accent-cyan); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ===== HEADER ===== */
+  header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    background: rgba(10,14,26,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--glass-border);
+    padding: 0 2rem;
+    height: 90px;
+    display: flex; align-items: center; gap: 1.5rem;
+    transition: all 0.3s;
+  }
+  header.scrolled {
+    background: rgba(10,14,26,0.98);
+    box-shadow: 0 4px 40px rgba(0,0,0,0.5);
+  }
+  /* OKOL-WDI logo */
+  .logo-brand {
+    display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0;
+  }
+  .logo-icon {
+    width: 70px; height: 70px;
+    background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-size: 0.85rem; font-weight: 700;
+    color: #fff; letter-spacing: 1px;
+    box-shadow: 0 0 20px var(--glow-cyan);
+    position: relative; overflow: hidden;
+  }
+  .logo-icon::before {
+    content: '⬡'; position: absolute;
+    font-size: 2rem; opacity: 0.15;
+    transform: rotate(15deg);
+  }
+  .logo-icon span { position: relative; z-index: 1; }
+  .logo-text { display: flex; flex-direction: column; }
+  .logo-text strong {
+    font-family: var(--font-display);
+    font-size: 1.2rem; font-weight: 700;
+    background: linear-gradient(90deg, var(--accent-cyan), var(--accent-violet));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: 2px;
+  }
+  .logo-text small {
+    font-size: 0.62rem; color: var(--text-muted);
+    letter-spacing: 1px; font-family: var(--font-mono);
+    line-height: 1.2;
+  }
+
+  /* NAV */
+  nav { flex: 1; display: flex; justify-content: center; }
+  .nav-links { list-style: none; display: flex; gap: 0.25rem; align-items: center; }
+  .nav-links a {
+    font-family: var(--font-body);
+    font-size: 0.8rem; font-weight: 600;
+    color: var(--text-secondary);
+    padding: 6px 14px; border-radius: 6px;
+    transition: all 0.3s; letter-spacing: 0.5px;
+    position: relative;
+  }
+  .nav-links a::after {
+    content: ''; position: absolute;
+    bottom: 2px; left: 50%; right: 50%;
+    height: 2px; background: var(--accent-cyan);
+    transition: all 0.3s; border-radius: 1px;
+    opacity: 0;
+  }
+  .nav-links a:hover { color: var(--accent-cyan); }
+  .nav-links a:hover::after { left: 14px; right: 14px; opacity: 1; }
+
+  /* LANG SWITCH */
+  .lang-switch {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(6,255,216,0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px; padding: 4px 6px;
+    flex-shrink: 0;
+  }
+  .lang-btn {
+    padding: 4px 12px; border-radius: 14px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem; font-weight: 700;
+    cursor: pointer; border: none;
+    transition: all 0.3s; letter-spacing: 1px;
+    background: transparent; color: var(--text-muted);
+  }
+  .lang-btn.active {
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+    color: #fff;
+    box-shadow: 0 0 12px var(--glow-cyan);
+  }
+
+  /* INST LOGOS */
+  .inst-logos { display: flex; align-items: center; gap: 30px; flex-shrink: 0; }
+  .inst-logo {
+    width: 70px; height: 70px; border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.05);
+    transition: all 0.3s;
+    position: relative;
+  }
+  .inst-logo:hover { border-color: var(--accent-cyan); box-shadow: 0 0 15px var(--glow-cyan); transform: translateY(-2px); }
+  .inst-logo img { width: 100%; height: 100%; object-fit: contain; padding: 6px; }
+  .inst-logo-placeholder {
+    font-family: var(--font-display);
+    font-size: 0.55rem; font-weight: 700;
+    color: var(--accent-cyan); text-align: center;
+    line-height: 1.2; padding: 4px;
+  }
+
+  /* ===== HERO ===== */
+  #hero {
+    position: relative; min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  #hero-canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+  }
+  .hero-overlay {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 20% 50%, rgba(123,47,255,0.15) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 30%, rgba(0,180,216,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse at 50% 80%, rgba(6,255,216,0.08) 0%, transparent 60%);
+  }
+  .hero-content {
+    position: relative; z-index: 10;
+    text-align: center; max-width: 860px;
+    padding: 0 2rem; padding-top: 90px;
+    animation: heroFadeIn 1.2s ease forwards;
+  }
+  @keyframes heroFadeIn {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(6,255,216,0.08);
+    border: 1px solid rgba(6,255,216,0.3);
+    border-radius: 20px; padding: 6px 18px;
+    font-family: var(--font-mono); font-size: 0.72rem;
+    color: var(--accent-cyan); letter-spacing: 2px;
+    margin-bottom: 2rem;
+    animation: pulse-border 2s ease infinite;
+  }
+  @keyframes pulse-border {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(6,255,216,0.3); }
+    50% { box-shadow: 0 0 0 6px rgba(6,255,216,0); }
+  }
+  .hero-badge::before { content: '◉'; font-size: 0.6rem; animation: blink 1.5s ease infinite; }
+  @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+  .hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5.5vw, 4rem);
+    font-weight: 900; line-height: 1.1;
+    margin-bottom: 0.5rem;
+  }
+  .hero-title .t1 {
+    background: linear-gradient(135deg, #fff 0%, var(--accent-cyan) 50%, var(--accent-violet) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    display: block;
+  }
+  .hero-title .t2 {
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    display: block; font-size: 0.6em;
+    letter-spacing: 3px; margin-top: 4px;
+  }
+  .hero-subtitle {
+    font-size: clamp(0.9rem, 2vw, 1.15rem);
+    color: var(--text-secondary); margin: 1.5rem 0 2.5rem;
+    max-width: 620px; margin-left: auto; margin-right: auto;
+    font-weight: 300; line-height: 1.7;
+  }
+  .hero-formula {
+    font-family: var(--font-mono); font-size: 0.75rem;
+    color: var(--accent-purple); opacity: 0.8;
+    letter-spacing: 2px; margin-bottom: 2.5rem;
+  }
+  .hero-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    padding: 13px 30px; border-radius: 50px;
+    font-family: var(--font-body); font-weight: 700;
+    font-size: 0.88rem; letter-spacing: 0.5px;
+    cursor: pointer; border: none; transition: all 0.3s;
+    position: relative; overflow: hidden;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .btn::before {
+    content: ''; position: absolute; inset: 0;
+    background: rgba(255,255,255,0.1);
+    transform: translateX(-100%) skewX(-15deg);
+    transition: transform 0.5s;
+  }
+  .btn:hover::before { transform: translateX(100%) skewX(-15deg); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+    color: #fff; box-shadow: 0 0 30px var(--glow-cyan);
+  }
+  .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 40px var(--glow-cyan); }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid rgba(6,255,216,0.4);
+    color: var(--accent-cyan);
+    backdrop-filter: blur(10px);
+  }
+  .btn-outline:hover { background: rgba(6,255,216,0.1); transform: translateY(-3px); border-color: var(--accent-cyan); box-shadow: 0 0 20px var(--glow-cyan); }
+  .btn-ghost {
+    background: rgba(123,47,255,0.1);
+    border: 1px solid rgba(123,47,255,0.3);
+    color: var(--accent-violet);
+  }
+  .btn-ghost:hover { background: rgba(123,47,255,0.2); transform: translateY(-3px); }
+
+  .hero-stats {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; margin-top: 3.5rem;
+    padding: 1.8rem 2.5rem;
+    border: 1px solid rgba(6,255,216,0.12);
+    border-radius: 16px;
+    background: rgba(6,255,216,0.03);
+    backdrop-filter: blur(10px);
+    flex-wrap: wrap;
+    max-width: 680px; margin-left: auto; margin-right: auto;
+    margin-top: 3rem;
+  }
+  .stat { text-align: center; flex: 1; min-width: 120px; padding: 0.5rem 0; }
+  .stat-val {
+    font-family: var(--font-display); font-size: 2rem;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-violet));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    font-weight: 900; display: block; line-height: 1.1;
+  }
+  .stat-lbl { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 2px; margin-top: 4px; display: block; }
+  .stat-divider {
+    width: 1px; height: 40px;
+    background: linear-gradient(180deg, transparent, rgba(6,255,216,0.25), transparent);
+    flex-shrink: 0;
+  }
+  @media (max-width: 600px) {
+    .stat-divider { display: none; }
+    .hero-stats { gap: 1rem; padding: 1.2rem; }
+  }
+
+  .scroll-indicator {
+    position: absolute; bottom: 2rem; left: 50%;
+    transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    color: var(--text-muted); font-size: 0.7rem; letter-spacing: 2px;
+    z-index: 10;
+    animation: float 3s ease infinite;
+  }
+  @keyframes float { 0%,100%{transform:translateX(-50%) translateY(0);} 50%{transform:translateX(-50%) translateY(-8px);} }
+  .scroll-arrow { display: flex; flex-direction: column; gap: 3px; align-items: center; }
+  .scroll-arrow span {
+    display: block; width: 12px; height: 12px;
+    border-right: 2px solid var(--accent-cyan); border-bottom: 2px solid var(--accent-cyan);
+    transform: rotate(45deg);
+    animation: arrowDown 1.5s ease infinite;
+  }
+  .scroll-arrow span:nth-child(2) { animation-delay: 0.2s; }
+  @keyframes arrowDown { 0%{opacity:0;} 50%{opacity:1;} 100%{opacity:0;} }
+
+  /* ===== SECTIONS ===== */
+  section { padding: 100px 2rem; position: relative; }
+  .container { max-width: 1200px; margin: 0 auto; }
+  .section-header { text-align: center; margin-bottom: 4rem; }
+  .section-tag {
+    font-family: var(--font-mono); font-size: 0.72rem;
+    color: var(--accent-cyan); letter-spacing: 3px;
+    text-transform: uppercase; margin-bottom: 1rem;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  .section-tag::before, .section-tag::after {
+    content: ''; height: 1px; width: 50px;
+    background: linear-gradient(90deg, transparent, var(--accent-cyan));
+  }
+  .section-tag::after { background: linear-gradient(90deg, var(--accent-cyan), transparent); }
+  .section-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 3.5vw, 2.5rem);
+    font-weight: 700; line-height: 1.2;
+    margin-bottom: 1rem;
+  }
+  .section-title .highlight {
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .section-desc { color: var(--text-secondary); max-width: 560px; margin: 0 auto; font-size: 1rem; }
+
+  /* ===== FEATURES SECTION ===== */
+  #features { background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%); }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+  }
+  .feature-card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    backdrop-filter: blur(20px);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative; overflow: hidden;
+    cursor: default;
+  }
+  .feature-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(6,255,216,0.05), rgba(123,47,255,0.05));
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .feature-card:hover { transform: translateY(-8px) rotateX(3deg); border-color: rgba(6,255,216,0.3); box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 40px var(--glow-cyan); }
+  .feature-card:hover::before { opacity: 1; }
+  .feature-icon {
+    width: 56px; height: 56px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; margin-bottom: 1.2rem;
+    position: relative; z-index: 1;
+  }
+  .feature-card h3 {
+    font-family: var(--font-display); font-size: 0.9rem;
+    font-weight: 700; letter-spacing: 1px;
+    margin-bottom: 0.75rem; position: relative; z-index: 1;
+  }
+  .feature-card p { color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; position: relative; z-index: 1; }
+  .feature-accent {
+    position: absolute; top: -20px; right: -20px;
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    opacity: 0.06;
+  }
+
+  /* ===== MATERIALS SECTION ===== */
+  #materials { background: var(--primary); }
+  .materials-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+  }
+  .material-card {
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.4s;
+    position: relative; overflow: hidden;
+    transform-style: preserve-3d;
+    perspective: 1000px;
+  }
+  .material-card::after {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--accent-cyan), var(--accent-purple));
+    border-radius: 3px 0 0 3px;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .material-card:hover { transform: translateY(-6px) scale(1.02); border-color: rgba(0,180,216,0.4); box-shadow: 0 16px 50px rgba(0,0,0,0.5), 0 0 30px rgba(0,180,216,0.15); }
+  .material-card:hover::after { opacity: 1; }
+  .mat-num {
+    font-family: var(--font-display); font-size: 0.65rem;
+    color: var(--accent-cyan); letter-spacing: 2px;
+    margin-bottom: 0.5rem; opacity: 0.7;
+  }
+  .mat-title {
+    font-family: var(--font-body); font-weight: 700;
+    font-size: 0.95rem; margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    line-height: 1.3;
+  }
+  .mat-sub { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; }
+  .mat-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 1rem; }
+  .mat-tag {
+    font-size: 0.65rem; padding: 3px 10px; border-radius: 20px;
+    border: 1px solid rgba(6,255,216,0.2);
+    color: var(--accent-cyan); font-family: var(--font-mono);
+    letter-spacing: 0.5px;
+  }
+  .mat-arrow {
+    position: absolute; right: 1.2rem; top: 50%;
+    transform: translateY(-50%) translateX(5px);
+    color: var(--accent-cyan); opacity: 0;
+    transition: all 0.3s; font-size: 1.2rem;
+  }
+  .material-card:hover .mat-arrow { opacity: 1; transform: translateY(-50%) translateX(0); }
+
+  /* ===== 3D PREVIEW SECTION ===== */
+  #preview3d { background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%); }
+  .preview-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.85rem;
+  }
+  .preview-card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: all 0.4s;
+    cursor: pointer;
+    min-width: 0;
+  }
+  .preview-card:hover { transform: translateY(-6px); border-color: var(--accent-purple); box-shadow: 0 16px 50px rgba(0,0,0,0.4), 0 0 30px var(--glow-purple); }
+  .preview-visual {
+    height: 120px; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .mol-canvas { width: 100%; height: 100%; }
+  .preview-info { padding: 0.85rem 0.9rem 1rem; }
+  .preview-title {
+    font-family: var(--font-display); font-size: 0.62rem;
+    font-weight: 700; color: var(--text-primary);
+    letter-spacing: 0.5px; margin-bottom: 0.35rem;
+    line-height: 1.3;
+  }
+  .preview-desc { font-size: 0.68rem; color: var(--text-muted); line-height: 1.4; }
+  @media (max-width: 1100px) {
+    .preview-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 600px) {
+    .preview-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ===== LOCKED SECTIONS ===== */
+  .section-locked {
+    display: none;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  .section-locked.unlocked {
+    display: block;
+    animation: sectionUnlock 0.8s ease forwards;
+  }
+  @keyframes sectionUnlock {
+    from { opacity: 0; transform: translateY(40px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .nav-locked { display: none !important; }
+
+  /* ===== INSTRUCTOR SECTION ===== */
+  #instructor { background: var(--primary); }
+  .instructor-wrapper {
+    display: grid; grid-template-columns: 1fr 1.5fr;
+    gap: 4rem; align-items: center;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px; padding: 3rem; backdrop-filter: blur(20px);
+  }
+  .instructor-photo-wrap {
+    position: relative; display: flex; justify-content: center;
+  }
+  .instructor-photo {
+    width: 240px; height: 300px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 6rem; position: relative;
+    box-shadow: 0 0 60px var(--glow-purple);
+    overflow: hidden;
+  }
+  .instructor-photo::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(123,47,255,0.3), rgba(0,180,216,0.2));
+  }
+  .instructor-photo::after {
+    content: '⬡⬡⬡⬡'; position: absolute;
+    font-size: 6rem; color: rgba(255,255,255,0.05);
+    bottom: -20px; right: -20px; line-height: 1;
+  }
+  .photo-badge {
+    position: absolute; bottom: -12px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+    color: #fff; padding: 6px 18px; border-radius: 20px;
+    font-size: 0.7rem; font-weight: 700; white-space: nowrap;
+    font-family: var(--font-mono); letter-spacing: 1px;
+    box-shadow: 0 4px 20px var(--glow-cyan);
+  }
+  .inst-name {
+    font-family: var(--font-display); font-size: 1.4rem;
+    font-weight: 700; margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, var(--text-primary), var(--accent-cyan));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .inst-unit { font-size: 0.85rem; color: var(--accent-violet); margin-bottom: 1.5rem; font-weight: 600; }
+  .inst-desc { color: var(--text-secondary); line-height: 1.7; margin-bottom: 2rem; font-size: 0.95rem; }
+  .inst-fields { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 2rem; }
+  .inst-field {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(6,255,216,0.06);
+    border: 1px solid rgba(6,255,216,0.2);
+    border-radius: 8px; padding: 8px 14px;
+    font-size: 0.82rem; color: var(--text-secondary);
+  }
+  .inst-field-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-cyan); flex-shrink: 0; }
+
+  /* ===== PLATFORM ADVANTAGES ===== */
+  #advantages { background: var(--secondary); }
+  .adv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem; }
+  .adv-card {
+    text-align: center; padding: 2.5rem 1.5rem;
+    background: var(--glass); border: 1px solid var(--glass-border);
+    border-radius: var(--radius); backdrop-filter: blur(20px);
+    transition: all 0.4s; cursor: default;
+  }
+  .adv-card:hover { transform: translateY(-8px); border-color: var(--accent-cyan); box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 40px var(--glow-cyan); }
+  .adv-icon { font-size: 2.8rem; margin-bottom: 1.2rem; display: block; filter: drop-shadow(0 0 10px var(--accent-cyan)); }
+  .adv-title {
+    font-family: var(--font-display); font-size: 0.8rem;
+    font-weight: 700; letter-spacing: 2px; color: var(--accent-cyan);
+    margin-bottom: 0.75rem;
+  }
+  .adv-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+
+  /* ===== CTA SECTION ===== */
+  #cta {
+    background: var(--primary);
+    text-align: center;
+  }
+  .cta-box {
+    background: linear-gradient(135deg, rgba(123,47,255,0.12), rgba(0,180,216,0.08), rgba(6,255,216,0.05));
+    border: 1px solid rgba(6,255,216,0.2);
+    border-radius: 24px; padding: 4rem 3rem;
+    position: relative; overflow: hidden;
+    backdrop-filter: blur(20px);
+  }
+  .cta-box::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(6,255,216,0.1), transparent 60%);
+    pointer-events: none;
+  }
+  .cta-title {
+    font-family: var(--font-display); font-size: clamp(1.5rem, 3vw, 2.2rem);
+    font-weight: 900; margin-bottom: 1rem;
+    background: linear-gradient(135deg, #fff, var(--accent-cyan));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .cta-sub { color: var(--text-secondary); margin-bottom: 2.5rem; max-width: 500px; margin-left: auto; margin-right: auto; }
+  .cta-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+  /* ===== FOOTER ===== */
+  footer {
+    background: rgba(5,8,15,0.95);
+    border-top: 1px solid var(--glass-border);
+    padding: 4rem 2rem 2rem;
+  }
+  .footer-grid {
+    max-width: 1200px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 2rem; margin-bottom: 3rem;
+    align-items: start;
+  }
+  /* Footer 3D Visual */
+  .footer-visual {
+    position: relative; display: flex;
+    align-items: center; justify-content: center;
+    width: 100%;
+    aspect-ratio: 1;
+  }
+  #footer-canvas {
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    border: 1px solid rgba(6,255,216,0.12);
+    box-shadow: 0 0 40px rgba(6,255,216,0.08), 0 0 80px rgba(123,47,255,0.06);
+    background: radial-gradient(ellipse at center, rgba(13,21,48,0.9) 0%, rgba(5,8,15,0.95) 100%);
+    display: block;
+  }
+  .footer-visual-ring {
+    position: absolute; border-radius: 50%;
+    border: 1px solid rgba(6,255,216,0.08);
+    animation: footer-ring-spin linear infinite;
+    pointer-events: none;
+  }
+  .footer-visual-ring:nth-child(1) { width: calc(100% + 18px); height: calc(100% + 18px); animation-duration: 12s; }
+  .footer-visual-ring:nth-child(2) { width: calc(100% + 36px); height: calc(100% + 36px); animation-duration: 18s; animation-direction: reverse; border-color: rgba(123,47,255,0.06); }
+  @keyframes footer-ring-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  /* Footer Stats */
+  .footer-stats { display: flex; flex-direction: column; gap: 0.35rem; }
+  .footer-stat-item {
+    display: flex; align-items: center; gap: 12px;
+    background: rgba(6,255,216,0.03);
+    border: 1px solid rgba(6,255,216,0.08);
+    border-radius: 6px; padding: 5px 8px;
+    transition: all 0.3s;
+  }
+  .footer-stat-item:hover {
+    border-color: rgba(6,255,216,0.25);
+    background: rgba(6,255,216,0.06);
+    transform: translateX(4px);
+  }
+  .footer-stat-icon { font-size: 0.75rem; flex-shrink: 0; }
+  .footer-stat-info { display: flex; flex-direction: column; gap: 1px; }
+  .footer-stat-val {
+    font-family: var(--font-display); font-size: 0.65rem; font-weight: 700;
+    background: linear-gradient(90deg, var(--accent-cyan), var(--accent-violet));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: 0.5px;
+  }
+  .footer-stat-desc { font-size: 0.52rem; color: var(--text-muted); letter-spacing: 0.3px; }
+  .footer-brand { }
+  .footer-logo-area { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
+  .footer-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 1.5rem; }
+  /* ===== FOOTER PARTNER LOGOS ===== */
+  .footer-partners { margin-top: 1rem; }
+  .footer-partners-label {
+    font-size: 0.58rem; color: var(--text-muted);
+    letter-spacing: 2px; text-transform: uppercase;
+    font-family: var(--font-mono); margin-bottom: 0.6rem;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .footer-partners-label::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, var(--glass-border), transparent);
+  }
+  .footer-partner-logos {
+    display: flex; gap: 8px; flex-wrap: nowrap; align-items: stretch;
+  }
+  .footer-partner-logo {
+    display: flex; flex-direction: row; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px; padding: 7px 10px;
+    cursor: default;
+    transition: all 0.3s;
+    flex: 1;
+    overflow: hidden;
+  }
+  .footer-partner-logo:hover {
+    border-color: var(--accent-cyan);
+    background: rgba(6,255,216,0.05);
+    box-shadow: 0 0 12px var(--glow-cyan);
+    transform: translateY(-1px);
+  }
+  .footer-partner-logo svg { display: block; flex-shrink: 0; }
+  .footer-partner-logo span {
+    font-size: 0.56rem; color: var(--text-muted);
+    font-family: var(--font-mono); letter-spacing: 0.3px;
+    line-height: 1.35; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .footer-partner-logo:hover span { color: var(--accent-cyan); }
+  .footer-col h4 {
+    font-family: var(--font-display); font-size: 0.65rem;
+    font-weight: 700; letter-spacing: 2px;
+    color: var(--accent-cyan); margin-bottom: 0.85rem;
+  }
+  .footer-links { list-style: none; display: flex; flex-direction: column; gap: 0.6rem; }
+  .footer-links a { font-size: 0.85rem; color: var(--text-muted); transition: color 0.3s; }
+  .footer-links a:hover { color: var(--accent-cyan); }
+  .footer-contact { display: flex; flex-direction: column; gap: 0.5rem; }
+  .footer-contact-item { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--text-muted); }
+  .footer-contact-icon { color: var(--accent-cyan); font-size: 0.8rem; flex-shrink: 0; }
+  .footer-bottom {
+    max-width: 1200px; margin: 0 auto;
+    padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.05);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 1rem;
+  }
+  .footer-copy { font-size: 0.78rem; color: var(--text-muted); }
+  .footer-tech { font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); }
+  .footer-tech span { color: var(--accent-cyan); }
+
+  /* ===== SECTION DIVIDER ===== */
+  .divider {
+    width: 100%; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--glass-border), transparent);
+    margin: 0;
+  }
+
+  /* ===== BG PARTICLES ===== */
+  .bg-grid {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      linear-gradient(rgba(6,255,216,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(6,255,216,0.015) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at 50% 50%, black, transparent 80%);
+  }
+
+  /* ===== REVEAL ANIMATION ===== */
+  .reveal {
+    opacity: 0; transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+  .reveal-delay-4 { transition-delay: 0.4s; }
+
+  /* ===== GLOW ORBS ===== */
+  .glow-orb {
+    position: absolute; border-radius: 50%; pointer-events: none;
+    filter: blur(80px);
+  }
+  .orb-1 { width: 400px; height: 400px; background: rgba(123,47,255,0.12); top: 10%; left: -10%; }
+  .orb-2 { width: 350px; height: 350px; background: rgba(0,180,216,0.1); top: 40%; right: -5%; }
+  .orb-3 { width: 300px; height: 300px; background: rgba(6,255,216,0.08); bottom: 10%; left: 40%; }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 900px) {
+    .instructor-wrapper { grid-template-columns: 1fr; text-align: center; }
+    .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .footer-visual { grid-column: 1 / -1; justify-content: center; aspect-ratio: unset; height: 180px; }
+    #footer-canvas { width: 160px; height: 160px; }
+    .footer-visual-ring:nth-child(1) { width: 178px; height: 178px; }
+    .footer-visual-ring:nth-child(2) { width: 196px; height: 196px; }
+    .nav-links { display: none; }
+    header { gap: 1rem; }
+    .inst-fields { justify-content: center; }
+  }
+  @media (max-width: 600px) {
+    header { padding: 0 1rem; height: 80px; }
+    .inst-logos { gap: 16px; }
+    .inst-logo { width: 50px; height: 50px; }
+    section { padding: 70px 1rem; }
+    .footer-grid { grid-template-columns: 1fr; }
+    .instructor-wrapper { padding: 2rem 1.5rem; }
+    .cta-box { padding: 2.5rem 1.5rem; }
+    .features-grid, .materials-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ===== FEATURE ICON COLORS ===== */
+  .fi-1 { background: linear-gradient(135deg, rgba(6,255,216,0.15), rgba(0,180,216,0.1)); color: var(--accent-cyan); }
+  .fi-2 { background: linear-gradient(135deg, rgba(123,47,255,0.15), rgba(199,125,255,0.1)); color: var(--accent-violet); }
+  .fi-3 { background: linear-gradient(135deg, rgba(0,180,216,0.15), rgba(6,255,216,0.1)); color: var(--accent-blue); }
+  .fi-4 { background: linear-gradient(135deg, rgba(255,200,0,0.12), rgba(255,150,0,0.08)); color: #ffd060; }
+  .fi-5 { background: linear-gradient(135deg, rgba(255,60,120,0.12), rgba(255,100,150,0.08)); color: #ff6090; }
+  .fi-6 { background: linear-gradient(135deg, rgba(0,255,120,0.12), rgba(0,200,100,0.08)); color: #00e87a; }
+  .fa-1 { background: var(--accent-cyan); }
+  .fa-2 { background: var(--accent-purple); }
+  .fa-3 { background: var(--accent-blue); }
+  .fa-4 { background: #ffd060; }
+  .fa-5 { background: #ff6090; }
+  .fa-6 { background: #00e87a; }
+
+  /* MOLECULE SVG ANIMATION */
+  .mol-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .mol-atom { animation: mol-pulse 2s ease infinite alternate; }
+  .mol-atom:nth-child(2) { animation-delay: 0.3s; }
+  .mol-atom:nth-child(3) { animation-delay: 0.6s; }
+  .mol-atom:nth-child(4) { animation-delay: 0.9s; }
+  .mol-atom:nth-child(5) { animation-delay: 1.2s; }
+  @keyframes mol-pulse {
+    from { opacity: 0.5; r: 6; }
+    to { opacity: 1; r: 8; filter: drop-shadow(0 0 6px currentColor); }
+  }
+  .mol-bond { stroke-dasharray: 8 4; animation: mol-dash 2s linear infinite; }
+  @keyframes mol-dash { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
+
+  /* PREVIEW CARDS CANVAS BG */
+  .prev-bg-1 { background: linear-gradient(135deg, #0d0a20, #1a0d35); }
+  .prev-bg-2 { background: linear-gradient(135deg, #050f1a, #0a1e2e); }
+  .prev-bg-3 { background: linear-gradient(135deg, #030d1a, #061530); }
+  .prev-bg-4 { background: linear-gradient(135deg, #0d1a05, #0a2010); }
+  .prev-bg-5 { background: linear-gradient(135deg, #1a0505, #2e0a0a); }
+  .prev-bg-6 { background: linear-gradient(135deg, #1a0e00, #2e1800); }
+
+  /* NOTIFICATION TOAST */
+  .toast {
+    position: fixed; bottom: 2rem; right: 2rem;
+    background: var(--glass); border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px); border-radius: var(--radius-sm);
+    padding: 1rem 1.5rem; z-index: 9998;
+    font-size: 0.85rem; color: var(--accent-cyan);
+    transform: translateX(200%); transition: transform 0.5s cubic-bezier(0.175,0.885,0.32,1.275);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .toast.show { transform: translateX(0); }
+  .toast::before { content: '⚗'; font-size: 1.1rem; }
+
+  /* NAV MOBILE TOGGLE */
+  .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 8px; }
+  .hamburger span { width: 22px; height: 2px; background: var(--accent-cyan); border-radius: 1px; transition: all 0.3s; }
+  @media (max-width: 900px) { .hamburger { display: flex; } }
+  .mobile-nav {
+    display: none;
+    position: fixed; top: 90px; left: 0; right: 0;
+    background: rgba(10,14,26,0.97);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--glass-border);
+    padding: 1rem;
+    z-index: 999;
+    flex-direction: column; gap: 0.5rem;
+  }
+  .mobile-nav.open { display: flex; }
+  .mobile-nav a {
+    padding: 10px 14px; border-radius: 8px;
+    font-size: 0.9rem; color: var(--text-secondary);
+    transition: all 0.3s;
+  }
+  .mobile-nav a:hover { background: var(--glass-hover); color: var(--accent-cyan); }
+</style>
+</head>
+<body>
+
+<!-- BACKGROUND GRID -->
+<div class="bg-grid"></div>
+
+<!-- LOADING SCREEN -->
+<div id="loader">
+  <div class="loader-ring"></div>
+  <div class="loader-text" id="loader-text">MEMUAT MOLEKUL...</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">Platform siap digunakan!</div>
+
+<!-- ===== HEADER ===== -->
+<header id="header">
+  <!-- OKOL-WDI LOGO — ukuran diatur via --logo1-header-scale di :root -->
+  <div class="logo-brand">
+    <div class="logo-icon logo1-header" style="background:none;box-shadow:none;padding:0;">
+      <img src="logo1.png" alt="OKOL-WDI" style="width:70px;height:70px;object-fit:contain;display:block;backface-visibility:hidden;">
+    </div>
+    <div class="logo-text">
+      <strong>OKOL-WDI</strong>
+      <small>Web Digital Interaktif</small>
+    </div>
+  </div>
+
+  <!-- NAV DESKTOP -->
+  <nav>
+    <ul class="nav-links">
+      <li><a href="#features" data-id="nav-features" data-en="Features" data-id-text="Fitur">Fitur</a></li>
+      <li><a href="#advantages" data-id="nav-adv" data-en="Platform" data-id-text="Platform">Platform</a></li>
+      <li><a href="#instructor" data-id="nav-instructor" data-en="Instructor" data-id-text="Pengajar">Pengajar</a></li>
+      <li><a href="#cta" class="btn btn-primary" style="padding:8px 22px;font-size:0.82rem;font-weight:800;background:linear-gradient(135deg,#06ffd8,#7b2fff);color:#fff;box-shadow:0 0 18px rgba(6,255,216,0.7),0 0 40px rgba(123,47,255,0.4);letter-spacing:1px;border:1.5px solid rgba(6,255,216,0.6);text-shadow:0 0 8px rgba(6,255,216,0.8);" data-en="Start Learning" data-id-text="Mulai Belajar">Mulai Belajar</a></li>
+      <li class="nav-locked" id="nav-li-preview3d"><a href="#preview3d" data-id="nav-3d" data-en="3D Preview" data-id-text="Preview 3D">Preview 3D</a></li>
+      <li class="nav-locked" id="nav-li-materials"><a href="#materials" data-id="nav-materials" data-en="Materials" data-id-text="Materi">Materi</a></li>
+    </ul>
+  </nav>
+
+  <!-- HAMBURGER MOBILE -->
+  <div class="hamburger" id="hamburger" onclick="toggleMobileNav()">
+    <span></span><span></span><span></span>
+  </div>
+
+  <!-- LANG SWITCH -->
+  <div class="lang-switch">
+    <button class="lang-btn active" id="btn-id" onclick="setLang('id')">ID</button>
+    <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
+  </div>
+
+  <!-- INSTITUTIONAL LOGOS — ukuran diatur via --logo2/3/4-header-scale di :root -->
+  <div class="inst-logos">
+    <!-- Kemendiktisaintek — paling kiri -->
+    <div class="inst-logo logo4-header" title="Kemendiktisaintek">
+      <img src="logo4.png" alt="Kemendiktisaintek">
+    </div>
+    <!-- Universitas Sriwijaya -->
+    <div class="inst-logo logo2-header" title="Universitas Sriwijaya">
+      <img src="logo2.png" alt="Universitas Sriwijaya">
+    </div>
+    <!-- BPSDM SUMSEL -->
+    <div class="inst-logo logo3-header" title="BPSDM Sumatera Selatan">
+      <img src="logo3.png" alt="BPSDM Sumatera Selatan">
+    </div>
+  </div>
+</header>
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav" id="mobileNav">
+  <a href="#features" onclick="closeMobileNav()">Fitur</a>
+  <a href="#advantages" onclick="closeMobileNav()">Platform</a>
+  <a href="#instructor" onclick="closeMobileNav()">Pengajar</a>
+  <a href="#cta" onclick="closeMobileNav()">Mulai Belajar</a>
+  <a href="#preview3d" class="nav-locked" id="mob-nav-preview3d" onclick="closeMobileNav()">Preview 3D</a>
+  <a href="#materials" class="nav-locked" id="mob-nav-materials" onclick="closeMobileNav()">Materi</a>
+</div>
+
+<!-- ===== HERO SECTION ===== -->
+<section id="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span data-en="Advanced Organic Chemistry Interactive Platform" data-id-text="Platform Kimia Organik Lanjut Interaktif">Platform Kimia Organik Lanjut Interaktif</span>
+    </div>
+    <h1 class="hero-title">
+      <span class="t1">OKOL-WDI</span>
+      <span class="t2" data-en="ADVANCED ORGANIC CHEMISTRY · INTERACTIVE 3D" data-id-text="KIMIA ORGANIK LANJUT INTERAKTIF 3D">KIMIA ORGANIK LANJUT INTERAKTIF 3D</span>
+    </h1>
+    <p class="hero-subtitle" data-en="Advanced Organic Chemistry Learning Platform Based on Interactive 3D Visualization. Designed for students and lecturers at Sriwijaya University." data-id-text="Platform Pembelajaran Kimia Organik Lanjut Berbasis Visualisasi 3D Interaktif. Dirancang untuk mahasiswa dan dosen Universitas Sriwijaya.">
+      Platform Pembelajaran Kimia Organik Lanjut Berbasis Visualisasi 3D Interaktif. Dirancang untuk mahasiswa dan dosen Universitas Sriwijaya.
+    </p>
+    <div class="hero-formula">CH₃CH₂OH → CH₂=CH₂ + H₂O &nbsp;|&nbsp; SN1 · SN2 · E1 · E2</div>
+    <div class="hero-stats">
+      <div class="stat">
+        <span class="stat-val">14</span>
+        <span class="stat-lbl" data-en="MODULES" data-id-text="MODUL">MODUL</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <span class="stat-val">3D</span>
+        <span class="stat-lbl" data-en="VISUALIZATION" data-id-text="VISUALISASI">VISUALISASI</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <span class="stat-val">∞</span>
+        <span class="stat-lbl" data-en="INTERACTIVE" data-id-text="INTERAKTIF">INTERAKTIF</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <span class="stat-val">5+</span>
+        <span class="stat-lbl" data-en="REACTION TYPES" data-id-text="JENIS REAKSI">JENIS REAKSI</span>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-indicator">
+    <span data-en="SCROLL" data-id-text="GULIR">GULIR</span>
+    <div class="scroll-arrow"><span></span><span></span></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== FEATURES SECTION ===== -->
+<section id="features">
+  <div class="glow-orb orb-1"></div>
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-tag" data-en="PLATFORM FEATURES" data-id-text="FITUR PLATFORM">FITUR PLATFORM</div>
+      <h2 class="section-title" data-en="<span class='highlight'>Interactive Features</span> That Distinguish Us" data-id-text="<span class='highlight'>Fitur Interaktif</span> yang Membedakan Kami"><span class="highlight">Fitur Interaktif</span> yang Membedakan Kami</h2>
+      <p class="section-desc" data-en="OKOL-WDI combines the latest technology with proven pedagogical methods for the most effective organic chemistry learning experience." data-id-text="OKOL-WDI menggabungkan teknologi terkini dengan metode pedagogis terbukti untuk pengalaman belajar kimia organik yang paling efektif.">OKOL-WDI menggabungkan teknologi terkini dengan metode pedagogis terbukti untuk pengalaman belajar kimia organik yang paling efektif.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-accent fa-1"></div>
+        <div class="feature-icon fi-1">⬡</div>
+        <h3 data-en="3D MOLECULE VISUALIZATION" data-id-text="VISUALISASI MOLEKUL 3D">VISUALISASI MOLEKUL 3D</h3>
+        <p data-en="Explore molecular structures in three dimensions. Rotate, zoom, and analyze bonds and geometry interactively." data-id-text="Jelajahi struktur molekul dalam tiga dimensi. Putar, zoom, dan analisis ikatan serta geometri secara interaktif.">Jelajahi struktur molekul dalam tiga dimensi. Putar, zoom, dan analisis ikatan serta geometri secara interaktif.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-accent fa-2"></div>
+        <div class="feature-icon fi-2">⚗</div>
+        <h3 data-en="REACTION MECHANISM ANIMATION" data-id-text="ANIMASI MEKANISME REAKSI">ANIMASI MEKANISME REAKSI</h3>
+        <p data-en="Watch step-by-step reaction mechanisms with animations showing electron flow, bond formation and breaking in real time." data-id-text="Saksikan mekanisme reaksi langkah demi langkah dengan animasi yang menampilkan aliran elektron, pembentukan dan pemutusan ikatan secara real time.">Saksikan mekanisme reaksi langkah demi langkah dengan animasi yang menampilkan aliran elektron, pembentukan dan pemutusan ikatan secara real time.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-3">
+        <div class="feature-accent fa-3"></div>
+        <div class="feature-icon fi-3">🔬</div>
+        <h3 data-en="INTERACTIVE REACTION SIMULATION" data-id-text="SIMULASI REAKSI INTERAKTIF">SIMULASI REAKSI INTERAKTIF</h3>
+        <p data-en="Simulate organic reactions with various reagents and conditions. See results instantly with detailed explanations." data-id-text="Simulasikan reaksi organik dengan berbagai reagen dan kondisi. Lihat hasilnya secara instan dengan penjelasan mendetail.">Simulasikan reaksi organik dengan berbagai reagen dan kondisi. Lihat hasilnya secara instan dengan penjelasan mendetail.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-accent fa-4"></div>
+        <div class="feature-icon fi-4">🧠</div>
+        <h3 data-en="INTERACTIVE QUIZ" data-id-text="QUIZ INTERAKTIF">QUIZ INTERAKTIF</h3>
+        <p data-en="Test understanding with interactive quizzes covering molecular structures, reaction mechanisms, and spectroscopic analysis." data-id-text="Uji pemahaman dengan kuis interaktif yang mencakup struktur molekul, mekanisme reaksi, dan analisis spektroskopi.">Uji pemahaman dengan kuis interaktif yang mencakup struktur molekul, mekanisme reaksi, dan analisis spektroskopi.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-accent fa-5"></div>
+        <div class="feature-icon fi-5">📚</div>
+        <h3 data-en="QUESTION BANK" data-id-text="BANK SOAL">BANK SOAL</h3>
+        <p data-en="Hundreds of curated questions from basic to advanced level covering all Advanced Organic Chemistry topics with detailed discussions." data-id-text="Ratusan soal terseleksi dari level dasar hingga lanjut mencakup seluruh topik Kimia Organik Lanjut dengan pembahasan mendetail.">Ratusan soal terseleksi dari level dasar hingga lanjut mencakup seluruh topik Kimia Organik Lanjut dengan pembahasan mendetail.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-3">
+        <div class="feature-accent fa-6"></div>
+        <div class="feature-icon fi-6">🔄</div>
+        <h3 data-en="INTERACTIVE RETROSYNTHESIS" data-id-text="RETROSINTESIS INTERAKTIF">RETROSINTESIS INTERAKTIF</h3>
+        <p data-en="Train retrosynthetic thinking with interactive tools to plan multi-step synthesis from target molecules to starting materials." data-id-text="Latih pemikiran retrosintesis dengan alat interaktif untuk merencanakan sintesis multi-langkah dari molekul target ke bahan awal.">Latih pemikiran retrosintesis dengan alat interaktif untuk merencanakan sintesis multi-langkah dari molekul target ke bahan awal.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== ADVANTAGES SECTION ===== -->
+<section id="advantages">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-tag" data-en="PLATFORM ADVANTAGES" data-id-text="KEUNGGULAN PLATFORM">KEUNGGULAN PLATFORM</div>
+      <h2 class="section-title" data-en="Why Choose <span class='highlight'>OKOL-WDI?</span>" data-id-text="Mengapa Memilih <span class='highlight'>OKOL-WDI?</span>">Mengapa Memilih <span class="highlight">OKOL-WDI?</span></h2>
+    </div>
+    <div class="adv-grid">
+      <div class="adv-card reveal reveal-delay-1">
+        <span class="adv-icon">🎮</span>
+        <div class="adv-title" data-en="INTERACTIVE" data-id-text="INTERAKTIF">INTERAKTIF</div>
+        <p class="adv-desc" data-en="Full interactive experience that actively engages students in the learning process." data-id-text="Pengalaman interaktif penuh yang melibatkan mahasiswa secara aktif dalam proses pembelajaran.">Pengalaman interaktif penuh yang melibatkan mahasiswa secara aktif dalam proses pembelajaran.</p>
+      </div>
+      <div class="adv-card reveal reveal-delay-2">
+        <span class="adv-icon">⬡</span>
+        <div class="adv-title" data-en="3D VISUAL" data-id-text="VISUAL 3D">VISUAL 3D</div>
+        <p class="adv-desc" data-en="Molecular visualization in 3D helps understand 3D structures and stereochemistry intuitively." data-id-text="Visualisasi molekul dalam 3D membantu memahami struktur tiga dimensi dan stereokimia secara intuitif.">Visualisasi molekul dalam 3D membantu memahami struktur tiga dimensi dan stereokimia secara intuitif.</p>
+      </div>
+      <div class="adv-card reveal reveal-delay-3">
+        <span class="adv-icon">🚀</span>
+        <div class="adv-title" data-en="MODERN" data-id-text="MODERN">MODERN</div>
+        <p class="adv-desc" data-en="Modern interface with the latest web technologies for optimal and comfortable learning experience." data-id-text="Antarmuka modern dengan teknologi web terkini untuk pengalaman belajar yang optimal dan nyaman.">Antarmuka modern dengan teknologi web terkini untuk pengalaman belajar yang optimal dan nyaman.</p>
+      </div>
+      <div class="adv-card reveal reveal-delay-1">
+        <span class="adv-icon">💡</span>
+        <div class="adv-title" data-en="EASY TO UNDERSTAND" data-id-text="MUDAH DIPAHAMI">MUDAH DIPAHAMI</div>
+        <p class="adv-desc" data-en="Complex concepts explained simply through animation, visualization, and interactive simulation." data-id-text="Konsep kompleks dijelaskan secara sederhana melalui animasi, visualisasi, dan simulasi interaktif.">Konsep kompleks dijelaskan secara sederhana melalui animasi, visualisasi, dan simulasi interaktif.</p>
+      </div>
+      <div class="adv-card reveal reveal-delay-2">
+        <span class="adv-icon">🔬</span>
+        <div class="adv-title" data-en="RESEARCH-BASED" data-id-text="BERBASIS RISET">BERBASIS RISET</div>
+        <p class="adv-desc" data-en="Content developed based on the latest research and academic standards for Advanced Organic Chemistry." data-id-text="Konten dikembangkan berdasarkan penelitian terkini dan standar akademik Kimia Organik Lanjut.">Konten dikembangkan berdasarkan penelitian terkini dan standar akademik Kimia Organik Lanjut.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== INSTRUCTOR SECTION ===== -->
+<section id="instructor">
+  <div class="glow-orb orb-3"></div>
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-tag" data-en="COURSE INSTRUCTOR" data-id-text="PENGAJAR KURSUS">PENGAJAR KURSUS</div>
+      <h2 class="section-title" data-en="Meet the <span class='highlight'>Instructor</span>" data-id-text="Kenali <span class='highlight'>Pengajar</span>">Kenali <span class="highlight">Pengajar</span></h2>
+    </div>
+    <div class="instructor-wrapper reveal">
+      <div class="instructor-photo-wrap">
+        <div class="instructor-photo">
+          <img src="fotoprofil.png" alt="Muhammad Zulqurnain" style="width:88%;height:88%;object-fit:cover;position:relative;z-index:1;border-radius:5px;">
+        </div>
+        <div class="photo-badge">Dosen Pendidikan Kimia</div>
+      </div>
+      <div class="instructor-info">
+        <h2 class="inst-name">Muhammad Zulqurnain, S.Si., M.Si.</h2>
+        <p class="inst-unit" data-en="Lecturer at Chemistry Education, FKIP Sriwijaya University" data-id-text="Dosen Pendidikan Kimia, Fakultas Keguruan dan Ilmu Pendidikan (FKIP) Universitas Sriwijaya">Dosen Pendidikan Kimia, Fakultas Keguruan dan Ilmu Pendidikan (FKIP) Universitas Sriwijaya</p>
+        <p class="inst-desc" data-en="An organic chemistry expert with a focus on synthesis, drug development, and structural analysis. Actively developing innovative digital learning methods to facilitate understanding of complex organic chemistry concepts through interactive visualization." data-id-text="Seorang ahli kimia organik dengan fokus pada sintesis senyawa, pengembangan obat, dan analisis struktur. Aktif mengembangkan metode pembelajaran digital inovatif untuk memudahkan pemahaman konsep kimia organik yang kompleks melalui visualisasi interaktif.">Seorang ahli kimia organik dengan fokus pada sintesis senyawa, pengembangan obat, dan analisis struktur. Aktif mengembangkan metode pembelajaran digital inovatif untuk memudahkan pemahaman konsep kimia organik yang kompleks melalui visualisasi interaktif.</p>
+        <div class="inst-fields">
+          <div class="inst-field"><div class="inst-field-dot"></div><span data-en="Organic Chemistry" data-id-text="Kimia Organik">Kimia Organik</span></div>
+          <div class="inst-field"><div class="inst-field-dot"></div><span data-en="Compound Synthesis" data-id-text="Sintesis Senyawa">Sintesis Senyawa</span></div>
+          <div class="inst-field"><div class="inst-field-dot"></div><span data-en="Drug Development" data-id-text="Drug Development">Drug Development</span></div>
+          <div class="inst-field"><div class="inst-field-dot"></div><span data-en="Structural Analysis" data-id-text="Analisis Struktur">Analisis Struktur</span></div>
+        </div>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+          <button class="btn btn-primary" style="font-size:0.82rem;padding:10px 22px;" onclick="window.location.href='profil.html'" data-en="👤 Instructor Profile" data-id-text="👤 Profil Pengajar">👤 Profil Pengajar</button>
+          <button class="btn btn-outline" style="font-size:0.82rem;padding:10px 22px;" onclick="document.getElementById('kontak').scrollIntoView({behavior:'smooth'})" data-en="✉ Contact" data-id-text="✉ Hubungi">✉ Hubungi</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== CTA SECTION ===== -->
+<section id="cta">
+  <div class="container">
+    <div class="cta-box reveal">
+      <h2 class="cta-title" data-en="Ready to Learn Advanced Organic Chemistry?" data-id-text="Siap Belajar Kimia Organik Lanjut?">Siap Belajar Kimia Organik Lanjut?</h2>
+      <p class="cta-sub" data-en="Join thousands of students who have experienced the difference of learning with OKOL-WDI's interactive 3D platform." data-id-text="Bergabunglah dengan ribuan mahasiswa yang telah merasakan perbedaan belajar dengan platform interaktif 3D OKOL-WDI.">Bergabunglah dengan ribuan mahasiswa yang telah merasakan perbedaan belajar dengan platform interaktif 3D OKOL-WDI.</p>
+      <div class="cta-btns" style="justify-content:center;">
+        <button class="btn btn-primary" onclick="unlockPlatform()" data-en="🚀 Access Platform" data-id-text="🚀 Akses Platform">🚀 Akses Platform</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 3D PREVIEW SECTION ===== -->
+<div id="locked-wrapper" class="section-locked">
+<section id="preview3d">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-tag" data-en="INTERACTIVE PREVIEW" data-id-text="PREVIEW INTERAKTIF">PREVIEW INTERAKTIF</div>
+      <h2 class="section-title" data-en="<span class='highlight'>3D Molecular</span> Visualization" data-id-text="Visualisasi <span class='highlight'>Molekul 3D</span>">Visualisasi <span class="highlight">Molekul 3D</span></h2>
+      <p class="section-desc" data-en="A glimpse at the interactive 3D visualizations available in the OKOL-WDI platform." data-id-text="Sekilas visualisasi 3D interaktif yang tersedia di platform OKOL-WDI.">Sekilas visualisasi 3D interaktif yang tersedia di platform OKOL-WDI.</p>
+    </div>
+    <div class="preview-grid" id="previewGrid"></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== MATERIALS SECTION ===== -->
+<section id="materials">
+  <div class="glow-orb orb-2"></div>
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-tag" data-en="LEARNING MODULES" data-id-text="MODUL PEMBELAJARAN">MODUL PEMBELAJARAN</div>
+      <h2 class="section-title" data-en="Complete <span class='highlight'>Material List</span>" data-id-text="Daftar <span class='highlight'>Materi Lengkap</span>">Daftar <span class="highlight">Materi Lengkap</span></h2>
+      <p class="section-desc" data-en="14 comprehensive modules covering all Advanced Organic Chemistry topics with interactive 3D visualization." data-id-text="14 modul komprehensif mencakup seluruh topik Kimia Organik Lanjut dengan visualisasi 3D interaktif.">14 modul komprehensif mencakup seluruh topik Kimia Organik Lanjut dengan visualisasi 3D interaktif.</p>
+    </div>
+    <div class="materials-grid" id="materialsGrid"></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+</div><!-- end locked-wrapper -->
+
+<div class="divider"></div>
+
+<!-- ===== FOOTER ===== -->
+<footer id="kontak">
+  <div class="footer-grid">
+    <!-- 3D Visual -->
+    <div class="footer-visual">
+      <div class="footer-visual-ring"></div>
+      <div class="footer-visual-ring"></div>
+      <canvas id="footer-canvas"></canvas>
+    </div>
+    <!-- Brand — logo1 footer: ukuran via --logo1-footer-scale -->
+    <div class="footer-brand">
+      <div class="footer-logo-area">
+        <div class="logo-icon logo1-footer" style="width:40px;height:40px;background:none;box-shadow:none;padding:0;">
+          <img src="logo1.png" alt="OKOL-WDI" style="width:40px;height:40px;object-fit:contain;display:block;backface-visibility:hidden;">
+        </div>
+        <div class="logo-text">
+          <strong>OKOL-WDI</strong>
+          <small>Web Digital Interaktif</small>
+        </div>
+      </div>
+      <p class="footer-desc" data-en="Advanced Organic Chemistry Online Learning Platform based on Interactive 3D Visualization. Developed for Sriwijaya University students." data-id-text="Platform Pembelajaran Kimia Organik Lanjut Online berbasis Visualisasi 3D Interaktif. Dikembangkan untuk mahasiswa dan dosen Universitas Sriwijaya.">Platform Pembelajaran Kimia Organik Lanjut Online berbasis Visualisasi 3D Interaktif. Dikembangkan untuk mahasiswa dan dosen Universitas Sriwijaya.</p>
+      <div class="footer-partners">
+        <p class="footer-partners-label">Didukung oleh</p>
+        <div class="footer-partner-logos">
+          <!-- logo4 footer: paling kiri -->
+          <div class="footer-partner-logo logo4-footer" title="Kemendiktisaintek">
+            <img src="logo4.png" alt="Kemendiktisaintek" style="width:28px;height:28px;object-fit:contain;flex-shrink:0;">
+            <span>Kemendiktisaintek</span>
+          </div>
+          <!-- logo2 footer: ukuran via --logo2-footer-scale -->
+          <div class="footer-partner-logo logo2-footer" title="Universitas Sriwijaya">
+            <img src="logo2.png" alt="Universitas Sriwijaya" style="width:28px;height:28px;object-fit:contain;flex-shrink:0;">
+            <span>Univ. Sriwijaya</span>
+          </div>
+          <!-- logo3 footer: ukuran via --logo3-footer-scale -->
+          <div class="footer-partner-logo logo3-footer" title="BPSDM Sumatera Selatan">
+            <img src="logo3.png" alt="BPSDM Sumatera Selatan" style="width:28px;height:28px;object-fit:contain;flex-shrink:0;">
+            <span>BPSDM Sumsel</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Contact -->
+    <div class="footer-col">
+      <h4 data-en="CONTACT" data-id-text="KONTAK">KONTAK</h4>
+      <div class="footer-contact">
+        <div class="footer-contact-item">
+          <span class="footer-contact-icon">👤</span>
+          <span>Muhammad Zulqurnain, S.Si., M.Si.</span>
+        </div>
+        <div class="footer-contact-item">
+          <span class="footer-contact-icon">🏛</span>
+          <span>FKIP Universitas Sriwijaya</span>
+        </div>
+        <div class="footer-contact-item">
+          <span class="footer-contact-icon">📧</span>
+          <span><a href="/cdn-cgi/l/email-protection#314b445d4044435f50585f71575a58411f445f4243581f50521f5855"><span class="__cf_email__" data-cfemail="403a352c3135322e21292e00262b29306e352e3332296e21236e2924">[email&#160;protected]</span></a></span>
+        </div>
+        <div class="footer-contact-item">
+          <span class="footer-contact-icon">📍</span>
+          <span>Indralaya, Ogan Ilir, Sumsel</span>
+        </div>
+      </div>
+    </div>
+    <!-- Stats -->
+    <div class="footer-col">
+      <h4 data-en="STATISTICS" data-id-text="STATISTIK">STATISTIK</h4>
+      <div class="footer-stats">
+        <div class="footer-stat-item">
+          <span class="footer-stat-icon">🎓</span>
+          <div class="footer-stat-info">
+            <span class="footer-stat-val">500+</span>
+            <span class="footer-stat-desc" data-en="Students" data-id-text="Mahasiswa">Mahasiswa</span>
+          </div>
+        </div>
+        <div class="footer-stat-item">
+          <span class="footer-stat-icon">📚</span>
+          <div class="footer-stat-info">
+            <span class="footer-stat-val">20+</span>
+            <span class="footer-stat-desc" data-en="3D Materials" data-id-text="Materi 3D">Materi 3D</span>
+          </div>
+        </div>
+        <div class="footer-stat-item">
+          <span class="footer-stat-icon">🧪</span>
+          <div class="footer-stat-info">
+            <span class="footer-stat-val">50+</span>
+            <span class="footer-stat-desc" data-en="Reaction Animations" data-id-text="Animasi Reaksi">Animasi Reaksi</span>
+          </div>
+        </div>
+        <div class="footer-stat-item">
+          <span class="footer-stat-icon">🌍</span>
+          <div class="footer-stat-info">
+            <span class="footer-stat-val">24/7</span>
+            <span class="footer-stat-desc" data-en="Online Access" data-id-text="Akses Online">Akses Online</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p class="footer-copy" data-en="© 2026 OKOL-WDI · Muhammad Zulqurnain · Chemistry Education FKIP Sriwijaya University · All Rights Reserved" data-id-text="© 2026 OKOL-WDI · Muhammad Zulqurnain · Pendidikan Kimia FKIP Universitas Sriwijaya · Hak Cipta Dilindungi">© 2026 OKOL-WDI · Muhammad Zulqurnain · Pendidikan Kimia FKIP Universitas Sriwijaya · Hak Cipta Dilindungi</p>
+    <p class="footer-tech">Powered by <span>Three.js</span> · <span>HTML5</span> · <span>CSS3</span> · <span>JavaScript</span></p>
+  </div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ============================================================
+//  DATA
+// ============================================================
+const materialsData = [
+  { num:'01', file:'m1.html',  title:'Isomer', titleEn:'Isomers', sub:'Isomer struktural, stereoisomer, enantiomer, diastereomer', subEn:'Structural isomers, stereoisomers, enantiomers, diastereomers', tags:['3D','Stereokimia'] },
+  { num:'02', file:'m2.html',  title:'Stereoselektifitas & Stereospesifik', titleEn:'Stereoselectivity & Stereospecificity', sub:'Kontrol stereokimia dalam reaksi organik', subEn:'Stereochemical control in organic reactions', tags:['Stereo','3D'] },
+  { num:'03', file:'m3.html',  title:'Reaksi SN2', titleEn:'SN2 Reaction', sub:'Substitusi nukleofilik bimolekuler: mekanisme, stereo, kinetika', subEn:'Bimolecular nucleophilic substitution: mechanism, stereo, kinetics', tags:['SN2','Mekanisme'] },
+  { num:'04', file:'m4.html',  title:'Reaksi SN1', titleEn:'SN1 Reaction', sub:'Substitusi nukleofilik unimolekuler: karbokation, stabilitas', subEn:'Unimolecular nucleophilic substitution: carbocation, stability', tags:['SN1','Karbokation'] },
+  { num:'05', file:'m5.html',  title:'Reaksi E2', titleEn:'E2 Reaction', sub:'Eliminasi bimolekuler: antiperiplanar, syn/anti periplanar', subEn:'Bimolecular elimination: antiperiplanar, syn/anti periplanar', tags:['E2','Eliminasi'] },
+  { num:'06', file:'m6.html',  title:'Reaksi E1', titleEn:'E1 Reaction', sub:'Eliminasi unimolekuler: karbokation, Zaitsev', subEn:'Unimolecular elimination: carbocation, Zaitsev rule', tags:['E1','Alkena'] },
+  { num:'07', file:'m7.html',  title:'Kompetisi SN1, SN2, E1, E2', titleEn:'Competition SN1, SN2, E1, E2', sub:'Faktor penentu jalur reaksi: substrat, nukleofil, pelarut, suhu', subEn:'Determining factors: substrate, nucleophile, solvent, temperature', tags:['Kompetisi','Analisis'] },
+  { num:'08', file:'m8.html',  title:'Reaksi Radikal', titleEn:'Radical Reactions', sub:'Mekanisme radikal bebas: inisiasi, propagasi, terminasi', subEn:'Free radical mechanism: initiation, propagation, termination', tags:['Radikal','Propagasi'] },
+  { num:'09', file:'m9.html',  title:'Reaksi SEAr', titleEn:'Electrophilic Aromatic Substitution', sub:'Substitusi elektrofilik aromatik: halogenasi, nitrasi, sulfonasi', subEn:'Electrophilic aromatic substitution: halogenation, nitration, sulfonation', tags:['Aromatik','Elektrofilik'] },
+  { num:'10', file:'m10.html', title:'Reaksi Adisi Elektrofilik', titleEn:'Electrophilic Addition', sub:'a. Adisi Alkena\nb. Adisi Alkuna — Markovnikov & anti-Markovnikov', subEn:'a. Alkene Addition\nb. Alkyne Addition — Markovnikov & anti-Markovnikov', tags:['Alkena','Alkuna'] },
+  { num:'11', file:'m11.html', title:'Reaksi Adisi Nukleofilik', titleEn:'Nucleophilic Addition', sub:'a. Adisi Aldehid\nb. Adisi Keton — gugus karbonil', subEn:'a. Aldehyde Addition\nb. Ketone Addition — carbonyl group', tags:['Aldehid','Keton'] },
+  { num:'12', file:'m12.html', title:'Reaksi Kondensasi Karbonil', titleEn:'Carbonyl Condensation', sub:'a. Aldol  b. Claisen  c. Michael  d. Annulasi Robinson', subEn:'a. Aldol  b. Claisen  c. Michael  d. Robinson Annulation', tags:['Kondensasi','Karbonil'] },
+  { num:'13', file:'m13.html', title:'Retrosintesis', titleEn:'Retrosynthesis', sub:'Analisis retrosintesis, disconnection, synthon, FGI', subEn:'Retrosynthetic analysis, disconnection, synthon, FGI', tags:['Retro','Sintesis'] },
+  { num:'14', file:'m14.html', title:'Analisis Struktur', titleEn:'Structural Analysis', sub:'UV · IR · ¹³C-NMR · ¹H-NMR · MS · Penentuan Struktur', subEn:'UV · IR · ¹³C-NMR · ¹H-NMR · MS · Structure Determination', tags:['Spektroskopi','NMR'] },
+];
+
+const previewsData = [
+  { file:'v1.html', title:'Isomer 3D', titleEn:'3D Isomers', desc:'Eksplorasi isomer konstitusional dan stereo dalam ruang 3D', descEn:'Explore constitutional and stereo isomers in 3D space', bg:'prev-bg-1', color:'#06ffd8', atoms:[{cx:80,cy:80,r:12,c:'#06ffd8'},{cx:130,cy:50,r:10,c:'#7b2fff'},{cx:160,cy:90,r:10,c:'#00b4d8'},{cx:50,cy:115,r:8,c:'#c77dff'},{cx:120,cy:120,r:9,c:'#06ffd8'}] },
+  { file:'v2.html', title:'SN1 Mechanism', titleEn:'SN1 Mechanism', desc:'Animasi interaktif mekanisme SN1 dengan intermediat karbokation', descEn:'Interactive SN1 mechanism animation with carbocation intermediate', bg:'prev-bg-2', color:'#7b2fff', atoms:[{cx:70,cy:80,r:14,c:'#7b2fff'},{cx:130,cy:60,r:8,c:'#c77dff'},{cx:160,cy:100,r:10,c:'#7b2fff'},{cx:50,cy:110,r:7,c:'#06ffd8'}] },
+  { file:'v3.html', title:'SN2 Mechanism', titleEn:'SN2 Mechanism', desc:'Visualisasi serangan balik dan inversi konfigurasi Walden', descEn:'Visualization of backside attack and Walden inversion of configuration', bg:'prev-bg-3', color:'#00b4d8', atoms:[{cx:80,cy:75,r:12,c:'#00b4d8'},{cx:140,cy:75,r:12,c:'#06ffd8'},{cx:60,cy:120,r:8,c:'#00b4d8'},{cx:170,cy:40,r:7,c:'#c77dff'},{cx:100,cy:130,r:6,c:'#7b2fff'}] },
+  { file:'v4.html', title:'Radical Reaction', titleEn:'Radical Reaction', desc:'Mekanisme radikal bebas: inisiasi, propagasi, dan terminasi rantai', descEn:'Free radical mechanism: initiation, propagation, and chain termination', bg:'prev-bg-6', color:'#ff9500', atoms:[{cx:100,cy:55,r:13,c:'#ff9500'},{cx:155,cy:80,r:10,c:'#ffcc00'},{cx:145,cy:130,r:11,c:'#ff9500'},{cx:70,cy:130,r:10,c:'#ffcc00'},{cx:55,cy:80,r:9,c:'#ff6000'},{cx:100,cy:100,r:7,c:'#fff'}] },
+  { file:'v5.html', title:'Aromatic Substitution', titleEn:'Aromatic Substitution', desc:'SEAr: σ-kompleks (arenium ion) dan proses deprotonasi', descEn:'EAS: σ-complex (arenium ion) and deprotonation process', bg:'prev-bg-5', color:'#ff6090', atoms:[{cx:100,cy:50,r:9,c:'#ff6090'},{cx:140,cy:75,r:9,c:'#ff6090'},{cx:140,cy:115,r:9,c:'#ffd060'},{cx:100,cy:140,r:9,c:'#ff6090'},{cx:60,cy:115,r:9,c:'#ff6090'},{cx:60,cy:75,r:9,c:'#ffd060'}] },
+  { file:'v6.html', title:'Aldol Reaction', titleEn:'Aldol Reaction', desc:'Kondensasi aldol: enolat, nukleofil, produk β-hidroksi karbonil', descEn:'Aldol condensation: enolate, nucleophile, β-hydroxy carbonyl product', bg:'prev-bg-4', color:'#00e87a', atoms:[{cx:75,cy:80,r:11,c:'#00e87a'},{cx:140,cy:60,r:9,c:'#06ffd8'},{cx:160,cy:110,r:11,c:'#00e87a'},{cx:50,cy:115,r:7,c:'#00b4d8'}] },
+];
+
+// ============================================================
+//  RENDER MATERIALS
+// ============================================================
+function renderMaterials(lang) {
+  const grid = document.getElementById('materialsGrid');
+  grid.innerHTML = '';
+  materialsData.forEach((m,i) => {
+    const card = document.createElement('div');
+    card.className = 'material-card reveal';
+    card.style.transitionDelay = (i%4*0.08)+'s';
+    const titleText = lang === 'en' ? m.titleEn : m.title;
+    const subText = lang === 'en' ? m.subEn : m.sub;
+    const tags = m.tags.join('</div><div class="mat-tag">');
+    card.innerHTML = `
+      <div class="mat-num">MODUL ${m.num}</div>
+      <div class="mat-title">${titleText}</div>
+      <div class="mat-sub">${subText.replace(/\n/g,'<br>')}</div>
+      <div class="mat-tags"><div class="mat-tag">${tags}</div></div>
+      <div class="mat-arrow">→</div>
+    `;
+    card.addEventListener('click', () => { window.location.href = m.file; });
+    grid.appendChild(card);
+  });
+  observeReveal();
+}
+
+// ============================================================
+//  RENDER 3D PREVIEWS
+// ============================================================
+function renderPreviews(lang) {
+  const grid = document.getElementById('previewGrid');
+  grid.innerHTML = '';
+  previewsData.forEach((p,i) => {
+    const card = document.createElement('div');
+    card.className = 'preview-card reveal';
+    card.style.transitionDelay = (i*0.1)+'s';
+    const bonds = generateBondsSVG(p.atoms);
+    card.innerHTML = `
+      <div class="preview-visual ${p.bg}">
+        <svg class="mol-svg" viewBox="0 0 200 160">
+          ${bonds}
+          ${p.atoms.map((a,j)=>`<circle class="mol-atom" cx="${a.cx}" cy="${a.cy}" r="${a.r}" fill="${a.c}" opacity="0.9" style="animation-delay:${j*0.25}s;filter:drop-shadow(0 0 6px ${a.c})"/>`).join('')}
+        </svg>
+      </div>
+      <div class="preview-info">
+        <div class="preview-title">${lang==='en'?p.titleEn:p.title}</div>
+        <div class="preview-desc">${lang==='en'?p.descEn:p.desc}</div>
+      </div>
+    `;
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', () => { window.location.href = p.file; });
+    grid.appendChild(card);
+  });
+  observeReveal();
+}
+
+function generateBondsSVG(atoms) {
+  let bonds = '';
+  for(let i=0;i<atoms.length-1;i++) {
+    const a=atoms[i], b=atoms[i+1];
+    bonds += `<line class="mol-bond" x1="${a.cx}" y1="${a.cy}" x2="${b.cx}" y2="${b.cy}" stroke="${a.c}" stroke-width="1.5" opacity="0.5"/>`;
+  }
+  if(atoms.length>2) {
+    const a=atoms[atoms.length-1], b=atoms[0];
+    bonds += `<line class="mol-bond" x1="${a.cx}" y1="${a.cy}" x2="${b.cx}" y2="${b.cy}" stroke="${a.c}" stroke-width="1" opacity="0.3" style="animation-delay:0.5s"/>`;
+  }
+  return bonds;
+}
+
+// ============================================================
+//  THREE.JS HERO ANIMATION
+// ============================================================
+function initHeroCanvas() {
+  const canvas = document.getElementById('hero-canvas');
+  if (!canvas || typeof THREE === 'undefined') return;
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+  renderer.setClearColor(0x000000, 0);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+  camera.position.z = 30;
+
+  const atomColors = [0x06ffd8, 0x7b2fff, 0x00b4d8, 0xc77dff, 0xffd060, 0xff6090, 0x00e87a];
+  const atomGeos = [
+    new THREE.SphereGeometry(0.7, 16, 16),
+    new THREE.SphereGeometry(0.9, 16, 16),
+    new THREE.SphereGeometry(0.55, 16, 16),
+    new THREE.SphereGeometry(1.1, 16, 16),
+  ];
+
+  const moleculeGroups = [];
+
+  function createMolecule(cx, cy, cz, scale, atomCount) {
+    const group = new THREE.Group();
+    group.position.set(cx, cy, cz);
+    const molAtoms = [];
+
+    for (let i = 0; i < atomCount; i++) {
+      const geo = atomGeos[Math.floor(Math.random() * atomGeos.length)];
+      const col = atomColors[Math.floor(Math.random() * atomColors.length)];
+      const mat = new THREE.MeshPhongMaterial({
+        color: col, emissive: col, emissiveIntensity: 0.3,
+        transparent: true, opacity: 0.85, shininess: 80
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      const r = 2.5 * scale;
+      const theta = (i / atomCount) * Math.PI * 2;
+      const phi = Math.random() * Math.PI;
+      mesh.position.set(
+        r * Math.sin(phi) * Math.cos(theta),
+        r * Math.sin(phi) * Math.sin(theta),
+        r * Math.cos(phi)
+      );
+      group.add(mesh);
+      molAtoms.push(mesh);
+    }
+
+    for (let i = 0; i < molAtoms.length - 1; i++) {
+      const a = molAtoms[i].position;
+      const b = molAtoms[i + 1].position;
+      const dir = new THREE.Vector3().subVectors(b, a);
+      const len = dir.length();
+      const mid = new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5);
+      const bGeo = new THREE.CylinderGeometry(0.04, 0.04, len, 6);
+      const bMat = new THREE.MeshPhongMaterial({
+        color: 0x06ffd8, transparent: true, opacity: 0.35
+      });
+      const bond = new THREE.Mesh(bGeo, bMat);
+      bond.position.copy(mid);
+      bond.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0),
+        dir.normalize()
+      );
+      group.add(bond);
+    }
+
+    scene.add(group);
+    moleculeGroups.push({
+      group, speed: (Math.random() - 0.5) * 0.003,
+      rotX: (Math.random() - 0.5) * 0.008,
+      rotY: (Math.random() - 0.5) * 0.008,
+      rotZ: (Math.random() - 0.5) * 0.005,
+      floatSpeed: Math.random() * 0.002 + 0.001,
+      floatAmp: Math.random() * 1.5 + 0.5,
+      baseY: cy,
+      phase: Math.random() * Math.PI * 2
+    });
+  }
+
+  const configs = [
+    [-18, 8, -10, 1.0, 6], [15, -6, -8, 0.9, 5],
+    [-8, -10, -15, 0.75, 7], [20, 10, -12, 0.85, 4],
+    [-22, -4, -18, 0.7, 5], [5, 14, -20, 0.8, 6],
+    [12, -12, -10, 0.65, 4], [-14, 12, -22, 0.9, 5],
+    [25, -2, -25, 0.7, 6], [-5, -15, -8, 0.8, 5],
+    [18, 6, -30, 0.6, 4], [-20, 0, -5, 0.85, 6],
+  ];
+  configs.forEach(c => createMolecule(...c));
+
+  const particleGeo = new THREE.BufferGeometry();
+  const pCount = 200;
+  const pPos = new Float32Array(pCount * 3);
+  for (let i = 0; i < pCount * 3; i++) pPos[i] = (Math.random() - 0.5) * 80;
+  particleGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+  const pMat = new THREE.PointsMaterial({ color: 0x06ffd8, size: 0.12, transparent: true, opacity: 0.4 });
+  scene.add(new THREE.Points(particleGeo, pMat));
+
+  scene.add(new THREE.AmbientLight(0x111133, 0.8));
+  const light1 = new THREE.PointLight(0x06ffd8, 1.5, 60);
+  light1.position.set(-20, 15, 10); scene.add(light1);
+  const light2 = new THREE.PointLight(0x7b2fff, 1.2, 60);
+  light2.position.set(20, -10, 5); scene.add(light2);
+  const light3 = new THREE.PointLight(0x00b4d8, 0.8, 40);
+  light3.position.set(0, -20, 20); scene.add(light3);
+
+  let mouseX = 0, mouseY = 0;
+  document.addEventListener('mousemove', (e) => {
+    mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+    mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+  });
+
+  let t = 0;
+  function animate() {
+    requestAnimationFrame(animate);
+    t += 0.016;
+    moleculeGroups.forEach(m => {
+      m.group.rotation.x += m.rotX;
+      m.group.rotation.y += m.rotY;
+      m.group.rotation.z += m.rotZ;
+      m.group.position.y = m.baseY + Math.sin(t * m.floatSpeed * 60 + m.phase) * m.floatAmp;
+    });
+    camera.position.x += (mouseX * 3 - camera.position.x) * 0.015;
+    camera.position.y += (-mouseY * 2 - camera.position.y) * 0.015;
+    camera.lookAt(0, 0, 0);
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    renderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  });
+}
+
+// ============================================================
+//  FOOTER 3D BENZENE
+// ============================================================
+function initFooterCanvas() {
+  const canvas = document.getElementById('footer-canvas');
+  if (!canvas || typeof THREE === 'undefined') return;
+
+  const w = canvas.offsetWidth || canvas.parentElement?.offsetWidth || 200;
+  const h = canvas.offsetHeight || w;
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setSize(w, h);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  const scene  = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+  camera.position.set(0, 0, 6);
+
+  scene.add(new THREE.AmbientLight(0x111133, 1));
+  const l1 = new THREE.PointLight(0x06ffd8, 2.5, 20);
+  l1.position.set(3, 3, 3); scene.add(l1);
+  const l2 = new THREE.PointLight(0x7b2fff, 1.8, 20);
+  l2.position.set(-3, -2, 2); scene.add(l2);
+
+  const group = new THREE.Group();
+  scene.add(group);
+
+  const carbons = [];
+  const atomColors = [0x06ffd8, 0x00b4d8, 0x7b2fff, 0xc77dff, 0x06ffd8, 0x00b4d8];
+  for (let i = 0; i < 6; i++) {
+    const angle = (i / 6) * Math.PI * 2;
+    const x = Math.cos(angle) * 1.4;
+    const y = Math.sin(angle) * 1.4;
+    const geo = new THREE.SphereGeometry(0.22, 16, 16);
+    const mat = new THREE.MeshPhongMaterial({
+      color: atomColors[i], emissive: atomColors[i], emissiveIntensity: 0.4, shininess: 100
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, y, 0);
+    group.add(mesh);
+    carbons.push(mesh);
+  }
+
+  for (let i = 0; i < 6; i++) {
+    const a = carbons[i].position;
+    const b = carbons[(i + 1) % 6].position;
+    const dir = new THREE.Vector3().subVectors(b, a);
+    const len = dir.length();
+    const mid = new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5);
+    const geo = new THREE.CylinderGeometry(0.045, 0.045, len, 8);
+    const mat = new THREE.MeshPhongMaterial({ color: 0x06ffd8, transparent: true, opacity: 0.6 });
+    const bond = new THREE.Mesh(geo, mat);
+    bond.position.copy(mid);
+    bond.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+    group.add(bond);
+  }
+
+  for (let i = 0; i < 6; i++) {
+    const angle = (i / 6) * Math.PI * 2;
+    const x = Math.cos(angle) * 2.1;
+    const y = Math.sin(angle) * 2.1;
+    const geo = new THREE.SphereGeometry(0.12, 12, 12);
+    const mat = new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0xaaaaaa, emissiveIntensity: 0.2, shininess: 80 });
+    const h = new THREE.Mesh(geo, mat);
+    h.position.set(x, y, 0);
+    group.add(h);
+
+    const ca = carbons[i].position;
+    const ha = h.position;
+    const dir = new THREE.Vector3().subVectors(ha, ca);
+    const len = dir.length();
+    const mid = new THREE.Vector3().addVectors(ca, ha).multiplyScalar(0.5);
+    const bGeo = new THREE.CylinderGeometry(0.03, 0.03, len, 6);
+    const bMat = new THREE.MeshPhongMaterial({ color: 0x335566, transparent: true, opacity: 0.5 });
+    const bond = new THREE.Mesh(bGeo, bMat);
+    bond.position.copy(mid);
+    bond.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+    group.add(bond);
+  }
+
+  const ringGeo = new THREE.TorusGeometry(1.05, 0.03, 8, 64);
+  const ringMat = new THREE.MeshPhongMaterial({ color: 0x7b2fff, emissive: 0x7b2fff, emissiveIntensity: 0.5, transparent: true, opacity: 0.55 });
+  group.add(new THREE.Mesh(ringGeo, ringMat));
+
+  const pGeo = new THREE.BufferGeometry();
+  const pCount = 40;
+  const pPos = new Float32Array(pCount * 3);
+  for (let i = 0; i < pCount * 3; i++) pPos[i] = (Math.random() - 0.5) * 7;
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+  const pMat = new THREE.PointsMaterial({ color: 0x06ffd8, size: 0.06, transparent: true, opacity: 0.5 });
+  scene.add(new THREE.Points(pGeo, pMat));
+
+  let t = 0;
+  function animate() {
+    requestAnimationFrame(animate);
+    t += 0.016;
+    group.rotation.y += 0.008;
+    group.rotation.x = Math.sin(t * 0.4) * 0.35;
+    group.rotation.z = Math.cos(t * 0.25) * 0.12;
+    renderer.render(scene, camera);
+  }
+  animate();
+}
+
+// ============================================================
+//  UNLOCK PLATFORM
+// ============================================================
+function unlockPlatform() {
+  const wrapper = document.getElementById('locked-wrapper');
+  if (wrapper.classList.contains('unlocked')) {
+    document.getElementById('preview3d').scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
+  wrapper.classList.add('unlocked');
+  document.getElementById('nav-li-preview3d').style.removeProperty('display');
+  document.getElementById('nav-li-materials').style.removeProperty('display');
+  document.getElementById('mob-nav-preview3d').style.removeProperty('display');
+  document.getElementById('mob-nav-materials').style.removeProperty('display');
+  document.getElementById('nav-li-preview3d').classList.remove('nav-locked');
+  document.getElementById('nav-li-materials').classList.remove('nav-locked');
+  document.getElementById('mob-nav-preview3d').classList.remove('nav-locked');
+  document.getElementById('mob-nav-materials').classList.remove('nav-locked');
+
+  showToast(currentLang === 'en' ? '🔓 Platform unlocked! Preview 3D & Materials are now available.' : '🔓 Platform terbuka! Preview 3D & Materi kini tersedia.');
+
+  setTimeout(() => {
+    observeReveal();
+    renderPreviews(currentLang);
+    renderMaterials(currentLang);
+    document.getElementById('preview3d').scrollIntoView({ behavior: 'smooth' });
+  }, 300);
+}
+
+// ============================================================
+//  LANGUAGE SWITCH
+// ============================================================
+let currentLang = 'id';
+
+function setLang(lang) {
+  currentLang = lang;
+  document.getElementById('btn-id').classList.toggle('active', lang === 'id');
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.documentElement.lang = lang;
+
+  document.querySelectorAll('[data-en]').forEach(el => {
+    const txt = lang === 'en' ? el.getAttribute('data-en') : el.getAttribute('data-id-text');
+    if (txt) {
+      if (el.innerHTML.includes('<')) el.innerHTML = txt;
+      else el.textContent = txt;
+    }
+  });
+
+  renderMaterials(lang);
+  renderPreviews(lang);
+  document.getElementById('loader-text').textContent = lang === 'en' ? 'LOADING MOLECULES...' : 'MEMUAT MOLEKUL...';
+}
+
+// ============================================================
+//  SCROLL REVEAL
+// ============================================================
+function observeReveal() {
+  const els = document.querySelectorAll('.reveal:not(.visible)');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+  }, { threshold: 0.1 });
+  els.forEach(el => io.observe(el));
+}
+
+// ============================================================
+//  HEADER SCROLL
+// ============================================================
+window.addEventListener('scroll', () => {
+  document.getElementById('header').classList.toggle('scrolled', window.scrollY > 50);
+});
+
+// ============================================================
+//  UTILS
+// ============================================================
+let toastTimeout;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg || (currentLang === 'en' ? 'Platform ready to use!' : 'Platform siap digunakan!');
+  t.classList.add('show');
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function toggleMobileNav() {
+  document.getElementById('mobileNav').classList.toggle('open');
+}
+function closeMobileNav() {
+  document.getElementById('mobileNav').classList.remove('open');
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded', () => {
+  renderMaterials('id');
+  renderPreviews('id');
+  setTimeout(() => {
+    document.getElementById('loader').classList.add('hidden');
+    observeReveal();
+    initHeroCanvas();
+    initFooterCanvas();
+    setTimeout(() => showToast('Platform OKOL-WDI siap! 🧪'), 1200);
+  }, 2000);
+  observeReveal();
+});
+
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
+  });
+});
+
+document.addEventListener('mousemove', e => {
+  document.querySelectorAll('.feature-card').forEach(card => {
+    const rect = card.getBoundingClientRect();
+    if (rect.width === 0) return;
+    const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+    const dx = (e.clientX - cx) / (rect.width / 2);
+    const dy = (e.clientY - cy) / (rect.height / 2);
+    card.style.transform = `translateY(-8px) rotateX(${-dy * 4}deg) rotateY(${dx * 4}deg)`;
+  });
+});
+
+document.addEventListener('mouseleave', () => {
+  document.querySelectorAll('.feature-card').forEach(card => {
+    card.style.transform = '';
+  });
+});
+</script>
+</body>
+</html>
