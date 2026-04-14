@@ -2,7 +2,11 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0e1a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>OKOL-WDI – Web Digital Interaktif</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:ital,wght@0,300;0,400;0,600;0,700;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -70,14 +74,16 @@
 
   /* ===== RESET & BASE ===== */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
   body {
     font-family: var(--font-body);
     background: var(--primary);
     color: var(--text-primary);
     overflow-x: hidden;
     line-height: 1.6;
+    min-width: 320px;
   }
+  img, video, canvas, svg { max-width: 100%; height: auto; }
   ::selection { background: var(--accent-purple); color: #fff; }
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: var(--primary); }
@@ -115,6 +121,7 @@
     height: 90px;
     display: flex; align-items: center; gap: 1.5rem;
     transition: all 0.3s;
+    min-width: 0;
   }
   header.scrolled {
     background: rgba(10,14,26,0.98);
@@ -135,6 +142,8 @@
     color: #fff; letter-spacing: 1px;
     box-shadow: 0 0 20px var(--glow-cyan);
     position: relative; overflow: hidden;
+    flex-shrink: 0;
+    transition: width 0.3s, height 0.3s;
   }
   .logo-icon::before {
     content: '⬡'; position: absolute;
@@ -157,15 +166,16 @@
   }
 
   /* NAV */
-  nav { flex: 1; display: flex; justify-content: center; }
-  .nav-links { list-style: none; display: flex; gap: 0.25rem; align-items: center; }
+  nav { flex: 1; display: flex; justify-content: center; overflow: hidden; }
+  .nav-links { list-style: none; display: flex; gap: 0.1rem; align-items: center; flex-wrap: nowrap; }
   .nav-links a {
     font-family: var(--font-body);
-    font-size: 0.8rem; font-weight: 600;
+    font-size: 1.05rem; font-weight: 600;
     color: var(--text-secondary);
-    padding: 6px 14px; border-radius: 6px;
-    transition: all 0.3s; letter-spacing: 0.5px;
+    padding: 8px 18px; border-radius: 8px;
+    transition: all 0.3s; letter-spacing: 0.3px;
     position: relative;
+    white-space: nowrap;
   }
   .nav-links a::after {
     content: ''; position: absolute;
@@ -174,8 +184,63 @@
     transition: all 0.3s; border-radius: 1px;
     opacity: 0;
   }
-  .nav-links a:hover { color: var(--accent-cyan); }
-  .nav-links a:hover::after { left: 14px; right: 14px; opacity: 1; }
+  .nav-links a:hover { color: var(--accent-cyan); background: rgba(6,255,216,0.06); }
+  .nav-links a:hover::after { left: 16px; right: 16px; opacity: 1; }
+
+  /* Separator sebelum item locked */
+  #nav-li-preview3d { position: relative; }
+  #nav-li-preview3d::before {
+    content: '';
+    display: inline-block;
+    width: 1px; height: 18px;
+    background: linear-gradient(180deg, transparent, rgba(6,255,216,0.3), transparent);
+    margin-right: 0.1rem;
+    vertical-align: middle;
+  }
+  /* Badge "NEW" kecil pada item yang baru unlock */
+  #nav-li-preview3d a::after,
+  #nav-li-materials a::after {
+    content: ''; position: absolute;
+    bottom: 2px; left: 50%; right: 50%;
+    height: 2px; background: var(--accent-violet);
+    transition: all 0.3s; border-radius: 1px;
+    opacity: 0;
+  }
+  #nav-li-preview3d a:hover::after,
+  #nav-li-materials a:hover::after { left: 16px; right: 16px; opacity: 1; }
+  #nav-li-preview3d a, #nav-li-materials a { color: var(--accent-violet); }
+  #nav-li-preview3d a:hover, #nav-li-materials a:hover {
+    color: var(--accent-violet); background: rgba(123,47,255,0.08);
+  }
+
+  /* CTA BUTTON IN HEADER */
+  .header-cta {
+    flex-shrink: 0;
+    display: flex; align-items: center;
+  }
+  .header-cta a {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 26px; border-radius: 50px;
+    font-family: var(--font-body); font-size: 0.92rem; font-weight: 800;
+    letter-spacing: 0.5px; white-space: nowrap;
+    background: linear-gradient(135deg, #06ffd8, #7b2fff);
+    color: #fff;
+    border: 1.5px solid rgba(6,255,216,0.6);
+    box-shadow: 0 0 20px rgba(6,255,216,0.55), 0 0 45px rgba(123,47,255,0.35);
+    text-shadow: 0 0 8px rgba(6,255,216,0.7);
+    transition: all 0.3s;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .header-cta a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 30px rgba(6,255,216,0.65), 0 0 55px rgba(123,47,255,0.45);
+  }
+  .header-cta a::before {
+    content: '▶';
+    font-size: 0.65rem;
+    opacity: 0.9;
+  }
 
   /* LANG SWITCH */
   .lang-switch {
@@ -405,7 +470,7 @@
   #features { background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%); }
   .features-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
     gap: 1.5rem;
   }
   .feature-card {
@@ -448,7 +513,7 @@
   #materials { background: var(--primary); }
   .materials-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
     gap: 1.25rem;
   }
   .material-card {
@@ -544,7 +609,9 @@
     transition: opacity 0.8s ease, transform 0.8s ease;
   }
   .section-locked.unlocked {
-    display: block;
+    display: block !important;
+    opacity: 1 !important;
+    transform: translateY(0) !important;
     animation: sectionUnlock 0.8s ease forwards;
   }
   @keyframes sectionUnlock {
@@ -815,27 +882,148 @@
   .orb-2 { width: 350px; height: 350px; background: rgba(0,180,216,0.1); top: 40%; right: -5%; }
   .orb-3 { width: 300px; height: 300px; background: rgba(6,255,216,0.08); bottom: 10%; left: 40%; }
 
-  /* ===== RESPONSIVE ===== */
-  @media (max-width: 900px) {
-    .instructor-wrapper { grid-template-columns: 1fr; text-align: center; }
-    .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem; }
-    .footer-visual { grid-column: 1 / -1; justify-content: center; aspect-ratio: unset; height: 180px; }
-    #footer-canvas { width: 160px; height: 160px; }
-    .footer-visual-ring:nth-child(1) { width: 178px; height: 178px; }
-    .footer-visual-ring:nth-child(2) { width: 196px; height: 196px; }
-    .nav-links { display: none; }
-    header { gap: 1rem; }
-    .inst-fields { justify-content: center; }
+  /* ===== RESPONSIVE — Full Device Coverage ===== */
+
+  /* ── 1380px: Laptop besar ── */
+  @media (max-width: 1380px) {
+    header { gap: 0.85rem; padding: 0 1.25rem; }
+    .nav-links a { font-size: 0.97rem; padding: 7px 14px; }
+    .inst-logos { gap: 18px; }
   }
+
+  /* ── 1200px: Laptop standar ── */
+  @media (max-width: 1200px) {
+    header { gap: 0.7rem; padding: 0 1rem; }
+    .nav-links a { font-size: 0.88rem; padding: 6px 11px; letter-spacing: 0; }
+    .inst-logos { gap: 12px; }
+    .inst-logo { width: 58px; height: 58px; }
+    .logo-text small { font-size: 0.55rem; }
+    .header-cta a { padding: 9px 18px; font-size: 0.84rem; }
+    .features-grid { grid-template-columns: repeat(2, 1fr); }
+    .preview-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  /* ── 1050px: Laptop kecil ── */
+  @media (max-width: 1050px) {
+    .nav-links a { font-size: 0.8rem; padding: 5px 9px; }
+    .inst-logo { width: 52px; height: 52px; }
+    .lang-switch { padding: 3px 5px; }
+    .lang-btn { padding: 3px 9px; font-size: 0.68rem; }
+    .header-cta a { padding: 8px 14px; font-size: 0.78rem; }
+  }
+
+  /* ── 900px: Tablet landscape — hamburger aktif ── */
+  @media (max-width: 900px) {
+    /* Hero */
+    .hero-content { padding-top: 64px; }
+    .hero-stats { flex-wrap: wrap; gap: 0.5rem; padding: 1.2rem; }
+    .stat { min-width: 100px; }
+    .stat-divider { display: none; }
+    /* Sections */
+    section { padding: 80px 1.5rem; }
+    /* Features */
+    .features-grid { grid-template-columns: repeat(2, 1fr); }
+    /* Preview */
+    .preview-grid { grid-template-columns: repeat(3, 1fr); }
+    /* Materials */
+    .materials-grid { grid-template-columns: repeat(2, 1fr); }
+    /* Instructor */
+    .instructor-wrapper { grid-template-columns: 1fr; text-align: center; gap: 2rem; padding: 2rem; }
+    .inst-fields { justify-content: center; }
+    .instructor-photo { width: 200px; height: 250px; margin: 0 auto; }
+    /* Advantages */
+    .adv-grid { grid-template-columns: repeat(3, 1fr); }
+    /* Footer */
+    .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .footer-visual { grid-column: 1 / -1; justify-content: center; aspect-ratio: unset; height: 160px; }
+    #footer-canvas { width: 140px; height: 140px; }
+    .footer-visual-ring:nth-child(1) { width: 158px; height: 158px; }
+    .footer-visual-ring:nth-child(2) { width: 176px; height: 176px; }
+    /* CTA */
+    .cta-box { padding: 3rem 2rem; }
+    .cta-btns { flex-direction: column; align-items: center; }
+  }
+
+  /* ── 768px: Tablet portrait ── */
+  @media (max-width: 768px) {
+    /* Footer responsif */
+    .footer-partner-logos { flex-wrap: wrap; gap: 6px; }
+    .footer-partner-logo { flex: none; width: calc(50% - 3px); }
+    /* Instructor */
+    .instructor-wrapper { grid-template-columns: 1fr; text-align: center; padding: 1.75rem 1.25rem; }
+    /* Grids */
+    .features-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    .preview-grid { grid-template-columns: repeat(2, 1fr); }
+    .materials-grid { grid-template-columns: repeat(2, 1fr); }
+    .adv-grid { grid-template-columns: repeat(2, 1fr); }
+    .footer-grid { grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    /* Toast */
+    .toast { right: 1rem; left: 1rem; bottom: 1rem; }
+  }
+
+  /* ── 600px: HP besar ── */
   @media (max-width: 600px) {
-    header { padding: 0 1rem; height: 80px; }
-    .inst-logos { gap: 16px; }
-    .inst-logo { width: 50px; height: 50px; }
-    section { padding: 70px 1rem; }
-    .footer-grid { grid-template-columns: 1fr; }
-    .instructor-wrapper { padding: 2rem 1.5rem; }
-    .cta-box { padding: 2.5rem 1.5rem; }
-    .features-grid, .materials-grid { grid-template-columns: 1fr; }
+    section { padding: 60px 1rem; }
+    .container { padding: 0; }
+    .features-grid { grid-template-columns: 1fr; gap: 0.85rem; }
+    .materials-grid { grid-template-columns: 1fr; }
+    .preview-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+    .adv-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    .adv-card { padding: 1.8rem 1rem; }
+    .instructor-wrapper { padding: 1.5rem 1rem; }
+    .instructor-photo { width: 180px; height: 220px; }
+    .cta-box { padding: 2.5rem 1rem; border-radius: 16px; }
+    .cta-btns .btn { width: 100%; justify-content: center; }
+    .footer-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+    .footer-visual { height: 130px; }
+    #footer-canvas { width: 120px; height: 120px; }
+    .footer-visual-ring:nth-child(1) { width: 138px; height: 138px; }
+    .footer-visual-ring:nth-child(2) { width: 156px; height: 156px; }
+    .footer-bottom { flex-direction: column; text-align: center; }
+    .scroll-indicator { display: none; }
+    .stat-val { font-size: 1.5rem; }
+  }
+
+  /* ── 480px: HP sedang ── */
+  @media (max-width: 480px) {
+    header { height: 58px; }
+    .mobile-nav { top: 58px; }
+    .hero-content { padding-top: 58px; }
+    .hero-badge { display: none; }
+    .hero-subtitle { font-size: 0.88rem; }
+    .hero-formula { display: none; }
+    section { padding: 50px 0.85rem; }
+    .section-title { font-size: 1.4rem; }
+    .preview-grid { grid-template-columns: 1fr; }
+    .adv-grid { grid-template-columns: 1fr; }
+    .feature-card { padding: 1.5rem; }
+    .material-card { padding: 1.25rem; }
+    .preview-visual { height: 100px; }
+    .stat-val { font-size: 1.3rem; }
+    .stat-lbl { font-size: 0.6rem; letter-spacing: 1px; }
+    .cta-title { font-size: 1.4rem; }
+    footer { padding: 2.5rem 1rem 1.5rem; }
+    .toast { font-size: 0.78rem; padding: 0.75rem 1rem; }
+    .mobile-nav a { font-size: 1rem; padding: 12px 16px; }
+  }
+
+  /* ── 360px: HP sangat kecil ── */
+  @media (max-width: 360px) {
+    header { height: 48px; padding: 0 0.6rem; }
+    .mobile-nav { top: 48px; max-height: calc(100svh - 48px); }
+    .logo-icon { width: 30px; height: 30px; border-radius: 6px; }
+    .logo-text strong { font-size: 0.75rem; letter-spacing: 0.5px; }
+    .logo-text small  { font-size: 0.44rem; letter-spacing: 0.2px; }
+    .hero-content { padding-top: 48px; }
+    .hero-stats { grid-template-columns: repeat(2,1fr); display: grid; gap: 0.5rem; }
+    .stat { padding: 0.6rem 0; }
+    .stat-val { font-size: 1.2rem; }
+    section { padding: 45px 0.75rem; }
+    .section-title { font-size: 1.1rem; letter-spacing: 0; }
+    .section-tag { font-size: 0.62rem; letter-spacing: 2px; }
+    .section-tag::before, .section-tag::after { width: 24px; }
+    .mobile-nav a { font-size: 0.9rem; padding: 10px 12px; }
+    .btn { padding: 10px 18px; font-size: 0.82rem; }
   }
 
   /* ===== FEATURE ICON COLORS ===== */
@@ -851,6 +1039,150 @@
   .fa-4 { background: #ffd060; }
   .fa-5 { background: #ff6090; }
   .fa-6 { background: #00e87a; }
+
+  /* ===================================================
+     ENHANCED RESPONSIVE — Full Multi-Device Coverage
+     Laptop · Tablet · HP Besar · HP Sedang · HP Kecil
+     =================================================== */
+
+  /* ── Pastikan elemen tidak overflow secara horizontal ── */
+  .container { width: 100%; max-width: 1200px; margin: 0 auto; }
+  .nav-links { overflow: hidden; }
+  .logo-brand { min-width: 0; }
+  .logo-text { min-width: 0; overflow: hidden; }
+  .logo-text strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hero-stats { width: 100%; }
+  .inst-logos { min-width: 0; }
+  section { width: 100%; }
+  footer { width: 100%; }
+
+  /* ══════════════════════════════════════════════════
+     MOBILE HEADER — logo kiri + hamburger kanan
+     ══════════════════════════════════════════════════ */
+  @media (max-width: 900px) {
+    nav            { display: none; }
+    .hamburger     { display: flex !important; }   /* paksa tampil */
+    .header-cta    { display: none !important; }
+    .lang-switch   { display: none !important; }
+    .inst-logos    { display: none !important; }
+    header {
+      height: 64px; padding: 0 1rem; gap: 0;
+      justify-content: space-between;
+    }
+    .mobile-nav    { top: 64px; max-height: calc(100svh - 64px); }
+    .hero-content  { padding-top: 64px; }
+    .logo-brand    { gap: 10px; }
+    .logo-icon     { width: 44px; height: 44px; border-radius: 10px; }
+    .logo-text strong { font-size: 0.95rem; letter-spacing: 1.5px; }
+    .logo-text small  { display: block; font-size: 0.55rem; letter-spacing: 0.5px; }
+  }
+
+  /* ── 480px: HP sedang ── */
+  @media (max-width: 480px) {
+    header { height: 56px; padding: 0 0.85rem; }
+    .mobile-nav { top: 56px; max-height: calc(100svh - 56px); }
+    .logo-icon { width: 38px; height: 38px; border-radius: 8px; }
+    .hero-content { padding-top: 56px; padding-left: 0.85rem; padding-right: 0.85rem; }
+    .hero-badge { display: none; }
+    .hero-subtitle { font-size: 0.88rem; }
+    .hero-formula { display: none; }
+    .hero-stats { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.5rem; padding: 1rem; }
+    .stat-val { font-size: 1.3rem; }
+    .stat-lbl { font-size: 0.6rem; letter-spacing: 1px; }
+    section { padding: 50px 0.85rem; }
+    .section-title { font-size: 1.4rem; }
+    .features-grid { grid-template-columns: 1fr; }
+    .materials-grid { grid-template-columns: 1fr; }
+    .preview-grid { grid-template-columns: repeat(2,1fr); }
+    .adv-grid { grid-template-columns: 1fr; }
+    .feature-card { padding: 1.5rem; }
+    .material-card { padding: 1.25rem; }
+    .preview-visual { height: 100px; }
+    .cta-title { font-size: 1.4rem; }
+    .cta-box { padding: 2.5rem 1rem; border-radius: 16px; }
+    .cta-btns .btn { width: 100%; justify-content: center; }
+    .footer-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+    .footer-visual { height: 130px; }
+    .footer-bottom { flex-direction: column; text-align: center; }
+    footer { padding: 2.5rem 1rem 1.5rem; }
+    .toast { right: 0.75rem; left: 0.75rem; bottom: 0.75rem; font-size: 0.78rem; padding: 0.75rem 1rem; }
+    .mobile-nav a { font-size: 1rem; padding: 12px 16px; }
+    .instructor-wrapper { padding: 1.5rem 1rem; }
+    .instructor-photo { width: 180px; height: 220px; }
+  }
+
+  /* ── 400px: HP kecil ── */
+  @media (max-width: 400px) {
+    header { height: 52px; padding: 0 0.75rem; }
+    .mobile-nav { top: 52px; max-height: calc(100vh - 52px); }
+    .logo-icon { width: 34px; height: 34px; border-radius: 7px; }
+    .logo-text strong { font-size: 0.82rem; letter-spacing: 1px; }
+    .logo-text small  { font-size: 0.48rem; letter-spacing: 0.3px; }
+    .hero-content { padding-top: 52px; }
+    section { padding: 50px 0.75rem; }
+    .section-title { font-size: 1.25rem; }
+    .btn { padding: 10px 18px; font-size: 0.82rem; }
+    .preview-grid { grid-template-columns: 1fr; }
+    .feature-card { padding: 1.25rem; }
+    .material-card { padding: 1.1rem; }
+    .preview-visual { height: 100px; }
+    footer { padding: 2rem 0.75rem 1.25rem; }
+    .cta-box { padding: 2rem 0.75rem; }
+  }
+
+  /* ── Khusus landscape HP ── */
+  @media (max-width: 900px) and (orientation: landscape) and (max-height: 500px) {
+    #hero { min-height: 100svh; padding-top: 60px; }
+    .hero-content { padding-top: 60px; }
+    .hero-badge { display: none; }
+    .hero-formula { display: none; }
+    .hero-stats { margin-top: 1rem; }
+    .scroll-indicator { display: none; }
+    header { height: 55px; }
+    .mobile-nav { top: 55px; max-height: calc(100svh - 55px); overflow-y: auto; }
+  }
+
+  /* ── Safe area insets (iPhone notch/Dynamic Island) ── */
+  @supports (padding: env(safe-area-inset-top)) {
+    header {
+      padding-left: max(2rem, env(safe-area-inset-left));
+      padding-right: max(2rem, env(safe-area-inset-right));
+    }
+    @media (max-width: 900px) {
+      header {
+        padding-left: max(1rem, env(safe-area-inset-left));
+        padding-right: max(1rem, env(safe-area-inset-right));
+      }
+    }
+    @media (max-width: 600px) {
+      header {
+        padding-left: max(0.75rem, env(safe-area-inset-left));
+        padding-right: max(0.75rem, env(safe-area-inset-right));
+      }
+    }
+    footer {
+      padding-bottom: max(2rem, env(safe-area-inset-bottom));
+    }
+    .mobile-nav {
+      padding-left: max(1.25rem, env(safe-area-inset-left));
+      padding-right: max(1.25rem, env(safe-area-inset-right));
+    }
+    .toast {
+      bottom: max(2rem, env(safe-area-inset-bottom));
+    }
+  }
+
+  /* ===== TOUCH / TAP TARGET SIZE ===== */
+  @media (pointer: coarse) {
+    .nav-links a { padding: 10px 14px; }
+    .btn { min-height: 44px; }
+    .lang-btn { min-height: 32px; min-width: 36px; }
+    .material-card { cursor: pointer; }
+    .hamburger { padding: 10px; }
+    .hamburger span { width: 24px; height: 3px; }
+    .mobile-nav a { min-height: 48px; display: flex; align-items: center; }
+    .footer-links a { min-height: 40px; display: flex; align-items: center; }
+  }
 
   /* MOLECULE SVG ANIMATION */
   .mol-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -887,33 +1219,161 @@
   .toast.show { transform: translateX(0); }
   .toast::before { content: '⚗'; font-size: 1.1rem; }
 
-  /* NAV MOBILE TOGGLE */
-  .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 8px; }
-  .hamburger span { width: 22px; height: 2px; background: var(--accent-cyan); border-radius: 1px; transition: all 0.3s; }
-  @media (max-width: 900px) { .hamburger { display: flex; } }
+  /* ===== NAV UNLOCKED STATE ===== */
+  .nav-links li { flex-shrink: 0; }
+
+  /* ===== NAV MOBILE TOGGLE ===== */
+  .hamburger {
+    display: none;
+    flex-direction: column; gap: 5px;
+    cursor: pointer; padding: 10px;
+    flex-shrink: 0;
+    z-index: 1002;          /* di atas segalanya */
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .hamburger span {
+    width: 24px; height: 2.5px;
+    background: var(--accent-cyan);
+    border-radius: 2px;
+    transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform-origin: center;
+    display: block;
+  }
+  /* Hamburger → X saat menu terbuka */
+  .hamburger.active span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .hamburger.active span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+  .hamburger.active span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+  /* ===== MOBILE NAV PANEL ===== */
   .mobile-nav {
     display: none;
-    position: fixed; top: 90px; left: 0; right: 0;
-    background: rgba(10,14,26,0.97);
-    backdrop-filter: blur(20px);
+    position: fixed;
+    top: 64px; left: 0; right: 0;
+    background: rgba(8,12,22,0.98);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     border-bottom: 1px solid var(--glass-border);
-    padding: 1rem;
-    z-index: 999;
-    flex-direction: column; gap: 0.5rem;
+    padding: 0.75rem 1rem 1.25rem;
+    z-index: 1001;           /* di atas header (1000) */
+    flex-direction: column; gap: 0.2rem;
+    max-height: calc(100svh - 64px);
+    overflow-y: auto;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
   }
-  .mobile-nav.open { display: flex; }
+  .mobile-nav.open { display: flex; animation: slideDown 0.25s ease forwards; }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Logo strip di dalam mobile nav ── */
+  .mobile-nav-logos {
+    display: flex;
+    gap: 8px;
+    padding: 12px 8px 14px;
+    border-bottom: 1px solid var(--glass-border);
+    margin-bottom: 0.5rem;
+    align-items: center;
+    justify-content: space-around;
+    background: rgba(6,255,216,0.02);
+    border-radius: 10px;
+  }
+  .mobile-nav-logo-item {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+    flex: 1; min-width: 52px; max-width: 76px;
+  }
+  .mobile-nav-logo-item img {
+    width: 44px; height: 44px;
+    object-fit: contain;
+    border: 1px solid rgba(6,255,216,0.2);
+    border-radius: 9px;
+    padding: 5px;
+    background: rgba(255,255,255,0.05);
+  }
+  .mobile-nav-logo-item span {
+    font-size: 0.47rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    text-align: center; line-height: 1.3;
+  }
+
+  /* ── Item link di mobile nav ── */
   .mobile-nav a {
-    padding: 10px 14px; border-radius: 8px;
-    font-size: 0.9rem; color: var(--text-secondary);
-    transition: all 0.3s;
+    padding: 13px 16px; border-radius: 10px;
+    font-size: 1rem; font-weight: 600;
+    color: var(--text-secondary);
+    transition: all 0.25s;
+    border: 1px solid transparent;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 48px; display: flex; align-items: center;
   }
-  .mobile-nav a:hover { background: var(--glass-hover); color: var(--accent-cyan); }
+  .mobile-nav a:hover,
+  .mobile-nav a:active {
+    background: rgba(6,255,216,0.08);
+    color: var(--accent-cyan);
+    border-color: var(--glass-border);
+  }
+  .mobile-nav a[href="#cta"] {
+    background: linear-gradient(135deg, rgba(6,255,216,0.12), rgba(123,47,255,0.12));
+    border-color: rgba(6,255,216,0.35);
+    color: var(--accent-cyan);
+    font-weight: 700;
+    margin-top: 0.35rem;
+    justify-content: center;
+  }
+  /* ===== PREFERS-REDUCED-MOTION ===== */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    .reveal { opacity: 1 !important; transform: none !important; }
+    .loader-ring { animation: none !important; }
+    #hero-canvas, #footer-canvas { display: none; }
+  }
+
+  /* ===== MOBILE NAV BACKDROP (tap-to-close overlay) ===== */
+  .nav-backdrop {
+    display: none;
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(2px);
+  }
+  .nav-backdrop.show { display: block; }
+
+  /* ===== PRINT STYLES ===== */
+  @media print {
+    header, .hamburger, .mobile-nav, #loader, .toast,
+    #hero-canvas, #footer-canvas, .bg-grid, .glow-orb,
+    .scroll-indicator, .btn { display: none !important; }
+    body { background: #fff; color: #000; }
+    section { padding: 2rem 1rem; page-break-inside: avoid; }
+    .feature-card, .material-card, .adv-card {
+      border: 1px solid #ccc; background: #f9f9f9;
+      box-shadow: none;
+    }
+    .section-title, .hero-title { color: #000 !important; -webkit-text-fill-color: #000 !important; }
+  }
+
+  /* ===== FOCUS-VISIBLE (Aksesibilitas keyboard) ===== */
+  :focus-visible {
+    outline: 2px solid var(--accent-cyan);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  button:focus-visible, a:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 3px; }
 </style>
 </head>
 <body>
 
 <!-- BACKGROUND GRID -->
 <div class="bg-grid"></div>
+
+<!-- NAV BACKDROP (tap luar untuk tutup menu) -->
+<div class="nav-backdrop" id="navBackdrop" onclick="closeMobileNav()"></div>
 
 <!-- LOADING SCREEN -->
 <div id="loader">
@@ -929,7 +1389,7 @@
   <!-- OKOL-WDI LOGO — ukuran diatur via --logo1-header-scale di :root -->
   <div class="logo-brand">
     <div class="logo-icon logo1-header" style="background:none;box-shadow:none;padding:0;">
-      <img src="logo1.png" alt="OKOL-WDI" style="width:70px;height:70px;object-fit:contain;display:block;backface-visibility:hidden;">
+      <img src="logo1.png" alt="OKOL-WDI" style="width:100%;height:100%;object-fit:contain;display:block;backface-visibility:hidden;">
     </div>
     <div class="logo-text">
       <strong>OKOL-WDI</strong>
@@ -943,7 +1403,6 @@
       <li><a href="#features" data-id="nav-features" data-en="Features" data-id-text="Fitur">Fitur</a></li>
       <li><a href="#advantages" data-id="nav-adv" data-en="Platform" data-id-text="Platform">Platform</a></li>
       <li><a href="#instructor" data-id="nav-instructor" data-en="Instructor" data-id-text="Pengajar">Pengajar</a></li>
-      <li><a href="#cta" class="btn btn-primary" style="padding:8px 22px;font-size:0.82rem;font-weight:800;background:linear-gradient(135deg,#06ffd8,#7b2fff);color:#fff;box-shadow:0 0 18px rgba(6,255,216,0.7),0 0 40px rgba(123,47,255,0.4);letter-spacing:1px;border:1.5px solid rgba(6,255,216,0.6);text-shadow:0 0 8px rgba(6,255,216,0.8);" data-en="Start Learning" data-id-text="Mulai Belajar">Mulai Belajar</a></li>
       <li class="nav-locked" id="nav-li-preview3d"><a href="#preview3d" data-id="nav-3d" data-en="3D Preview" data-id-text="Preview 3D">Preview 3D</a></li>
       <li class="nav-locked" id="nav-li-materials"><a href="#materials" data-id="nav-materials" data-en="Materials" data-id-text="Materi">Materi</a></li>
     </ul>
@@ -952,6 +1411,11 @@
   <!-- HAMBURGER MOBILE -->
   <div class="hamburger" id="hamburger" onclick="toggleMobileNav()">
     <span></span><span></span><span></span>
+  </div>
+
+  <!-- CTA BUTTON -->
+  <div class="header-cta">
+    <a href="#cta" data-en="Start Learning" data-id-text="Mulai Belajar">Mulai Belajar</a>
   </div>
 
   <!-- LANG SWITCH -->
@@ -979,12 +1443,44 @@
 
 <!-- MOBILE NAV -->
 <div class="mobile-nav" id="mobileNav">
-  <a href="#features" onclick="closeMobileNav()">Fitur</a>
-  <a href="#advantages" onclick="closeMobileNav()">Platform</a>
-  <a href="#instructor" onclick="closeMobileNav()">Pengajar</a>
-  <a href="#cta" onclick="closeMobileNav()">Mulai Belajar</a>
-  <a href="#preview3d" class="nav-locked" id="mob-nav-preview3d" onclick="closeMobileNav()">Preview 3D</a>
-  <a href="#materials" class="nav-locked" id="mob-nav-materials" onclick="closeMobileNav()">Materi</a>
+
+  <!-- Logo institusi -->
+  <div class="mobile-nav-logos">
+    <div class="mobile-nav-logo-item">
+      <img src="logo1.png" alt="OKOL-WDI">
+      <span>OKOL-WDI</span>
+    </div>
+    <div class="mobile-nav-logo-item">
+      <img src="logo4.png" alt="Kemendiktisaintek">
+      <span>Kemendiktisaintek</span>
+    </div>
+    <div class="mobile-nav-logo-item">
+      <img src="logo2.png" alt="Univ. Sriwijaya">
+      <span>Univ. Sriwijaya</span>
+    </div>
+    <div class="mobile-nav-logo-item">
+      <img src="logo3.png" alt="BPSDM Sumsel">
+      <span>BPSDM Sumsel</span>
+    </div>
+  </div>
+
+  <!-- Link navigasi -->
+  <a href="#features"   onclick="closeMobileNav()">🔬 Fitur</a>
+  <a href="#advantages" onclick="closeMobileNav()">🚀 Platform</a>
+  <a href="#instructor" onclick="closeMobileNav()">👤 Pengajar</a>
+  <a href="#preview3d"  class="nav-locked" id="mob-nav-preview3d" onclick="closeMobileNav()">⬡ Preview 3D</a>
+  <a href="#materials"  class="nav-locked" id="mob-nav-materials" onclick="closeMobileNav()">📚 Materi</a>
+  <a href="#cta" onclick="closeMobileNav()">🚀 Mulai Belajar</a>
+
+  <!-- Pilihan bahasa -->
+  <div style="display:flex;gap:8px;padding:12px 4px 4px;margin-top:0.25rem;border-top:1px solid var(--glass-border);">
+    <button class="lang-btn active" id="mob-btn-id"
+      onclick="setLang('id');document.getElementById('mob-btn-id').classList.add('active');document.getElementById('mob-btn-en').classList.remove('active');"
+      style="flex:1;padding:10px;border-radius:10px;font-size:0.82rem;cursor:pointer;">🇮🇩 Indonesia</button>
+    <button class="lang-btn" id="mob-btn-en"
+      onclick="setLang('en');document.getElementById('mob-btn-en').classList.add('active');document.getElementById('mob-btn-id').classList.remove('active');"
+      style="flex:1;padding:10px;border-radius:10px;font-size:0.82rem;cursor:pointer;">🇬🇧 English</button>
+  </div>
 </div>
 
 <!-- ===== HERO SECTION ===== -->
@@ -1135,7 +1631,7 @@
     <div class="instructor-wrapper reveal">
       <div class="instructor-photo-wrap">
         <div class="instructor-photo">
-          <img src="fotoprofil.png" alt="Muhammad Zulqurnain" style="width:88%;height:88%;object-fit:cover;position:relative;z-index:1;border-radius:5px;">
+          <img src="fotoprofil.png" alt="Muhammad Zulqurnain" style="width:88%;height:88%;object-fit:cover;position:relative;z-index:1;border-radius:5px;max-width:100%;">
         </div>
         <div class="photo-badge">Dosen Pendidikan Kimia</div>
       </div>
@@ -1218,8 +1714,8 @@
     <!-- Brand — logo1 footer: ukuran via --logo1-footer-scale -->
     <div class="footer-brand">
       <div class="footer-logo-area">
-        <div class="logo-icon logo1-footer" style="width:40px;height:40px;background:none;box-shadow:none;padding:0;">
-          <img src="logo1.png" alt="OKOL-WDI" style="width:40px;height:40px;object-fit:contain;display:block;backface-visibility:hidden;">
+        <div class="logo-icon logo1-footer" style="width:40px;height:40px;background:none;box-shadow:none;padding:0;flex-shrink:0;">
+          <img src="logo1.png" alt="OKOL-WDI" style="width:100%;height:100%;object-fit:contain;display:block;backface-visibility:hidden;">
         </div>
         <div class="logo-text">
           <strong>OKOL-WDI</strong>
@@ -1657,29 +2153,28 @@ function initFooterCanvas() {
 //  UNLOCK PLATFORM
 // ============================================================
 function unlockPlatform() {
-  const wrapper = document.getElementById('locked-wrapper');
-  if (wrapper.classList.contains('unlocked')) {
-    document.getElementById('preview3d').scrollIntoView({ behavior: 'smooth' });
+  var wrapper = document.getElementById("locked-wrapper");
+  if (wrapper.classList.contains("unlocked")) {
+    document.getElementById("preview3d").scrollIntoView({ behavior: "smooth" });
     return;
   }
-  wrapper.classList.add('unlocked');
-  document.getElementById('nav-li-preview3d').style.removeProperty('display');
-  document.getElementById('nav-li-materials').style.removeProperty('display');
-  document.getElementById('mob-nav-preview3d').style.removeProperty('display');
-  document.getElementById('mob-nav-materials').style.removeProperty('display');
-  document.getElementById('nav-li-preview3d').classList.remove('nav-locked');
-  document.getElementById('nav-li-materials').classList.remove('nav-locked');
-  document.getElementById('mob-nav-preview3d').classList.remove('nav-locked');
-  document.getElementById('mob-nav-materials').classList.remove('nav-locked');
-
-  showToast(currentLang === 'en' ? '🔓 Platform unlocked! Preview 3D & Materials are now available.' : '🔓 Platform terbuka! Preview 3D & Materi kini tersedia.');
-
-  setTimeout(() => {
-    observeReveal();
+  wrapper.classList.add("unlocked");
+  wrapper.style.display = "block";
+  wrapper.style.opacity = "1";
+  wrapper.style.transform = "translateY(0)";
+  ["nav-li-preview3d","nav-li-materials","mob-nav-preview3d","mob-nav-materials"].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) { el.classList.remove("nav-locked"); el.style.removeProperty("display"); }
+  });
+  showToast(currentLang === "en" ? "🔓 Platform unlocked! Preview 3D & Materials are now available." : "🔓 Platform terbuka! Preview 3D & Materi kini tersedia.");
+  setTimeout(function() {
     renderPreviews(currentLang);
     renderMaterials(currentLang);
-    document.getElementById('preview3d').scrollIntoView({ behavior: 'smooth' });
-  }, 300);
+    observeReveal();
+    setTimeout(function() {
+      document.getElementById("preview3d").scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  }, 350);
 }
 
 // ============================================================
@@ -1725,6 +2220,45 @@ window.addEventListener('scroll', () => {
 });
 
 // ============================================================
+//  CANVAS RESIZE HANDLER — responsif saat rotasi / resize window
+// ============================================================
+(function() {
+  let heroRenderer, footerRenderer;
+  // Store renderer references agar bisa di-resize
+  const _initHeroCanvas = initHeroCanvas;
+  const _initFooterCanvas = initFooterCanvas;
+
+  window.addEventListener('resize', () => {
+    // Hero canvas
+    const hc = document.getElementById('hero-canvas');
+    if (hc && hc._threeRenderer) {
+      hc._threeRenderer.setSize(hc.parentElement.clientWidth, hc.parentElement.clientHeight);
+      if (hc._threeCamera) {
+        hc._threeCamera.aspect = hc.parentElement.clientWidth / hc.parentElement.clientHeight;
+        hc._threeCamera.updateProjectionMatrix();
+      }
+    }
+    // Footer canvas
+    const fc = document.getElementById('footer-canvas');
+    if (fc && fc._threeRenderer) {
+      fc._threeRenderer.setSize(fc.clientWidth, fc.clientHeight);
+    }
+    // Mol canvases di preview grid
+    document.querySelectorAll('.mol-canvas').forEach(c => {
+      if (c._threeRenderer) {
+        const w = c.parentElement.clientWidth;
+        const h = c.parentElement.clientHeight;
+        c._threeRenderer.setSize(w, h);
+        if (c._threeCamera) {
+          c._threeCamera.aspect = w / h;
+          c._threeCamera.updateProjectionMatrix();
+        }
+      }
+    });
+  }, { passive: true });
+})();
+
+// ============================================================
 //  UTILS
 // ============================================================
 let toastTimeout;
@@ -1737,10 +2271,20 @@ function showToast(msg) {
 }
 
 function toggleMobileNav() {
-  document.getElementById('mobileNav').classList.toggle('open');
+  const nav      = document.getElementById('mobileNav');
+  const ham      = document.getElementById('hamburger');
+  const backdrop = document.getElementById('navBackdrop');
+  const isOpen   = nav.classList.toggle('open');
+  ham.classList.toggle('active', isOpen);
+  if (backdrop) backdrop.classList.toggle('show', isOpen);
+  document.body.style.overflow = isOpen ? 'hidden' : '';
 }
 function closeMobileNav() {
   document.getElementById('mobileNav').classList.remove('open');
+  document.getElementById('hamburger').classList.remove('active');
+  const backdrop = document.getElementById('navBackdrop');
+  if (backdrop) backdrop.classList.remove('show');
+  document.body.style.overflow = '';
 }
 
 // ============================================================
@@ -1765,6 +2309,23 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
     if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
   });
 });
+
+// Tutup mobile nav dengan tombol Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeMobileNav();
+});
+
+// Swipe ke atas untuk tutup mobile nav di HP
+(function() {
+  let startY = 0;
+  const nav = document.getElementById('mobileNav');
+  if (!nav) return;
+  nav.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
+  nav.addEventListener('touchend', e => {
+    const dy = startY - e.changedTouches[0].clientY;
+    if (dy > 60) closeMobileNav(); // swipe ke atas > 60px → tutup
+  }, { passive: true });
+})();
 
 document.addEventListener('mousemove', e => {
   document.querySelectorAll('.feature-card').forEach(card => {

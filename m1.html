@@ -472,17 +472,158 @@
         .btn-retake { background: white; color: var(--primary); font-weight: 700; padding: 10px 28px; border-radius: 8px; font-size: 1em; }
         .btn-retake:hover { background: var(--light); }
 
+        /* ===== HAMBURGER BUTTON (hidden on desktop) ===== */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: var(--light);
+            border: 1.5px solid var(--border);
+            flex-shrink: 0;
+            align-self: center;
+        }
+        .hamburger span {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: var(--primary);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+        .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+        .hamburger.open span:nth-child(2) { opacity: 0; }
+        .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+        /* ===== TABLE RESPONSIVE WRAPPER ===== */
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+        .table-responsive table { margin-top: 0; }
+
+        /* ===== TABLET LANDSCAPE / SMALL DESKTOP (≤1100px) ===== */
+        @media (max-width: 1100px) {
+            .container { max-width: 100%; padding: 16px 14px 60px; }
+            .top-bar-nav a { font-size: 0.68em; padding: 5px 7px; }
+            .top-bar-center img { height: 32px; max-width: 65px; }
+        }
+
+        /* ===== TABLET PORTRAIT (≤768px) ===== */
         @media (max-width: 768px) {
-            .grid-2 { grid-template-columns: 1fr; }
+            /* Layout */
+            .container { padding: 12px 12px 60px; }
+            .grid-2 { grid-template-columns: 1fr; gap: 14px; }
             .lang-switch { top: 10px; right: 10px; }
-            header h1 { font-size: 1.4em; }
-            .top-bar { flex-wrap: wrap; min-height: auto; padding: 10px 14px; gap: 8px; position: relative; top: 0; }
+
+            /* Header */
+            header { padding: 24px 16px 20px; margin-bottom: 14px; }
+            header h1 { font-size: 1.35em; }
+            header h3 { font-size: 0.88em; }
+
+            /* Top bar */
+            .top-bar {
+                flex-wrap: wrap;
+                min-height: auto;
+                padding: 0;
+                gap: 0;
+                position: relative;
+                top: 0;
+                align-items: stretch;
+            }
+            .top-bar-left {
+                flex: 1 1 auto;
+                border-right: none;
+                border-bottom: 1.5px solid var(--border);
+                padding: 10px 12px;
+            }
+            .top-bar-center {
+                display: none; /* collapsed on tablet/mobile */
+            }
+            .top-bar-nav {
+                display: none;
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch;
+                order: 5;
+                padding: 8px 10px 10px;
+                gap: 3px;
+                border-top: 1.5px solid var(--border);
+            }
+            .top-bar-nav.open { display: flex; }
+            .top-bar-nav a {
+                font-size: 0.87em;
+                padding: 9px 14px;
+                width: 100%;
+                border-radius: 8px;
+                display: block;
+            }
+            .hamburger { display: flex; order: 2; margin: 8px 10px 8px auto; }
+
+            /* Cards */
+            .card { padding: 18px 16px; scroll-margin-top: 12px; }
+            .card-title { font-size: 1.05em; }
             .bar-divider, .bar-divider-2 { display: none; }
-            .logo-brand { padding: 4px 0; }
-            .logo-images { gap: 10px; padding: 4px 0; justify-content: flex-start; flex-wrap: wrap; }
-            .logo-images img { height: 36px; max-width: 70px; }
-            .top-bar-nav { justify-content: flex-start; padding: 4px 0 0; }
-            .top-bar-nav a { font-size: 0.75em; padding: 4px 8px; }
+
+            /* Viewer */
+            .view-container { height: 210px; }
+
+            /* Buttons */
+            button { padding: 8px 13px; font-size: 0.8em; }
+            .btn-group { margin-top: 10px; }
+
+            /* Table */
+            table { font-size: 0.85em; }
+            th, td { padding: 9px 11px; }
+
+            /* Quiz */
+            .quiz-progress {
+                flex-direction: column;
+                gap: 8px;
+                text-align: center;
+            }
+            .quiz-item { padding: 16px 14px; }
+            .quiz-q-header { gap: 10px; }
+            .quiz-summary { padding: 22px 16px; }
+            .quiz-summary .big-score { font-size: 2.5em; }
+        }
+
+        /* ===== SMALL MOBILE (≤480px) ===== */
+        @media (max-width: 480px) {
+            .container { padding: 10px 8px 50px; }
+            header h1 { font-size: 1.1em; }
+            header h3 { font-size: 0.8em; }
+            header { padding: 18px 12px 16px; }
+            .card { padding: 14px 12px; }
+            .card-title { font-size: 0.97em; }
+            .view-container { height: 185px; }
+            .top-bar-left img.brand-logo { height: 28px; }
+            .brand-title { font-size: 0.82em !important; }
+            .brand-sub { font-size: 0.55em !important; }
+            button { font-size: 0.75em; padding: 7px 10px; margin: 2px; }
+            .quiz-summary .big-score { font-size: 2em; }
+            .quiz-summary { padding: 18px 12px; }
+            .quiz-item { padding: 13px 11px; }
+            .pembahasan { padding: 12px; font-size: 0.84em; }
+            .quiz-number { min-width: 28px; height: 28px; font-size: 0.8em; }
+        }
+
+        /* ===== GENERAL FLUID FIXES ===== */
+        img, svg, video { max-width: 100%; height: auto; }
+        .card.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) {
+            .card.grid-2 { grid-template-columns: 1fr; gap: 0; }
+            .card.grid-2 > div + div { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+        }
+        /* Make sure lang-switch doesn't clash with hamburger */
+        @media (max-width: 480px) {
+            .lang-switch { top: auto; bottom: 16px; right: 16px; }
         }
     </style>
 </head>
@@ -506,12 +647,17 @@
         </div>
         <!-- TENGAH: Logo instansi -->
         <div class="top-bar-center">
+            <div class="inst-logo-wrap"><img src="logo4.png" alt="Logo ASN BerAKHLAK"></div>
             <div class="inst-logo-wrap"><img src="logo2.png" alt="Logo UNSRI"></div>
             <div class="inst-logo-wrap"><img src="logo3.png" alt="Logo BPSDM SUMSEL"></div>
-            <div class="inst-logo-wrap"><img src="logo4.png" alt="Logo ASN BerAKHLAK"></div>
         </div>
+        <!-- HAMBURGER: visible on mobile only -->
+        <button class="hamburger" id="hamburger-btn" onclick="toggleNav()" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
         <!-- KANAN: Navigasi -->
-        <nav class="top-bar-nav">
+        <nav class="top-bar-nav" id="top-nav">
+            <a href="index.html" style="background:var(--primary);color:white;padding:6px 11px;border-radius:6px;"><span class="lang-id">🏠 Beranda</span><span class="lang-en">🏠 Home</span></a>
             <a href="#materi-pengertian"><span class="lang-id">📖 Pengertian</span><span class="lang-en">📖 Introduction</span></a>
             <a href="#isomer-alkana"><span class="lang-id">🔬 Isomer Alkana</span><span class="lang-en">🔬 Alkane Isomers</span></a>
             <a href="#isomer-gugus-fungsi"><span class="lang-id">🧪 Isomer Gugus Fungsi</span><span class="lang-en">🧪 Func. Group Isomers</span></a>
@@ -1134,7 +1280,28 @@
         document.getElementById('btn-en').classList.toggle('active', lang === 'en');
     }
 
-    // ===== MOLECULE DATA (XYZ, with explicit Hydrogens) =====
+    // ===== HAMBURGER NAV TOGGLE =====
+    function toggleNav() {
+        const nav = document.getElementById('top-nav');
+        const btn = document.getElementById('hamburger-btn');
+        nav.classList.toggle('open');
+        btn.classList.toggle('open');
+    }
+    // Close nav when a link is clicked
+    document.querySelectorAll('.top-bar-nav a').forEach(function(link) {
+        link.addEventListener('click', function() {
+            document.getElementById('top-nav').classList.remove('open');
+            document.getElementById('hamburger-btn').classList.remove('open');
+        });
+    });
+
+    // ===== WRAP TABLES IN RESPONSIVE CONTAINER =====
+    document.querySelectorAll('.card table').forEach(function(tbl) {
+        var wrapper = document.createElement('div');
+        wrapper.className = 'table-responsive';
+        tbl.parentNode.insertBefore(wrapper, tbl);
+        wrapper.appendChild(tbl);
+    });
     const molData = {
         nButane: `14\nn-Butane\nC  -1.8270   0.0000   0.0000\nC  -0.6090  -0.8660   0.0000\nC   0.6090   0.0000   0.0000\nC   1.8270  -0.8660   0.0000\nH  -2.7400  -0.5770   0.0000\nH  -1.8820   0.6280   0.8870\nH  -1.8820   0.6280  -0.8870\nH  -0.5554  -1.4930   0.8870\nH  -0.5554  -1.4930  -0.8870\nH   0.5554   0.6280   0.8870\nH   0.5554   0.6280  -0.8870\nH   2.7400  -1.4435   0.0000\nH   1.8820  -1.4930   0.8870\nH   1.8820  -1.4930  -0.8870`,
         isobutane: `14\nIsobutane\nC   0.000   0.000   0.000\nC   1.383   0.000  -0.489\nC  -0.692   1.198  -0.489\nC  -0.692  -1.198  -0.489\nH   0.000   0.000   1.038\nH   2.035   0.000   0.319\nH   1.546   0.849  -1.065\nH   1.546  -0.849  -1.065\nH   0.010   1.908  -0.778\nH  -1.286   1.588   0.268\nH  -1.286   0.947  -1.300\nH  -1.657  -0.946  -0.778\nH  -0.731  -1.909   0.268\nH  -0.176  -1.588  -1.300`,
