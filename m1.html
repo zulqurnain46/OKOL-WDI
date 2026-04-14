@@ -541,10 +541,31 @@
                 flex: 1 1 auto;
                 border-right: none;
                 border-bottom: 1.5px solid var(--border);
-                padding: 10px 12px;
+                padding: 8px 10px;
+                gap: 6px;
             }
+            /* Tampilkan logo instansi di samping OKOL pada HP */
             .top-bar-center {
-                display: none; /* collapsed on tablet/mobile */
+                display: flex;
+                flex: 0 0 auto;
+                border-right: none;
+                border-bottom: 1.5px solid var(--border);
+                border-left: 1.5px solid var(--border);
+                padding: 6px 8px;
+                gap: 0;
+                align-items: center;
+                justify-content: center;
+                order: 1;
+            }
+            .top-bar-center .inst-logo-wrap {
+                padding: 0 5px;
+            }
+            .top-bar-center .inst-logo-wrap:not(:last-child) {
+                border-right: 1px solid var(--border);
+            }
+            .top-bar-center img {
+                height: 26px;
+                max-width: 34px;
             }
             .top-bar-nav {
                 display: none;
