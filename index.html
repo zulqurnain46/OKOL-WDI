@@ -479,16 +479,19 @@
     border-radius: var(--radius);
     padding: 2rem;
     backdrop-filter: blur(20px);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: border-color 0.4s, box-shadow 0.4s, transform 0.15s ease-out;
     position: relative; overflow: hidden;
     cursor: default;
+    perspective: 1000px;
+    transform-style: preserve-3d;
+    will-change: transform;
   }
   .feature-card::before {
     content: ''; position: absolute; inset: 0;
     background: linear-gradient(135deg, rgba(6,255,216,0.05), rgba(123,47,255,0.05));
     opacity: 0; transition: opacity 0.3s;
   }
-  .feature-card:hover { transform: translateY(-8px) rotateX(3deg); border-color: rgba(6,255,216,0.3); box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 40px var(--glow-cyan); }
+  .feature-card:hover { border-color: rgba(6,255,216,0.3); box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 40px var(--glow-cyan); }
   .feature-card:hover::before { opacity: 1; }
   .feature-icon {
     width: 56px; height: 56px; border-radius: 14px;
@@ -2327,22 +2330,41 @@ document.addEventListener('keydown', e => {
   }, { passive: true });
 })();
 
-document.addEventListener('mousemove', e => {
-  document.querySelectorAll('.feature-card').forEach(card => {
-    const rect = card.getBoundingClientRect();
-    if (rect.width === 0) return;
-    const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
-    const dx = (e.clientX - cx) / (rect.width / 2);
-    const dy = (e.clientY - cy) / (rect.height / 2);
-    card.style.transform = `translateY(-8px) rotateX(${-dy * 4}deg) rotateY(${dx * 4}deg)`;
-  });
-});
+// ============================================================
+//  FEATURE CARD — smooth per-card 3D tilt (no text flip)
+// ============================================================
+(function () {
+  const MAX_DEG = 8; // batas maksimal rotasi agar teks tidak terbalik
 
-document.addEventListener('mouseleave', () => {
-  document.querySelectorAll('.feature-card').forEach(card => {
-    card.style.transform = '';
-  });
-});
+  function attachTilt(card) {
+    card.addEventListener('mouseenter', () => {
+      card.style.transition = 'border-color 0.4s, box-shadow 0.4s, transform 0.15s ease-out';
+    });
+
+    card.addEventListener('mousemove', e => {
+      const rect = card.getBoundingClientRect();
+      // posisi kursor relatif terhadap tengah kartu (rentang -1 … +1)
+      const rx = ((e.clientX - rect.left) / rect.width  - 0.5) * 2;
+      const ry = ((e.clientY - rect.top)  / rect.height - 0.5) * 2;
+      // klem agar tidak melebihi MAX_DEG → cegah teks terbalik
+      const rotY =  Math.max(-MAX_DEG, Math.min(MAX_DEG,  rx * MAX_DEG));
+      const rotX =  Math.max(-MAX_DEG, Math.min(MAX_DEG, -ry * MAX_DEG));
+      card.style.transform = `translateY(-8px) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+    });
+
+    card.addEventListener('mouseleave', () => {
+      card.style.transition = 'border-color 0.4s, box-shadow 0.4s, transform 0.4s ease-out';
+      card.style.transform = 'translateY(0) rotateX(0deg) rotateY(0deg)';
+      // setelah transisi selesai, bersihkan agar CSS default kembali berlaku
+      card.addEventListener('transitionend', () => {
+        card.style.transform = '';
+        card.style.transition = '';
+      }, { once: true });
+    });
+  }
+
+  document.querySelectorAll('.feature-card').forEach(attachTilt);
+})();
 </script>
 </body>
 </html>
